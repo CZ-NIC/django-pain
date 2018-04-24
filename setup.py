@@ -4,8 +4,8 @@ from setuptools import find_packages, setup
 
 import django_pain
 
-INSTALL_REQUIRES = ['Django>=2.0']
-EXTRAS_REQUIRE = {'quality': ['isort', 'flake8', 'pydocstyle']}
+INSTALL_REQUIRES = ['Django>=2.0', 'django-money']
+EXTRAS_REQUIRE = {'quality': ['isort', 'flake8', 'pydocstyle', 'polint']}
 
 setup(name='django-pain',
       version=django_pain.__version__,

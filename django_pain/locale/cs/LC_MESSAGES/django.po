@@ -1,0 +1,61 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: django_pain 0.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-04-19 07:16-0500\n"
+"PO-Revision-Date: 2018-04-19 06:31-0500\n"
+"Last-Translator: Jan Musílek <jan.musilek@nic.cz>\n"
+"Language-Team: Czech <jan.musilek@nic.cz>\n"
+"Language: cs\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+
+msgid "Account name"
+msgstr "Název účtu"
+
+msgid "Account number"
+msgstr "Číslo účtu"
+
+msgid "Amount"
+msgstr "Částka"
+
+msgid "Constant symbol"
+msgstr "Konstantní symbol"
+
+msgid "Counter account name"
+msgstr "Název účtu protistrany"
+
+msgid "Counter account number"
+msgstr "Číslo účtu protistrany"
+
+msgid "Create time"
+msgstr "Čas vytvoření"
+
+msgid "Description"
+msgstr "Poznámka"
+
+msgid "Payment ID"
+msgstr "Identifikátor platby"
+
+msgid "Payment state"
+msgstr "Stav platby"
+
+msgid "Specific symbol"
+msgstr "Specifický symbol"
+
+msgid "Transaction date"
+msgstr "Datum transakce"
+
+msgid "Variable symbol"
+msgstr "Variabilní symbol"
+
+msgid "exported"
+msgstr "exportovaná"
+
+msgid "imported"
+msgstr "importovaná"
+
+msgid "processed"
+msgstr "zpracovaná"
