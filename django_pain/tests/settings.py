@@ -6,5 +6,5 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.auth',
     'djmoney',
-    'django_pain',
+    'django_pain.apps.DjangoPainConfig',
 ]

@@ -1,0 +1,2 @@
+ignore:
+    - "django_pain/migrations"
