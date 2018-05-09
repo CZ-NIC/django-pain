@@ -8,3 +8,7 @@ INSTALLED_APPS = [
     'djmoney',
     'django_pain.apps.DjangoPainConfig',
 ]
+
+DATABASES = {
+        'default': {'ENGINE': 'django.db.backends.sqlite3', 'NAME': ':memory:'}
+}
