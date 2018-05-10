@@ -8,7 +8,7 @@ from .bank import BankPayment
 class PaymentSymbols(models.Model):
     """Payment symbols (specific for Czech Republic and Slovak Republic)."""
 
-    payment = models.OneToOneField(BankPayment, on_delete=models.CASCADE, related_name='symbols')
+    payment = models.OneToOneField(BankPayment, on_delete=models.CASCADE, related_name='symbols', primary_key=True)
 
     constant_symbol = models.CharField(max_length=10, blank=True, verbose_name=_('Constant symbol'))
     variable_symbol = models.CharField(max_length=10, blank=True, verbose_name=_('Variable symbol'))
