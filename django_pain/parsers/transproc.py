@@ -7,6 +7,7 @@ transforming them into unified XML format.
 URL: https://github.com/CZ-NIC/fred-transproc
 """
 from datetime import datetime
+from typing import IO, Iterator, Tuple
 
 from djmoney.money import Money
 from lxml import etree
@@ -15,7 +16,7 @@ from django_pain.models import BankAccount, BankPayment, PaymentSymbols
 from django_pain.parsers.czechslovak import CzechSlovakBankStatementParser
 
 
-def none_to_str(value):
+def none_to_str(value: str) -> str:
     """Return value if value is not None, otherwise return empty string."""
     return value if value is not None else ''
 
@@ -23,7 +24,7 @@ def none_to_str(value):
 class TransprocXMLParser(CzechSlovakBankStatementParser):
     """Transproc XML parser."""
 
-    def parse(self, bank_statement):
+    def parse(self, bank_statement: IO[bytes]) -> Iterator[Tuple[BankPayment, PaymentSymbols]]:
         """Parse XML input."""
         parser = etree.XMLParser(resolve_entities=False)
         tree = etree.parse(bank_statement, parser)

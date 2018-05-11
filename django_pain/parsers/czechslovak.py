@@ -6,7 +6,7 @@ class CzechSlovakBankStatementParser(AbstractBankStatementParser):
     """Abstract parser class providing Czech and Slovak specifics."""
 
     @staticmethod
-    def compose_account_number(number, bank_code):
+    def compose_account_number(number: str, bank_code: str) -> str:
         """
         Compose account number from number and bank code.
 

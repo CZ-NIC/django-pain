@@ -1,12 +1,19 @@
 """Base bank statement parser module."""
 from abc import ABC, abstractmethod
+from typing import IO, Iterable, Sequence, Union
+
+from django.db.models import Model
+
+from django_pain.models import BankPayment
+
+BankStatementParserOutput = Union[Iterable[BankPayment], Iterable[Sequence[Model]]]
 
 
 class AbstractBankStatementParser(ABC):
     """Bank statement parser."""
 
     @abstractmethod
-    def parse(self, bank_statement):
+    def parse(self, bank_statement: IO) -> BankStatementParserOutput:
         """
         Parse bank statement.
 

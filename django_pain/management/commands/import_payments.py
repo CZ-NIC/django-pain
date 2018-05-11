@@ -8,6 +8,7 @@ from django.db import transaction
 from django.utils import module_loading
 
 from django_pain.models import BankAccount
+from django_pain.parsers.common import AbstractBankStatementParser, BankStatementParserOutput
 
 
 class Command(BaseCommand):
@@ -22,7 +23,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         """Run command."""
-        parser = module_loading.import_string(options['parser'])()
+        self.options = options
+
+        parser_class = module_loading.import_string(options['parser'])
+        if not issubclass(parser_class, AbstractBankStatementParser):
+            raise CommandError('Parser argument has to be subclass of AbstractBankStatementParser.')
+        parser = parser_class()  # type: AbstractBankStatementParser
 
         for input_file in options['input_file']:
             if input_file == '-':
@@ -35,11 +41,11 @@ class Command(BaseCommand):
             except BankAccount.DoesNotExist as e:
                 raise CommandError(e)
             else:
-                self.save_payments(payments, **options)
+                self.save_payments(payments)
             finally:
                 handle.close()
 
-    def save_payments(self, payments, **options):
+    def save_payments(self, payments: BankStatementParserOutput) -> None:
         """Save payments and related objects to database."""
         for payment_parts in payments:
             try:
@@ -62,9 +68,9 @@ class Command(BaseCommand):
                         rel.full_clean()
                         rel.save()
             except ValidationError as error:
-                if options['verbosity'] >= 1:
+                if self.options['verbosity'] >= 1:
                     for message in error.messages:
                         self.stderr.write(self.style.WARNING(message))
             else:
-                if options['verbosity'] >= 2:
+                if self.options['verbosity'] >= 2:
                     self.stdout.write(self.style.SUCCESS('Payment ID %s has been imported.' % payment.identifier))
