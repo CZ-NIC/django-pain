@@ -4,13 +4,12 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from djmoney.models.fields import CurrencyField, MoneyField
 
-from django_pain.constants import (CURRENCY_PRECISION, PAYMENT_STATE_EXPORTED, PAYMENT_STATE_IMPORTED,
-                                   PAYMENT_STATE_PROCESSED)
+from django_pain.constants import CURRENCY_PRECISION, PaymentState
 
 PAYMENT_STATE_CHOICES = (
-    (PAYMENT_STATE_IMPORTED, _('imported')),
-    (PAYMENT_STATE_PROCESSED, _('processed')),
-    (PAYMENT_STATE_EXPORTED, _('exported')),
+    (PaymentState.IMPORTED, _('imported')),
+    (PaymentState.PROCESSED, _('processed')),
+    (PaymentState.EXPORTED, _('exported')),
 )
 
 
@@ -35,8 +34,8 @@ class BankPayment(models.Model):
 
     amount = MoneyField(max_digits=64, decimal_places=CURRENCY_PRECISION, verbose_name=_('Amount'))
     description = models.TextField(blank=True, verbose_name=_('Description'))
-    state = models.IntegerField(choices=PAYMENT_STATE_CHOICES, default=PAYMENT_STATE_IMPORTED,
-                                verbose_name=_('Payment state'))
+    state = models.TextField(choices=PAYMENT_STATE_CHOICES, default=PaymentState.IMPORTED,
+                             verbose_name=_('Payment state'))
 
     class Meta:
         """Model Meta class."""
