@@ -1,0 +1,23 @@
+{% extends "django_pain/base.html" %}
+{% load i18n %}
+
+{% block content %}
+    {% for payment in payments %}
+        <b>{% trans "Payment" %} {{ payment.identifier }} ({{ payment.state }})</b>
+        <ul>
+            <li>{% trans "Account number" %}: {{ payment.account.account_number }}</li>
+            <li>{% trans "Account name" %}: {{ payment.account.account_name }}</li>
+            <li>{% trans "Transaction date" %}: {{ payment.transaction_date }}</li>
+            <li>{% trans "Counter account number" %}: {{ payment.counter_account_number }}</li>
+            <li>{% trans "Counter account name" %}: {{ payment.counter_account_name }}</li>
+            <li>{% trans "Amount" %}: {{ payment.amount }}</li>
+            <li>{% trans "Description" %}: {{ payment.description }}</li>
+
+            {% if payment.symbols %}
+                <li>{% trans "Variable symbol" %}: {{ payment.symbols.variable_symbol }}</li>
+                <li>{% trans "Constant symbol" %}: {{ payment.symbols.constant_symbol }}</li>
+                <li>{% trans "Specific symbol" %}: {{ payment.symbols.specific_symbol }}</li>
+            {% endif %}
+        </ul>
+    {% endfor %}
+{% endblock %}

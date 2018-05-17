@@ -2,7 +2,7 @@
 from datetime import date
 from decimal import Decimal
 from io import StringIO
-from typing import Any, List, Tuple
+from typing import List, Tuple
 
 from django.core.management import call_command
 from django.core.management.base import CommandError
@@ -12,19 +12,7 @@ from testfixtures import TempDirectory
 
 from django_pain.models import BankAccount, BankPayment, PaymentSymbols
 from django_pain.parsers import AbstractBankStatementParser
-
-
-def get_payment(**kwargs: Any) -> BankPayment:
-    """Create payment object."""
-    default = {
-        'identifier': 'PAYMENT1',
-        'account': None,
-        'transaction_date': date(2018, 5, 9),
-        'counter_account_number': '098765/4321',
-        'amount': Money('42.00', 'CZK'),
-    }
-    default.update(kwargs)
-    return BankPayment(**default)
+from django_pain.tests.utils import get_payment
 
 
 class DummyPaymentsParser(AbstractBankStatementParser):
