@@ -1,14 +1,14 @@
 """Command for importing payments from bank."""
 import sys
-from typing import Sequence
+from typing import Iterable
 
 from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import module_loading
 
-from django_pain.models import BankAccount
-from django_pain.parsers.common import AbstractBankStatementParser, BankStatementParserOutput
+from django_pain.models import BankAccount, BankPayment
+from django_pain.parsers.common import AbstractBankStatementParser
 
 
 class Command(BaseCommand):
@@ -45,28 +45,13 @@ class Command(BaseCommand):
             finally:
                 handle.close()
 
-    def save_payments(self, payments: BankStatementParserOutput) -> None:
+    def save_payments(self, payments: Iterable[BankPayment]) -> None:
         """Save payments and related objects to database."""
-        for payment_parts in payments:
+        for payment in payments:
             try:
                 with transaction.atomic():
-                    if isinstance(payment_parts, Sequence):
-                        payment = payment_parts[0]
-                        payment_related_objects = payment_parts[1:]
-                    else:
-                        payment = payment_parts
-                        payment_related_objects = ()
-
                     payment.full_clean()
                     payment.save()
-                    for rel in payment_related_objects:
-                        for field in [f.name for f in rel._meta.get_fields()]:
-                            # Django does not refresh object references before saving the objects
-                            # into database. Therefore we need to do that manually.
-                            # See https://code.djangoproject.com/ticket/8892
-                            setattr(rel, field, getattr(rel, field))
-                        rel.full_clean()
-                        rel.save()
             except ValidationError as error:
                 if self.options['verbosity'] >= 1:
                     for message in error.messages:

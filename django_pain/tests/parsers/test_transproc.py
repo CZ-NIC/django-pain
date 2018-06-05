@@ -5,8 +5,7 @@ from io import BytesIO
 from django.test import TestCase
 from djmoney.money import Money
 
-from django_pain.models import BankAccount, BankPayment
-from django_pain.models.symbols import PaymentSymbols
+from django_pain.models import BankAccount
 from django_pain.parsers.transproc import TransprocXMLParser
 
 
@@ -61,9 +60,7 @@ class TestTransprocXMLParser(TestCase):
             'counter_account_number': '123456777/0123',
             'counter_account_name': 'Company Inc.',
             'amount': Money('1000.00', 'CZK'),
-            'description': 'See you later'
-        }
-        symbols1 = {
+            'description': 'See you later',
             'constant_symbol': '0558',
             'variable_symbol': '11111111',
             'specific_symbol': '',
@@ -75,29 +72,18 @@ class TestTransprocXMLParser(TestCase):
             'counter_account_number': '123456888/1234',
             'counter_account_name': 'Company Ltd.',
             'amount': Money('2000.00', 'CZK'),
-            'description': ''
-        }
-        symbols2 = {
+            'description': '',
             'constant_symbol': '0558',
             'variable_symbol': '',
             'specific_symbol': '600',
         }
 
-        self.assertEqual(len(payments[0]), 2)
-        self.assertEqual(len(payments[1]), 2)
-        self.assertIsInstance(payments[0][0], BankPayment)
-        self.assertIsInstance(payments[1][0], BankPayment)
-        self.assertIsInstance(payments[0][1], PaymentSymbols)
-        self.assertIsInstance(payments[1][1], PaymentSymbols)
+        self.assertEqual(len(payments), 2)
 
         for field in payment1:
-            self.assertEqual(getattr(payments[0][0], field), payment1[field])
-        for field in symbols1:
-            self.assertEqual(getattr(payments[0][1], field), symbols1[field])
+            self.assertEqual(getattr(payments[0], field), payment1[field])
         for field in payment2:
-            self.assertEqual(getattr(payments[1][0], field), payment2[field])
-        for field in symbols2:
-            self.assertEqual(getattr(payments[1][1], field), symbols2[field])
+            self.assertEqual(getattr(payments[1], field), payment2[field])
 
     def test_parse_account_not_exists(self):
         """Parser should raise an exception if bank account does not exist."""

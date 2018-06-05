@@ -37,6 +37,11 @@ class BankPayment(models.Model):
     state = models.TextField(choices=PAYMENT_STATE_CHOICES, default=PaymentState.IMPORTED,
                              verbose_name=_('Payment state'))
 
+    # Payment symbols (specific for Czech Republic and Slovak Republic).
+    constant_symbol = models.CharField(max_length=10, blank=True, verbose_name=_('Constant symbol'))
+    variable_symbol = models.CharField(max_length=10, blank=True, verbose_name=_('Variable symbol'))
+    specific_symbol = models.CharField(max_length=10, blank=True, verbose_name=_('Specific symbol'))
+
     class Meta:
         """Model Meta class."""
 

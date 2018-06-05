@@ -7,12 +7,12 @@ transforming them into unified XML format.
 URL: https://github.com/CZ-NIC/fred-transproc
 """
 from datetime import datetime
-from typing import IO, Iterator, Tuple
+from typing import IO, Iterator
 
 from djmoney.money import Money
 from lxml import etree
 
-from django_pain.models import BankAccount, BankPayment, PaymentSymbols
+from django_pain.models import BankAccount, BankPayment
 from django_pain.parsers.czechslovak import CzechSlovakBankStatementParser
 
 
@@ -24,7 +24,7 @@ def none_to_str(value: str) -> str:
 class TransprocXMLParser(CzechSlovakBankStatementParser):
     """Transproc XML parser."""
 
-    def parse(self, bank_statement: IO[bytes]) -> Iterator[Tuple[BankPayment, PaymentSymbols]]:
+    def parse(self, bank_statement: IO[bytes]) -> Iterator[BankPayment]:
         """Parse XML input."""
         parser = etree.XMLParser(resolve_entities=False)
         tree = etree.parse(bank_statement, parser)
@@ -47,12 +47,9 @@ class TransprocXMLParser(CzechSlovakBankStatementParser):
                 counter_account_name=none_to_str(attrs['name']),
                 amount=Money(attrs['price'], account.currency),
                 description=none_to_str(attrs['memo']),
-            )
-            symbols = PaymentSymbols(
-                payment=payment,
                 constant_symbol=none_to_str(attrs['const_symbol']),
                 variable_symbol=none_to_str(attrs['var_symbol']),
                 specific_symbol=none_to_str(attrs['spec_symbol']),
             )
 
-            yield (payment, symbols)
+            yield payment

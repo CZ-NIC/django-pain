@@ -12,11 +12,14 @@
             <li>{% trans "Counter account name" %}: {{ payment.counter_account_name }}</li>
             <li>{% trans "Amount" %}: {{ payment.amount }}</li>
             <li>{% trans "Description" %}: {{ payment.description }}</li>
-
-            {% if payment.symbols %}
-                <li>{% trans "Variable symbol" %}: {{ payment.symbols.variable_symbol }}</li>
-                <li>{% trans "Constant symbol" %}: {{ payment.symbols.constant_symbol }}</li>
-                <li>{% trans "Specific symbol" %}: {{ payment.symbols.specific_symbol }}</li>
+            {% if payment.variable_symbol %}
+                <li>{% trans "Variable symbol" %}: {{ payment.variable_symbol }}</li>
+            {% endif %}
+            {% if payment.constant_symbol %}
+                <li>{% trans "Constant symbol" %}: {{ payment.constant_symbol }}</li>
+            {% endif %}
+            {% if payment.specific_symbol %}
+                <li>{% trans "Specific symbol" %}: {{ payment.specific_symbol }}</li>
             {% endif %}
         </ul>
     {% endfor %}
