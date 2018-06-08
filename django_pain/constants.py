@@ -12,4 +12,5 @@ class PaymentState(str, Enum):
 
     IMPORTED = 'imported'
     PROCESSED = 'processed'
+    DEFERRED = 'deferred'
     EXPORTED = 'exported'

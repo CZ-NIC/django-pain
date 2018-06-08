@@ -9,6 +9,7 @@ from django_pain.constants import CURRENCY_PRECISION, PaymentState
 PAYMENT_STATE_CHOICES = (
     (PaymentState.IMPORTED, _('imported')),
     (PaymentState.PROCESSED, _('processed')),
+    (PaymentState.DEFERRED, _('deferred')),
     (PaymentState.EXPORTED, _('exported')),
 )
 

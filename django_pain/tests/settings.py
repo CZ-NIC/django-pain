@@ -28,3 +28,5 @@ TEMPLATES = [
         },
     },
 ]
+
+PAIN_PROCESSORS = []  # type: list

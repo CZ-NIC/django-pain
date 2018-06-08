@@ -54,6 +54,9 @@ msgstr "Datum transakce"
 msgid "Variable symbol"
 msgstr "Variabilní symbol"
 
+msgid "deferred"
+msgstr "odložená"
+
 msgid "exported"
 msgstr "exportovaná"
 

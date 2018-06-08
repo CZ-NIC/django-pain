@@ -13,9 +13,9 @@ def readme():
         return f.read()
 
 
-INSTALL_REQUIRES = ['Django>=2.0', 'django-money', 'lxml']
+INSTALL_REQUIRES = ['Django>=2.0', 'django-money', 'django-app-settings', 'lxml']
 EXTRAS_REQUIRE = {'quality': ['isort', 'flake8', 'pydocstyle', 'polint', 'mypy'],
-                  'test': ['testfixtures']}
+                  'test': ['testfixtures', 'freezegun']}
 
 setup(name='django-pain',
       version=django_pain.__version__,
