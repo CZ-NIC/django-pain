@@ -1,4 +1,4 @@
-"""Test management commands."""
+"""Test import_payments command."""
 from datetime import date
 from decimal import Decimal
 from io import StringIO
@@ -44,8 +44,8 @@ class TestImportPayments(TestCase):
     def test_import_payments(self):
         """Test import_payments command."""
         out = StringIO()
-        call_command('import_payments', '--parser=django_pain.tests.test_commands.DummyPaymentsParser', '--no-color',
-                     '--verbosity=3', stdout=out)
+        call_command('import_payments', '--parser=django_pain.tests.commands.test_import_payments.DummyPaymentsParser',
+                     '--no-color', '--verbosity=3', stdout=out)
 
         self.assertEqual(out.getvalue().strip().split('\n'), [
             'Payment ID PAYMENT_1 has been imported.',
@@ -63,8 +63,8 @@ class TestImportPayments(TestCase):
     def test_account_not_exist(self):
         """Test command while account does not exist."""
         with self.assertRaises(CommandError) as cm:
-            call_command('import_payments', '--parser=django_pain.tests.test_commands.DummyExceptionParser',
-                         '--no-color')
+            call_command('import_payments',
+                         '--parser=django_pain.tests.commands.test_import_payments.DummyExceptionParser', '--no-color')
 
         self.assertEqual(str(cm.exception), 'Bank account ACCOUNT does not exist.')
 
@@ -72,9 +72,9 @@ class TestImportPayments(TestCase):
         """Test command for payments that already exist in database."""
         out = StringIO()
         err = StringIO()
-        call_command('import_payments', '--parser=django_pain.tests.test_commands.DummyPaymentsParser',
+        call_command('import_payments', '--parser=django_pain.tests.commands.test_import_payments.DummyPaymentsParser',
                      '--no-color', stdout=out)
-        call_command('import_payments', '--parser=django_pain.tests.test_commands.DummyPaymentsParser',
+        call_command('import_payments', '--parser=django_pain.tests.commands.test_import_payments.DummyPaymentsParser',
                      '--no-color', stderr=err)
 
         self.assertEqual(err.getvalue().strip().split('\n'), [
@@ -86,9 +86,9 @@ class TestImportPayments(TestCase):
         """Test command call with verbosity set to 0."""
         out = StringIO()
         err = StringIO()
-        call_command('import_payments', '--parser=django_pain.tests.test_commands.DummyPaymentsParser',
+        call_command('import_payments', '--parser=django_pain.tests.commands.test_import_payments.DummyPaymentsParser',
                      '--no-color', '--verbosity=0', stdout=out, stderr=err)
-        call_command('import_payments', '--parser=django_pain.tests.test_commands.DummyPaymentsParser',
+        call_command('import_payments', '--parser=django_pain.tests.commands.test_import_payments.DummyPaymentsParser',
                      '--no-color', '--verbosity=0', stdout=out, stderr=err)
 
         self.assertEqual(out.getvalue(), '')
@@ -100,7 +100,8 @@ class TestImportPayments(TestCase):
         err = StringIO()
         with TempDirectory() as d:
             d.write('input_file.xml', b'<whatever></whatever>')
-            call_command('import_payments', '--parser=django_pain.tests.test_commands.DummyPaymentsParser',
+            call_command('import_payments',
+                         '--parser=django_pain.tests.commands.test_import_payments.DummyPaymentsParser',
                          '--no-color', '--verbosity=0', '-', '/'.join([d.path, 'input_file.xml']),
                          stdout=out, stderr=err)
 
