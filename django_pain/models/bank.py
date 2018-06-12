@@ -1,4 +1,6 @@
 """Payments and invoices models."""
+import uuid
+
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -26,6 +28,7 @@ class BankPayment(models.Model):
     """Bank payment."""
 
     identifier = models.TextField(verbose_name=_('Payment ID'))
+    uuid = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
     account = models.ForeignKey(BankAccount, on_delete=models.CASCADE)
     create_time = models.DateTimeField(auto_now_add=True, verbose_name=_('Create time'))
     transaction_date = models.DateField(verbose_name=_('Transaction date'))
