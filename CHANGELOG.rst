@@ -2,6 +2,12 @@
  Changelog
 ===========
 
+git
+===
+* Change payment processors API to allow bulk processing `[#19]`_
+
+.. _[#19]: https://github.com/stinovlas/django-pain/issues/19
+
 0.1.1
 =====
 * Add uuid_ field to BankPayment
