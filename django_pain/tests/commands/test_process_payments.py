@@ -10,17 +10,17 @@ from django_pain.tests.utils import get_payment
 
 
 class DummyTruePaymentsProcessor(AbstractPaymentProcessor):
-    """Simple parser that just returns two fixed payments."""
+    """Simple processor that just returns success."""
 
-    def process_payment(self, payment):
-        return True
+    def process_payments(self, payments):
+        return [True]
 
 
 class DummyFalsePaymentsProcessor(AbstractPaymentProcessor):
-    """Simple parser that just returns two fixed payments."""
+    """Simple processor that just returns failure."""
 
-    def process_payment(self, payment):
-        return False
+    def process_payments(self, payments):
+        return [False]
 
 
 @freeze_time('2018-01-01')

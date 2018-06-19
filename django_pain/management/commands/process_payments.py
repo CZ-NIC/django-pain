@@ -32,12 +32,22 @@ class Command(BaseCommand):
         settings = PainSettings()
         processors = [processor() for processor in settings.processors]
 
-        for payment in payments:
-            for processor in processors:
-                if processor.process_payment(deepcopy(payment)):
+        for processor in processors:
+            if not payments:
+                break
+
+            results = processor.process_payments(deepcopy(payment) for payment in payments)  # pragma: no cover
+            unprocessed_payments = []
+
+            for payment, processed in zip(payments, results):
+                if processed:
                     payment.state = PaymentState.PROCESSED
                     payment.save()
-                    break
-            else:
-                payment.state = PaymentState.DEFERRED
-                payment.save()
+                else:
+                    unprocessed_payments.append(payment)
+
+            payments = unprocessed_payments
+
+        for unprocessed_payment in payments:
+            unprocessed_payment.state = PaymentState.DEFERRED
+            unprocessed_payment.save()
