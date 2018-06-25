@@ -2,8 +2,8 @@
  Changelog
 ===========
 
-git
-===
+0.2.0
+=====
 * Change payment processors API to allow bulk processing `[#19]`_
 
 .. _[#19]: https://github.com/stinovlas/django-pain/issues/19
