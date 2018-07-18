@@ -39,8 +39,10 @@ class Command(BaseCommand):
             unprocessed_payments = []
 
             for payment, processed in zip(payments, results):
-                if processed:
+                if processed.result:
                     payment.state = PaymentState.PROCESSED
+                    payment.processor = "%s.%s" % (type(processor).__module__, type(processor).__qualname__)
+                    payment.objective = processed.objective
                     payment.save()
                 else:
                     unprocessed_payments.append(payment)

@@ -5,22 +5,26 @@ from freezegun import freeze_time
 
 from django_pain.constants import PaymentState
 from django_pain.models import BankAccount, BankPayment
-from django_pain.processors import AbstractPaymentProcessor
+from django_pain.processors import AbstractPaymentProcessor, ProcessPaymentResult
 from django_pain.tests.utils import get_payment
 
 
 class DummyTruePaymentsProcessor(AbstractPaymentProcessor):
     """Simple processor that just returns success."""
 
+    default_objective = 'True objective'
+
     def process_payments(self, payments):
-        return [True]
+        return [ProcessPaymentResult(result=True, objective=self.default_objective)]
 
 
 class DummyFalsePaymentsProcessor(AbstractPaymentProcessor):
     """Simple processor that just returns failure."""
 
+    default_objective = 'False objective'
+
     def process_payments(self, payments):
-        return [False]
+        return [ProcessPaymentResult(result=False, objective=self.default_objective)]
 
 
 @freeze_time('2018-01-01')
@@ -39,8 +43,9 @@ class TestProcessPayments(TestCase):
         call_command('process_payments')
 
         self.assertQuerysetEqual(
-            BankPayment.objects.values_list('identifier', 'account', 'state'),
-            [('PAYMENT_1', self.account.pk, PaymentState.PROCESSED)],
+            BankPayment.objects.values_list('identifier', 'account', 'state', 'processor', 'objective'),
+            [('PAYMENT_1', self.account.pk, PaymentState.PROCESSED,
+              'django_pain.tests.commands.test_process_payments.DummyTruePaymentsProcessor', 'True objective')],
             transform=tuple, ordered=False)
 
     @override_settings(PAIN_PROCESSORS=['django_pain.tests.commands.test_process_payments.DummyFalsePaymentsProcessor'])
@@ -49,8 +54,8 @@ class TestProcessPayments(TestCase):
         call_command('process_payments')
 
         self.assertQuerysetEqual(
-            BankPayment.objects.values_list('identifier', 'account', 'state'),
-            [('PAYMENT_1', self.account.pk, PaymentState.DEFERRED)],
+            BankPayment.objects.values_list('identifier', 'account', 'state', 'processor', 'objective'),
+            [('PAYMENT_1', self.account.pk, PaymentState.DEFERRED, '', '')],
             transform=tuple, ordered=False)
 
     @override_settings(PAIN_PROCESSORS=[
@@ -63,6 +68,6 @@ class TestProcessPayments(TestCase):
         print(self.payment.create_time)
 
         self.assertQuerysetEqual(
-            BankPayment.objects.values_list('identifier', 'account', 'state'),
-            [('PAYMENT_1', self.account.pk, PaymentState.IMPORTED)],
+            BankPayment.objects.values_list('identifier', 'account', 'state', 'processor', 'objective'),
+            [('PAYMENT_1', self.account.pk, PaymentState.IMPORTED, '', '')],
             transform=tuple, ordered=False)
