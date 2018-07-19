@@ -1,0 +1,4 @@
+Django>=2.0
+django-money
+django-app-settings
+lxml

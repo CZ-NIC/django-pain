@@ -13,7 +13,7 @@ def readme():
         return f.read()
 
 
-INSTALL_REQUIRES = ['Django>=2.0', 'django-money', 'django-app-settings', 'lxml']
+INSTALL_REQUIRES = open('requirements.txt').read().splitlines()
 EXTRAS_REQUIRE = {'quality': ['isort', 'flake8', 'pydocstyle', 'polint', 'mypy'],
                   'test': ['testfixtures', 'freezegun']}
 
