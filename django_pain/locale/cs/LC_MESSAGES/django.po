@@ -18,8 +18,17 @@ msgstr "Název účtu"
 msgid "Account number"
 msgstr "Číslo účtu"
 
+msgid "All"
+msgstr "Vše"
+
 msgid "Amount"
 msgstr "Částka"
+
+msgid "Assign payment"
+msgstr "Spárovat platbu"
+
+msgid "Client ID"
+msgstr "Identifikátor klienta"
 
 msgid "Constant symbol"
 msgstr "Konstantní symbol"
@@ -53,6 +62,9 @@ msgstr "Specifický symbol"
 
 msgid "Transaction date"
 msgstr "Datum transakce"
+
+msgid "Unable to assign payment"
+msgstr "Nepodařilo se spárovat platbu"
 
 msgid "Variable symbol"
 msgstr "Variabilní symbol"
