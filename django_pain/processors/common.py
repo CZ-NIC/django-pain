@@ -31,3 +31,13 @@ class AbstractPaymentProcessor(ABC):
         have ``result`` set to True, otherwise value of ``result`` must be
         False.
         """
+
+    @abstractmethod
+    def assign_payment(self, payment: BankPayment, client_id: str) -> ProcessPaymentResult:
+        """
+        Assign bank payment to this payment processor.
+
+        Each processor class has to implement this method. This method
+        implements forced assignment of payment to particular payment
+        processor. As a hint, ``client_id`` may be provided.
+        """
