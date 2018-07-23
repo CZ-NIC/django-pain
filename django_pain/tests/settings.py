@@ -5,8 +5,15 @@ SECRET_KEY = 'Qapla\'!'
 INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.auth',
+    'django.contrib.sessions',
+    'django.contrib.admin',
     'djmoney',
     'django_pain.apps.DjangoPainConfig',
+]
+
+MIDDLEWARE = [
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
 ]
 
 DATABASES = {

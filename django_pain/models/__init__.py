@@ -1,4 +1,4 @@
 """Models module."""
-from .bank import BankAccount, BankPayment
+from .bank import PAYMENT_STATE_CHOICES, BankAccount, BankPayment
 
-__all__ = ['BankAccount', 'BankPayment']
+__all__ = ['PAYMENT_STATE_CHOICES', 'BankAccount', 'BankPayment']
