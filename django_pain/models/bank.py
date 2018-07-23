@@ -26,6 +26,10 @@ class BankAccount(models.Model):
     account_name = models.TextField(blank=True, verbose_name=_('Account name'))
     currency = CurrencyField()
 
+    def __str__(self):
+        """Return string representation of bank account."""
+        return self.account_number
+
 
 class BankPayment(models.Model):
     """Bank payment."""

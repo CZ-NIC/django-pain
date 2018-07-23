@@ -7,6 +7,15 @@ from djmoney.money import Money
 from django_pain.models import BankAccount, BankPayment
 
 
+class TestBankAccount(SimpleTestCase):
+    """Test BankAccount model."""
+
+    def test_str(self):
+        """Test string representation."""
+        account = BankAccount(account_number='123', currency='USD')
+        self.assertEqual(str(account), '123')
+
+
 class TestBankPayment(SimpleTestCase):
     """Test BankPayment model."""
 
