@@ -3,10 +3,13 @@ import uuid
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import BLANK_CHOICE_DASH
 from django.utils.translation import gettext_lazy as _
 from djmoney.models.fields import CurrencyField, MoneyField
 
 from django_pain.constants import CURRENCY_PRECISION, PaymentState
+from django_pain.settings import SETTINGS
+from django_pain.utils import full_class_name
 
 PAYMENT_STATE_CHOICES = (
     (PaymentState.IMPORTED, _('imported')),
@@ -61,3 +64,12 @@ class BankPayment(models.Model):
                 self.identifier, self.amount.currency.code, self.account.account_number, self.account.currency
             ))
         super().clean()
+
+    @classmethod
+    def objective_choices(self):
+        """Return payment processor default objectives choices."""
+        choices = BLANK_CHOICE_DASH.copy()
+        for proc_class in SETTINGS.processors:
+            proc = proc_class()
+            choices.append((full_class_name(proc_class), proc.default_objective))
+        return choices
