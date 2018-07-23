@@ -1,5 +1,5 @@
 Django>=2.0
-django-money
+django-money>=0.14.2
 django-app-settings
 lxml
 django-modeltranslation>=0.13-beta1
