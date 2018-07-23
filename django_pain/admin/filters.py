@@ -16,10 +16,10 @@ class PaymentStateListFilter(ChoicesFieldListFilter):
             'query_string': cl.get_query_string({}, [self.lookup_kwarg]),
             'display': _('All'),
         }
-        for enum_value in PaymentState:
+        for enum_value in list(PaymentState):  # type: PaymentState
             str_value = enum_value.value
             yield {
                 'selected': (str_value == self.lookup_val),
                 'query_string': cl.get_query_string({self.lookup_kwarg: str_value}),
-                'display': dict(PAYMENT_STATE_CHOICES).get(enum_value),
+                'display': dict(PAYMENT_STATE_CHOICES)[enum_value],
             }
