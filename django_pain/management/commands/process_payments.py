@@ -4,9 +4,9 @@ from copy import deepcopy
 from django.core.management.base import BaseCommand
 from django.utils.dateparse import parse_datetime
 
-from django_pain.apps import PainSettings
 from django_pain.constants import PaymentState
 from django_pain.models import BankPayment
+from django_pain.settings import SETTINGS
 
 
 class Command(BaseCommand):
@@ -29,8 +29,7 @@ class Command(BaseCommand):
         if options['time_to'] is not None:
             payments = payments.filter(create_time__lte=options['time_to'])
 
-        settings = PainSettings()
-        processors = [processor() for processor in settings.processors]
+        processors = [processor() for processor in SETTINGS.processors]
 
         for processor in processors:
             if not payments:
@@ -40,8 +39,10 @@ class Command(BaseCommand):
             unprocessed_payments = []
 
             for payment, processed in zip(payments, results):
-                if processed:
+                if processed.result:
                     payment.state = PaymentState.PROCESSED
+                    payment.processor = "%s.%s" % (type(processor).__module__, type(processor).__qualname__)
+                    payment.objective = processed.objective
                     payment.save()
                 else:
                     unprocessed_payments.append(payment)

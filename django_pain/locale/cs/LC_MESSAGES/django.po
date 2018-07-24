@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django_pain 0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-05-17 12:38+0000\n"
+"POT-Creation-Date: 2018-07-23 15:11+0000\n"
 "PO-Revision-Date: 2018-04-19 06:31-0500\n"
 "Last-Translator: Jan Musílek <jan.musilek@nic.cz>\n"
 "Language-Team: Czech <jan.musilek@nic.cz>\n"
@@ -18,8 +18,17 @@ msgstr "Název účtu"
 msgid "Account number"
 msgstr "Číslo účtu"
 
+msgid "All"
+msgstr "Vše"
+
 msgid "Amount"
 msgstr "Částka"
+
+msgid "Assign payment"
+msgstr "Spárovat platbu"
+
+msgid "Client ID"
+msgstr "Identifikátor klienta"
 
 msgid "Constant symbol"
 msgstr "Konstantní symbol"
@@ -36,8 +45,8 @@ msgstr "Čas vytvoření"
 msgid "Description"
 msgstr "Poznámka"
 
-msgid "Payment"
-msgstr "Platba"
+msgid "Objective"
+msgstr "Účel"
 
 msgid "Payment ID"
 msgstr "Identifikátor platby"
@@ -45,11 +54,17 @@ msgstr "Identifikátor platby"
 msgid "Payment state"
 msgstr "Stav platby"
 
+msgid "Processor"
+msgstr "Zpracovatel"
+
 msgid "Specific symbol"
 msgstr "Specifický symbol"
 
 msgid "Transaction date"
 msgstr "Datum transakce"
+
+msgid "Unable to assign payment"
+msgstr "Nepodařilo se spárovat platbu"
 
 msgid "Variable symbol"
 msgstr "Variabilní symbol"

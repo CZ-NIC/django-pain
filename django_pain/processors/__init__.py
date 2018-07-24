@@ -1,4 +1,4 @@
 """Processors module."""
-from .common import AbstractPaymentProcessor
+from .common import AbstractPaymentProcessor, ProcessPaymentResult
 
-__all__ = ['AbstractPaymentProcessor']
+__all__ = ['AbstractPaymentProcessor', 'ProcessPaymentResult']

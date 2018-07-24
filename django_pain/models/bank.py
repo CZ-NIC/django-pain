@@ -3,10 +3,13 @@ import uuid
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import BLANK_CHOICE_DASH
 from django.utils.translation import gettext_lazy as _
 from djmoney.models.fields import CurrencyField, MoneyField
 
 from django_pain.constants import CURRENCY_PRECISION, PaymentState
+from django_pain.settings import SETTINGS
+from django_pain.utils import full_class_name
 
 PAYMENT_STATE_CHOICES = (
     (PaymentState.IMPORTED, _('imported')),
@@ -22,6 +25,10 @@ class BankAccount(models.Model):
     account_number = models.TextField(verbose_name=_('Account number'))
     account_name = models.TextField(blank=True, verbose_name=_('Account name'))
     currency = CurrencyField()
+
+    def __str__(self):
+        """Return string representation of bank account."""
+        return self.account_number
 
 
 class BankPayment(models.Model):
@@ -46,6 +53,9 @@ class BankPayment(models.Model):
     variable_symbol = models.CharField(max_length=10, blank=True, verbose_name=_('Variable symbol'))
     specific_symbol = models.CharField(max_length=10, blank=True, verbose_name=_('Specific symbol'))
 
+    processor = models.TextField(verbose_name=_('Processor'), blank=True)
+    objective = models.TextField(verbose_name=_('Objective'), blank=True)
+
     class Meta:
         """Model Meta class."""
 
@@ -58,3 +68,12 @@ class BankPayment(models.Model):
                 self.identifier, self.amount.currency.code, self.account.account_number, self.account.currency
             ))
         super().clean()
+
+    @classmethod
+    def objective_choices(self):
+        """Return payment processor default objectives choices."""
+        choices = BLANK_CHOICE_DASH.copy()
+        for proc_class in SETTINGS.processors:
+            proc = proc_class()
+            choices.append((full_class_name(proc_class), proc.default_objective))
+        return choices

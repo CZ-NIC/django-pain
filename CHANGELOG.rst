@@ -2,6 +2,16 @@
  Changelog
 ===========
 
+git
+===
+* Remove view PaymentListView
+* Add django admin interface for accounts and payments `[#21]`_
+* Payment processors now must return payment objective `[#21]`_
+* Payment processors now must implement assign_payment method `[#21]`_
+* Use modeltranslation on BankPayment model
+
+.. _[#21]: https://github.com/stinovlas/django-pain/issues/21
+
 0.2.0
 =====
 * Change payment processors API to allow bulk processing `[#19]`_
