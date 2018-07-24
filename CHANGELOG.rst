@@ -2,8 +2,8 @@
  Changelog
 ===========
 
-git
-===
+0.3.0
+=====
 * Remove view PaymentListView
 * Add django admin interface for accounts and payments `[#21]`_
 * Payment processors now must return payment objective `[#21]`_
