@@ -64,3 +64,11 @@ class BankPaymentAdmin(admin.ModelAdmin):
                         'description', 'counter_account_name', 'create_time', 'account', 'state')
                 }),
             ]
+
+    def has_add_permission(self, request):
+        """Forbid adding new payments through admin interface."""
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        """Forbid deleting payments through admin interface."""
+        return False
