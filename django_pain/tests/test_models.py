@@ -12,8 +12,8 @@ class TestBankAccount(SimpleTestCase):
 
     def test_str(self):
         """Test string representation."""
-        account = BankAccount(account_number='123', currency='USD')
-        self.assertEqual(str(account), '123')
+        account = BankAccount(account_name='Account', account_number='123', currency='USD')
+        self.assertEqual(str(account), 'Account 123')
 
 
 class TestBankPayment(SimpleTestCase):

@@ -78,8 +78,8 @@ class TestImportPayments(TestCase):
                      '--no-color', stderr=err)
 
         self.assertEqual(err.getvalue().strip().split('\n'), [
-            'Bank payment with this Payment ID and Account already exists.',
-            'Bank payment with this Payment ID and Account already exists.',
+            'Bank payment with this Payment ID and Destination account already exists.',
+            'Bank payment with this Payment ID and Destination account already exists.',
         ])
 
     def test_quiet_command(self):

@@ -58,15 +58,11 @@ class TestBankPaymentAdmin(TestCase):
         request.user = self.admin
 
         fieldsets = modeladmin.get_fieldsets(request)
-        self.assertEqual(fieldsets[1][1]['fields'], ('objective',))
+        self.assertEqual(len(fieldsets), 1)
 
         fieldsets = modeladmin.get_fieldsets(request, self.imported_payment)
+        self.assertEqual(len(fieldsets), 2)
         self.assertEqual(fieldsets[1][1]['fields'], ('processor', 'client_id'))
 
         fieldsets = modeladmin.get_fieldsets(request, self.processed_payment)
-        self.assertEqual(fieldsets[1][1]['fields'], ('objective',))
-
-    def test_account_name(self):
-        """Test account_name method."""
-        modeladmin = BankPaymentAdmin(BankPayment, admin.site)
-        self.assertEqual(modeladmin.account_name(self.imported_payment), 'My Account')
+        self.assertEqual(len(fieldsets), 1)

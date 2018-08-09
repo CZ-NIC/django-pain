@@ -18,10 +18,12 @@ class BankPaymentAdmin(admin.ModelAdmin):
     """Model admin for BankPayment."""
 
     form = BankPaymentForm
+
     list_display = (
-        'identifier', 'transaction_date', 'account_name', 'counter_account_name',
-        'amount', 'variable_symbol', 'state'
+        'identifier', 'counter_account_number', 'variable_symbol', 'amount', 'transaction_date',
+        'description', 'counter_account_name', 'account', 'state'
     )
+
     list_filter = (
         ('state', PaymentStateListFilter), 'account__account_name', 'transaction_date',
     )
@@ -32,6 +34,8 @@ class BankPaymentAdmin(admin.ModelAdmin):
         'constant_symbol', 'variable_symbol', 'specific_symbol', 'objective',
     )
 
+    ordering = ('-transaction_date', '-create_time')
+
     def get_fieldsets(self, request, obj=None):
         """
         Return form fieldsets.
@@ -39,21 +43,24 @@ class BankPaymentAdmin(admin.ModelAdmin):
         For imported or deferred payment, display form fields to manually assign
         payment. Otherwise, display payment objective.
         """
-        fieldsets = [
-            (None, {
-                'fields': ('identifier', 'account', 'create_time', 'transaction_date',
-                           'counter_account_number', 'counter_account_name', 'amount', 'description', 'state',
-                           'constant_symbol', 'variable_symbol', 'specific_symbol',)
-            }),
-        ]
         if obj is not None and obj.state in (PaymentState.IMPORTED, PaymentState.DEFERRED):
-            fieldsets.append((_('Assign payment'), {'fields': ('processor', 'client_id')}),)  # type: ignore
+            return [
+                (None, {
+                    'fields': (
+                        'counter_account_number',
+                        'transaction_date', 'constant_symbol', 'variable_symbol', 'specific_symbol', 'amount',
+                        'description', 'counter_account_name', 'create_time', 'account', 'state')
+                }),
+                (_('Assign payment'), {
+                    'fields': ('processor', 'client_id')
+                }),
+            ]
         else:
-            fieldsets.append((_('Assign payment'), {'fields': ('objective',)}),)  # type: ignore
-        return fieldsets
-
-    @staticmethod
-    def account_name(obj):
-        """Return related account name."""
-        return obj.account.account_name
-    account_name.short_description = _('Account name')  # type: ignore
+            return [
+                (None, {
+                    'fields': (
+                        'counter_account_number', 'objective',
+                        'transaction_date', 'constant_symbol', 'variable_symbol', 'specific_symbol', 'amount',
+                        'description', 'counter_account_name', 'create_time', 'account', 'state')
+                }),
+            ]
