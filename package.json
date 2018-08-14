@@ -9,7 +9,7 @@
     "build": "webpack",
     "watch": "webpack-dev-server --watch",
     "test": "ava",
-    "test-coverage": "nyc --all ava"
+    "test-coverage": "nyc ava"
   },
   "devDependencies": {
     "ajv": "^5.0.0",
@@ -26,7 +26,7 @@
     "fetch-mock": "^6.5.2",
     "mock-location": "^0.2.0",
     "node-fetch": "^2.2.0",
-    "nyc": "^11.3.0",
+    "nyc": "^12.0.2",
     "postcss-sass": "^0.3.2",
     "postcss-syntax": ">=0.28.0",
     "stylelint": "^9.2.1",

@@ -67,3 +67,8 @@ class BankPaymentForm(forms.ModelForm):
 
         fields = '__all__'
         model = BankPayment
+
+    class Media:
+        """Media class."""
+
+        js = ('django_pain/js/processor_client_field.js',)
