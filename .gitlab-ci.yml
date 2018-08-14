@@ -1,0 +1,108 @@
+stages:
+    - analysis
+    - test
+    - coverage
+
+########################################################################################################################
+# Basic declarations
+.requires-python: &requires-python
+    tags:
+        - python
+
+.requires-database: &requires-database
+    tags:
+        - python
+        - postgres
+
+.requires-nodejs: &requires-nodejs
+    tags:
+        - nodejs
+
+.python3-xenial: &python3-xenial
+    image: $CI_REGISTRY/ginger/base/ubuntu_xenial_python3:latest
+
+.nodejs-xenial: &nodejs-xenial
+    image: $CI_REGISTRY/ginger/base/ubuntu_xenial_nodejs:latest
+
+.install-dependencies: &install-dependencies
+    before_script:
+        - pip3 list
+        # Install dependencies
+        - pip3 install tox
+        - pip3 install git+https://gitlab.office.nic.cz/tomas.pazderka/tox-version-plugin.git@python3
+
+.test: &test
+    <<: *requires-database
+    <<: *python3-xenial
+    <<: *install-dependencies
+    script:
+        - tox
+
+########################################################################################################################
+# Individual jobs
+depcheck:
+    <<: *requires-python
+    <<: *python3-xenial
+    only:
+        - schedules
+    before_script:
+        # Install package with testing dependencies to verify versions
+        - pip3 install --process-dependency-links .[testing]
+    script:
+        - check-constraints.py constraints.txt
+    allow_failure: true
+
+test:
+    <<: *test
+
+test-thawed:
+    <<: *test
+    only:
+        - schedules
+    script:
+        - tox -e thaw
+
+css:
+    <<: *requires-nodejs
+    <<: *nodejs-xenial
+    stage: analysis
+    before_script:
+        - npm install
+        - npm list
+    script:
+        - npx stylelint django_pain/**/*.css
+
+eslint:
+    <<: *requires-nodejs
+    <<: *nodejs-xenial
+    stage: analysis
+    before_script:
+        - npm install -g eslint
+        - npm list
+    script:
+        - npm run check
+
+test-js:
+    <<: *requires-nodejs
+    <<: *nodejs-xenial
+    stage: test
+    before_script:
+        - npm install
+        - npm list
+    script:
+        - npm run test-coverage
+        - npx nyc report --reporter json-summary --report-dir coverage-js
+    artifacts:
+        expire_in: 1d
+        paths:
+            - coverage-js/
+
+coverage-report-js:
+    <<: *requires-nodejs
+    <<: *nodejs-xenial
+    before_script:
+        - git clone git@gitlab.office.nic.cz:jmusilek/report-json-coverage.git .rjc
+    stage: coverage
+    script:
+        - python3 .rjc/report_coverage.py coverage-js/coverage-summary.json --regex '^django_pain/tests-js/' --fail 100
+        - python3 .rjc/report_coverage.py coverage-js/coverage-summary.json --regex '^django_pain/static/django_pain/js/'
