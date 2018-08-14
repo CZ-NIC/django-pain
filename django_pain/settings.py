@@ -1,6 +1,7 @@
 """django_pain settings."""
 import appsettings
-from django.utils import module_loading
+
+from django_pain.processors.utils import get_processor_class
 
 
 class ClassListSetting(appsettings.ListSetting):
@@ -8,7 +9,7 @@ class ClassListSetting(appsettings.ListSetting):
 
     def transform(self, value):
         """Import all classes from setting."""
-        return [module_loading.import_string(item) for item in value]
+        return [get_processor_class(item) for item in value]
 
 
 class PainSettings(appsettings.AppSettings):
