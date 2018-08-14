@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Transpiled JavaScript code and source maps
+django_pain/static/django_pain/js/*.js
+django_pain/static/django_pain/js/*.js.map
+
 # Distribution / packaging
 .Python
 env/
