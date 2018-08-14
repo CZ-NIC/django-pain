@@ -1,5 +1,6 @@
 """Admin interface for django_pain."""
 from django.contrib import admin
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
 
 from django_pain.constants import PaymentState
@@ -21,7 +22,7 @@ class BankPaymentAdmin(admin.ModelAdmin):
 
     list_display = (
         'identifier', 'counter_account_number', 'variable_symbol', 'amount', 'transaction_date',
-        'description', 'counter_account_name', 'account', 'state'
+        'description', 'counter_account_name', 'account', 'state_styled'
     )
 
     list_filter = (
@@ -35,6 +36,14 @@ class BankPaymentAdmin(admin.ModelAdmin):
     )
 
     ordering = ('-transaction_date', '-create_time')
+
+    class Media:
+        """Media class."""
+
+        js = ('django_pain/js/state_colors.js',)
+        css = {
+            'all': ('django_pain/css/admin.css',),
+        }
 
     def get_fieldsets(self, request, obj=None):
         """
@@ -64,6 +73,16 @@ class BankPaymentAdmin(admin.ModelAdmin):
                         'description', 'counter_account_name', 'create_time', 'account', 'state')
                 }),
             ]
+
+    def state_styled(self, obj):
+        """
+        Payment state enclosed in div with appropriate css class.
+
+        This is used for assigning different colors to payment rows based on payment state.
+        """
+        return mark_safe('<div class="state_%s">%s</div>' % (
+                         PaymentState(obj.state).value, obj.state_description))
+    state_styled.short_description = _('Payment state')  # type: ignore
 
     def has_add_permission(self, request):
         """Forbid adding new payments through admin interface."""

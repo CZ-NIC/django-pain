@@ -1,0 +1,20 @@
+.inline-group .tabular td.original,
+.inline-group .tabular th.original {
+    display: none;
+}
+
+.inline-group .tabular tr.has_original td {
+    padding: 5px;
+}
+
+form div.form-row {
+    padding: 5px 10px;
+}
+
+.payment_deferred {
+    background: LightCoral;
+}
+
+.payment_processed {
+    background: LightGreen;
+}
