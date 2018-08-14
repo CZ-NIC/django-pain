@@ -4,6 +4,8 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
 
 from django_pain.constants import PaymentState
+from django_pain.models import Invoice
+from django_pain.processors import get_processor_instance
 
 from .filters import PaymentStateListFilter
 from .forms import BankAccountForm, BankPaymentForm
@@ -15,6 +17,36 @@ class BankAccountAdmin(admin.ModelAdmin):
     form = BankAccountForm
 
 
+class InvoicesInline(admin.TabularInline):
+    """Inline model admin for invoices related to payment."""
+
+    model = Invoice.payments.through
+
+    can_delete = False
+
+    fields = ('invoice_link', 'invoice_type')
+    readonly_fields = ('invoice_link', 'invoice_type')
+    extra = 0
+
+    verbose_name = _('Invoice related to payment')
+    verbose_name_plural = _('Invoices related to payment')
+
+    def invoice_link(self, obj):
+        """Return invoice link."""
+        processor = get_processor_instance(obj.bankpayment.processor)
+        return mark_safe('<a href="%s">%s</a>' % (processor.get_invoice_url(obj.invoice), obj.invoice.number))
+    invoice_link.short_description = _('Invoice number')  # type: ignore
+
+    def invoice_type(self, obj):
+        """Return invoice type."""
+        return obj.invoice.invoice_type
+    invoice_type.short_description = _('Invoice type')  # type: ignore
+
+    def has_add_permission(self, request, obj=None):
+        """Read only access."""
+        return False
+
+
 class BankPaymentAdmin(admin.ModelAdmin):
     """Model admin for BankPayment."""
 
@@ -22,7 +54,7 @@ class BankPaymentAdmin(admin.ModelAdmin):
 
     list_display = (
         'identifier', 'counter_account_number', 'variable_symbol', 'amount', 'transaction_date',
-        'description', 'counter_account_name', 'account', 'state_styled'
+        'description', 'invoice_link', 'counter_account_name', 'account', 'state_styled'
     )
 
     list_filter = (
@@ -36,6 +68,10 @@ class BankPaymentAdmin(admin.ModelAdmin):
     )
 
     ordering = ('-transaction_date', '-create_time')
+
+    inlines = (
+        InvoicesInline,
+    )
 
     class Media:
         """Media class."""
@@ -83,6 +119,16 @@ class BankPaymentAdmin(admin.ModelAdmin):
         return mark_safe('<div class="state_%s">%s</div>' % (
                          PaymentState(obj.state).value, obj.state_description))
     state_styled.short_description = _('Payment state')  # type: ignore
+
+    def invoice_link(self, obj):
+        """Invoice link."""
+        invoice = obj.advance_invoice
+        if invoice is not None:
+            processor = get_processor_instance(obj.processor)
+            return mark_safe('<a href="%s">%s</a>' % (processor.get_invoice_url(invoice), invoice.number))
+        else:
+            return ''
+    invoice_link.short_description = _('Invoice')  # type: ignore
 
     def has_add_permission(self, request):
         """Forbid adding new payments through admin interface."""

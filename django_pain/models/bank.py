@@ -7,7 +7,7 @@ from django.db.models import BLANK_CHOICE_DASH
 from django.utils.translation import gettext_lazy as _
 from djmoney.models.fields import CurrencyField, MoneyField
 
-from django_pain.constants import CURRENCY_PRECISION, PaymentState
+from django_pain.constants import CURRENCY_PRECISION, InvoiceType, PaymentState
 from django_pain.settings import SETTINGS
 from django_pain.utils import full_class_name
 
@@ -78,7 +78,7 @@ class BankPayment(models.Model):
         """Check whether payment currency is the same as currency of related bank account."""
         if self.account.currency != self.amount.currency.code:
             raise ValidationError('Bank payment {} is in different currency ({}) than bank account {} ({}).'.format(
-                self.identifier, self.amount.currency.code, self.account.account_number, self.account.currency
+                self.identifier, self.amount.currency.code, self.account, self.account.currency
             ))
         super().clean()
 
@@ -86,6 +86,15 @@ class BankPayment(models.Model):
     def state_description(self):
         """Return verbose localized string with state description."""
         return dict(PAYMENT_STATE_CHOICES)[self.state]
+
+    @property
+    def advance_invoice(self):
+        """Return advanced invoice if exists."""
+        invoices = self.invoices.filter(invoice_type=InvoiceType.ADVANCE)
+        if invoices:
+            return invoices[0]
+        else:
+            return None
 
     @classmethod
     def objective_choices(self):

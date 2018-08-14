@@ -6,7 +6,7 @@ from django.test import RequestFactory, TestCase, override_settings
 from django_pain.admin import BankPaymentAdmin
 from django_pain.constants import PaymentState
 from django_pain.models import BankPayment
-from django_pain.tests.utils import get_account, get_payment
+from django_pain.tests.utils import get_account, get_invoice, get_payment
 
 
 @override_settings(ROOT_URLCONF='django_pain.urls')
@@ -40,9 +40,13 @@ class TestBankPaymentAdmin(TestCase):
         )
         self.imported_payment.save()
         self.processed_payment = get_payment(
-            identifier='My Payment 2', account=self.account, state=PaymentState.PROCESSED
+            identifier='My Payment 2', account=self.account, state=PaymentState.PROCESSED,
+            processor='django_pain.tests.utils.DummyPaymentProcessor'
         )
         self.processed_payment.save()
+        self.invoice = get_invoice(number='INV111222')
+        self.invoice.save()
+        self.invoice.payments.add(self.processed_payment)
 
     def test_get_list(self):
         """Test GET request on model list."""
@@ -50,6 +54,13 @@ class TestBankPaymentAdmin(TestCase):
         response = self.client.get('/admin/django_pain/bankpayment/')
         self.assertContains(response, 'My Payment 1')
         self.assertContains(response, 'My Payment 2')
+
+    def test_get_detail(self):
+        """Test GET request on model detail."""
+        self.client.force_login(self.admin)
+        response = self.client.get('/admin/django_pain/bankpayment/%s/change/' % self.processed_payment.pk)
+        self.assertContains(response, 'My Payment 2')
+        self.assertContains(response, 'INV111222')
 
     def test_get_fieldsets(self):
         """Test get_fieldsets method."""

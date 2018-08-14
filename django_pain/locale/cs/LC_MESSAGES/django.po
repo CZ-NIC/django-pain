@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django_pain 0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-08-08 13:26+0000\n"
+"POT-Creation-Date: 2018-08-13 14:35+0000\n"
 "PO-Revision-Date: 2018-04-19 06:31-0500\n"
 "Last-Translator: Jan Musílek <jan.musilek@nic.cz>\n"
 "Language-Team: Czech <jan.musilek@nic.cz>\n"
@@ -66,6 +66,15 @@ msgstr "Faktura"
 msgid "Invoice number"
 msgstr "Číslo faktury"
 
+msgid "Invoice related to payment"
+msgstr "Faktura související s platbou"
+
+msgid "Invoice type"
+msgstr "Typ faktury"
+
+msgid "Invoices related to payment"
+msgstr "Faktury související s platbou"
+
 msgid "Objective"
 msgstr "Účel"
 
@@ -89,6 +98,12 @@ msgstr "Nepodařilo se spárovat platbu"
 
 msgid "Variable symbol"
 msgstr "Variabilní symbol"
+
+msgid "account"
+msgstr "standardní"
+
+msgid "advance"
+msgstr "zálohová"
 
 msgid "exported"
 msgstr "exportovaná"
