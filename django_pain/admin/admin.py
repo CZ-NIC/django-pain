@@ -123,11 +123,23 @@ class BankPaymentAdmin(admin.ModelAdmin):
     def invoice_link(self, obj):
         """Invoice link."""
         invoice = obj.advance_invoice
+        invoices_count = obj.invoices.count()
         if invoice is not None:
             processor = get_processor_instance(obj.processor)
-            return mark_safe('<a href="%s">%s</a>' % (processor.get_invoice_url(invoice), invoice.number))
+            if hasattr(processor, 'get_invoice_url'):
+                link = '<a href="%s">%s</a>' % (processor.get_invoice_url(invoice), invoice.number)
+            else:
+                link = invoice.number
+
+            if invoices_count > 1:
+                link += '&nbsp;(+%s)' % (invoices_count - 1)
+
+            return mark_safe(link)
         else:
-            return ''
+            if invoices_count > 0:
+                return '(+%s)' % invoices_count
+            else:
+                return ''
     invoice_link.short_description = _('Invoice')  # type: ignore
 
     def has_add_permission(self, request):
