@@ -67,6 +67,8 @@ class BankPaymentAdmin(admin.ModelAdmin):
         'constant_symbol', 'variable_symbol', 'specific_symbol', 'objective',
     )
 
+    search_fields = ('variable_symbol', 'counter_account_name', 'description',)
+
     ordering = ('-transaction_date', '-create_time')
 
     inlines = (
