@@ -5,7 +5,7 @@ from typing import Any
 from djmoney.money import Money
 
 from django_pain.constants import InvoiceType
-from django_pain.models import BankAccount, BankPayment, Invoice
+from django_pain.models import BankAccount, BankPayment, Client, Invoice
 from django_pain.processors import AbstractPaymentProcessor
 
 
@@ -19,10 +19,6 @@ class DummyPaymentProcessor(AbstractPaymentProcessor):
 
     def assign_payment(self, payment, client_id):
         """Dummy function."""
-
-    def get_invoice_url(self, invoice):
-        """Dummy function."""
-        return "http://example.com/invoice/%s" % invoice.remote_id
 
 
 def get_account(**kwargs: Any) -> BankAccount:
@@ -59,3 +55,13 @@ def get_invoice(**kwargs: Any) -> Invoice:
     }
     default.update(kwargs)
     return Invoice(**default)
+
+
+def get_client(**kwargs: Any) -> Client:
+    """Create client object."""
+    default = {
+        'handle': 'HANDLE',
+        'remote_id': 0,
+    }
+    default.update(kwargs)
+    return Client(**default)

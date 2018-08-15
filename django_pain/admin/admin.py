@@ -34,7 +34,10 @@ class InvoicesInline(admin.TabularInline):
     def invoice_link(self, obj):
         """Return invoice link."""
         processor = get_processor_instance(obj.bankpayment.processor)
-        return mark_safe('<a href="%s">%s</a>' % (processor.get_invoice_url(obj.invoice), obj.invoice.number))
+        if hasattr(processor, 'get_invoice_url'):
+            return mark_safe('<a href="%s">%s</a>' % (processor.get_invoice_url(obj.invoice), obj.invoice.number))
+        else:
+            return obj.invoice.number
     invoice_link.short_description = _('Invoice number')  # type: ignore
 
     def invoice_type(self, obj):
@@ -54,7 +57,7 @@ class BankPaymentAdmin(admin.ModelAdmin):
 
     list_display = (
         'identifier', 'counter_account_number', 'variable_symbol', 'amount', 'transaction_date',
-        'description', 'invoice_link', 'counter_account_name', 'account', 'state_styled'
+        'client_link', 'description', 'invoice_link', 'counter_account_name', 'account', 'state_styled'
     )
 
     list_filter = (
@@ -64,7 +67,7 @@ class BankPaymentAdmin(admin.ModelAdmin):
     readonly_fields = (
         'identifier', 'account', 'create_time', 'transaction_date',
         'counter_account_number', 'counter_account_name', 'amount', 'description', 'state',
-        'constant_symbol', 'variable_symbol', 'specific_symbol', 'objective',
+        'constant_symbol', 'variable_symbol', 'specific_symbol', 'objective', 'client_link',
     )
 
     search_fields = ('variable_symbol', 'counter_account_name', 'description',)
@@ -106,7 +109,7 @@ class BankPaymentAdmin(admin.ModelAdmin):
             return [
                 (None, {
                     'fields': (
-                        'counter_account_number', 'objective',
+                        'counter_account_number', 'objective', 'client_link',
                         'transaction_date', 'constant_symbol', 'variable_symbol', 'specific_symbol', 'amount',
                         'description', 'counter_account_name', 'create_time', 'account', 'state')
                 }),
@@ -143,6 +146,19 @@ class BankPaymentAdmin(admin.ModelAdmin):
             else:
                 return ''
     invoice_link.short_description = _('Invoice')  # type: ignore
+
+    def client_link(self, obj):
+        """Client link."""
+        client = getattr(obj, 'client', None)
+        if client is not None:
+            processor = get_processor_instance(obj.processor)
+            if hasattr(processor, 'get_client_url'):
+                return mark_safe('<a href="%s">%s</a>' % (processor.get_client_url(client), client.handle))
+            else:
+                return client.handle
+        else:
+            return ''
+    client_link.short_description = _('Client ID')  # type: ignore
 
     def has_add_permission(self, request):
         """Forbid adding new payments through admin interface."""

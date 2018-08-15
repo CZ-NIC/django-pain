@@ -60,7 +60,6 @@ class BankPayment(models.Model):
     specific_symbol = models.CharField(max_length=10, blank=True, verbose_name=_('Specific symbol'))
 
     processor = models.TextField(verbose_name=_('Processor'), blank=True)
-    # client_id = models.TextField(verbose_name=_('Client ID'), blank=True)
     objective = models.TextField(verbose_name=_('Objective'), blank=True)
 
     class Meta:

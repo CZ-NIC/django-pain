@@ -3,13 +3,23 @@ from abc import ABC, abstractmethod
 from collections import namedtuple
 from typing import Iterable
 
-from django_pain.models import BankPayment, Invoice
+from django_pain.models import BankPayment
 
 ProcessPaymentResult = namedtuple('ProcessPaymentResult', ['result', 'objective'])
 
 
 class AbstractPaymentProcessor(ABC):
-    """Bank payment processor."""
+    """
+    Bank payment processor.
+
+    Aside from mandatory methods, payment processor MAY implement
+    these methods:
+        * get_invoice_url(self, invoice: Invoice) -> str
+        * get_client_url(self, client: Client) -> str
+
+    Method get_invoice_url should return url of invoice in external system.
+    Method get_client_url should return url of client in external system.
+    """
 
     @property
     @abstractmethod
@@ -40,15 +50,4 @@ class AbstractPaymentProcessor(ABC):
         Each processor class has to implement this method. This method
         implements forced assignment of payment to particular payment
         processor. As a hint, ``client_id`` may be provided.
-        """
-
-    @abstractmethod
-    def get_invoice_url(self, invoice: Invoice) -> str:
-        """
-        Get url of invoice.
-
-        Eeach processor class has to implement this method. Invoices
-        are not present in django_pain at the moment. We only have
-        invoice links. This function constructs url of invoice in
-        external system.
         """
