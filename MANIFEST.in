@@ -2,3 +2,4 @@ include LICENSE
 include README.rst
 include requirements.txt
 recursive-include django_pain/locale *
+recursive-include django_pain/static *
