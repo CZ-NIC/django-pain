@@ -8,7 +8,7 @@ import django_pain.constants
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('django_pain', '0010_auto_20180807_0424'),
+        ('django_pain', '0010_verbose_names'),
     ]
 
     operations = [

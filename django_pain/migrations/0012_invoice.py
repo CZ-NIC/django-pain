@@ -7,7 +7,7 @@ import django_pain.constants
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('django_pain', '0011_auto_20180809_0557'),
+        ('django_pain', '0011_alter_bankpayment_account_and_state'),
     ]
 
     operations = [

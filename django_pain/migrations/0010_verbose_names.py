@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('django_pain', '0009_auto_20180718_0416'),
+        ('django_pain', '0009_bankpayment_add_processor_and_objective'),
     ]
 
     operations = [
