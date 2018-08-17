@@ -82,18 +82,10 @@ class BankPayment(models.Model):
         super().clean()
 
     @property
-    def state_description(self):
-        """Return verbose localized string with state description."""
-        return dict(PAYMENT_STATE_CHOICES)[self.state]
-
-    @property
     def advance_invoice(self):
-        """Return advanced invoice if exists."""
+        """Return advance invoice if it exists."""
         invoices = self.invoices.filter(invoice_type=InvoiceType.ADVANCE)
-        if invoices:
-            return invoices[0]
-        else:
-            return None
+        return invoices.first()
 
     @classmethod
     def objective_choices(self):

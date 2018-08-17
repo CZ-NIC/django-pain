@@ -1,5 +1,6 @@
 """Admin interface for django_pain."""
 from django.contrib import admin
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
 
@@ -42,7 +43,7 @@ class InvoicesInline(admin.TabularInline):
 
     def invoice_type(self, obj):
         """Return invoice type."""
-        return obj.invoice.invoice_type
+        return obj.invoice.get_invoice_type_display()
     invoice_type.short_description = _('Invoice type')  # type: ignore
 
     def has_add_permission(self, request, obj=None):
@@ -121,7 +122,8 @@ class BankPaymentAdmin(admin.ModelAdmin):
 
         This is used for assigning different colors to payment rows based on payment state.
         """
-        return mark_safe('<div class="state_{}">{}</div>'.format(PaymentState(obj.state).value, obj.state_description))
+        return mark_safe('<div class="state_{}">{}</div>'.format(PaymentState(obj.state).value,
+                                                                 obj.get_state_display()))
     state_styled.short_description = _('Payment state')  # type: ignore
 
     def invoice_link(self, obj):
@@ -131,14 +133,14 @@ class BankPaymentAdmin(admin.ModelAdmin):
         if invoice is not None:
             processor = get_processor_instance(obj.processor)
             if hasattr(processor, 'get_invoice_url'):
-                link = '<a href="{}">{}</a>'.format(processor.get_invoice_url(invoice), invoice.number)
+                link = format_html('<a href="{}">{}</a>', processor.get_invoice_url(invoice), invoice.number)
             else:
                 link = invoice.number
 
             if invoices_count > 1:
-                link += '&nbsp;(+{})'.format(invoices_count - 1)
+                link = format_html('{}&nbsp;(+{})', link, invoices_count - 1)
 
-            return mark_safe(link)
+            return link
         else:
             if invoices_count > 0:
                 return '(+{})'.format(invoices_count)
