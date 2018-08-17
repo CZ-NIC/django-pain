@@ -2,6 +2,7 @@
 from django.contrib import admin
 from django.contrib.auth.models import User
 from django.test import RequestFactory, TestCase, override_settings
+from django.urls import reverse
 
 from django_pain.admin import BankPaymentAdmin
 from django_pain.constants import InvoiceType, PaymentState
@@ -33,7 +34,7 @@ class TestBankAccountAdmin(TestCase):
     def test_get_list(self):
         """Test GET request on model list."""
         self.client.force_login(self.admin)
-        response = self.client.get('/admin/django_pain/bankaccount/')
+        response = self.client.get(reverse('admin:django_pain_bankaccount_changelist'))
         self.assertContains(response, '123456/0300')
 
 
@@ -65,7 +66,7 @@ class TestBankPaymentAdmin(TestCase):
     def test_get_list(self):
         """Test GET request on model list."""
         self.client.force_login(self.admin)
-        response = self.client.get('/admin/django_pain/bankpayment/')
+        response = self.client.get(reverse('admin:django_pain_bankpayment_changelist'))
         self.assertContains(response, 'My Payment 1')
         self.assertContains(response, 'My Payment 2')
         self.assertContains(response, 'INV111222')
@@ -73,7 +74,7 @@ class TestBankPaymentAdmin(TestCase):
     def test_get_detail(self):
         """Test GET request on model detail."""
         self.client.force_login(self.admin)
-        response = self.client.get('/admin/django_pain/bankpayment/{}/change/'.format(self.processed_payment.pk))
+        response = self.client.get(reverse('admin:django_pain_bankpayment_change', args=[self.processed_payment.pk]))
         self.assertContains(response, 'My Payment 2')
         self.assertContains(response, 'INV111222')
 
@@ -109,7 +110,7 @@ class TestBankPaymentAdminLinks(TestBankPaymentAdmin):
     def test_get_list_links(self):
         """Test GET request on model list."""
         self.client.force_login(self.admin)
-        response = self.client.get('/admin/django_pain/bankpayment/')
+        response = self.client.get(reverse('admin:django_pain_bankpayment_changelist'))
         self.assertContains(response, '<a href="#">INV111222</a>&nbsp;(+1)')
 
     def test_get_list_no_advance_invoice(self):
@@ -119,11 +120,11 @@ class TestBankPaymentAdminLinks(TestBankPaymentAdmin):
         self.invoice2.invoice_type = InvoiceType.ACCOUNT
         self.invoice2.save()
         self.client.force_login(self.admin)
-        response = self.client.get('/admin/django_pain/bankpayment/')
+        response = self.client.get(reverse('admin:django_pain_bankpayment_changelist'))
         self.assertContains(response, '(+2)')
 
     def test_get_detail_links(self):
         """Test GET request on model detail."""
         self.client.force_login(self.admin)
-        response = self.client.get('/admin/django_pain/bankpayment/{}/change/'.format(self.processed_payment.pk))
+        response = self.client.get(reverse('admin:django_pain_bankpayment_change', args=[self.processed_payment.pk]))
         self.assertContains(response, '<a href="#">INV111222</a>')
