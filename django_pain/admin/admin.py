@@ -1,7 +1,6 @@
 """Admin interface for django_pain."""
 from django.contrib import admin
 from django.utils.html import format_html
-from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
 
 from django_pain.constants import PaymentState
@@ -58,7 +57,7 @@ class BankPaymentAdmin(admin.ModelAdmin):
 
     list_display = (
         'identifier', 'counter_account_number', 'variable_symbol', 'amount', 'transaction_date',
-        'client_link', 'description', 'invoice_link', 'counter_account_name', 'account', 'state_styled'
+        'client_link', 'description', 'advance_invoice_link', 'counter_account_name', 'account', 'state_styled'
     )
 
     list_filter = (
@@ -125,16 +124,22 @@ class BankPaymentAdmin(admin.ModelAdmin):
         return format_html('<div class="state_{}">{}</div>', PaymentState(obj.state).value, obj.get_state_display())
     state_styled.short_description = _('Payment state')  # type: ignore
 
-    def invoice_link(self, obj):
-        """Invoice link."""
-        invoice = obj.advance_invoice
+    def advance_invoice_link(self, obj):
+        """
+        Display advance invoice link.
+
+        If there are any other invoices, number of remaining (not displayed)
+        invoices is displayed as well.
+        """
+        advance_invoice = obj.advance_invoice
         invoices_count = obj.invoices.count()
-        if invoice is not None:
+        if advance_invoice is not None:
             processor = get_processor_instance(obj.processor)
             if hasattr(processor, 'get_invoice_url'):
-                link = format_html('<a href="{}">{}</a>', processor.get_invoice_url(invoice), invoice.number)
+                link = format_html('<a href="{}">{}</a>',
+                                   processor.get_invoice_url(advance_invoice), advance_invoice.number)
             else:
-                link = invoice.number
+                link = advance_invoice.number
 
             if invoices_count > 1:
                 link = format_html('{}&nbsp;(+{})', link, invoices_count - 1)
@@ -145,7 +150,7 @@ class BankPaymentAdmin(admin.ModelAdmin):
                 return '(+{})'.format(invoices_count)
             else:
                 return ''
-    invoice_link.short_description = _('Invoice')  # type: ignore
+    advance_invoice_link.short_description = _('Invoice')  # type: ignore
 
     def client_link(self, obj):
         """Client link."""
