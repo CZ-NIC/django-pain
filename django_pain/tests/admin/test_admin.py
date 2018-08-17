@@ -15,11 +15,11 @@ class LinkedDummyPaymentProcessor(DummyPaymentProcessor):
 
     def get_invoice_url(self, invoice):
         """Dummy url."""
-        return '#'
+        return 'http://example.com/invoice/'
 
     def get_client_url(self, client):
         """Dummy url."""
-        return '#'
+        return 'http://example.com/client/'
 
 
 @override_settings(ROOT_URLCONF='django_pain.urls')
@@ -77,6 +77,7 @@ class TestBankPaymentAdmin(TestCase):
         response = self.client.get(reverse('admin:django_pain_bankpayment_change', args=[self.processed_payment.pk]))
         self.assertContains(response, 'My Payment 2')
         self.assertContains(response, 'INV111222')
+        self.assertContains(response, 'HANDLE')
 
     def test_get_fieldsets(self):
         """Test get_fieldsets method."""
@@ -95,9 +96,8 @@ class TestBankPaymentAdmin(TestCase):
         self.assertEqual(len(fieldsets), 1)
 
 
-@override_settings(ROOT_URLCONF='django_pain.urls')
 class TestBankPaymentAdminLinks(TestBankPaymentAdmin):
-    """Test BankAccountAdmin."""
+    """Test BankAccountAdmin with invoice and client links."""
 
     def setUp(self):
         super().setUp()
@@ -111,7 +111,7 @@ class TestBankPaymentAdminLinks(TestBankPaymentAdmin):
         """Test GET request on model list."""
         self.client.force_login(self.admin)
         response = self.client.get(reverse('admin:django_pain_bankpayment_changelist'))
-        self.assertContains(response, '<a href="#">INV111222</a>&nbsp;(+1)')
+        self.assertContains(response, '<a href="http://example.com/invoice/">INV111222</a>&nbsp;(+1)')
 
     def test_get_list_no_advance_invoice(self):
         """Test GET request on model list."""
@@ -127,4 +127,5 @@ class TestBankPaymentAdminLinks(TestBankPaymentAdmin):
         """Test GET request on model detail."""
         self.client.force_login(self.admin)
         response = self.client.get(reverse('admin:django_pain_bankpayment_change', args=[self.processed_payment.pk]))
-        self.assertContains(response, '<a href="#">INV111222</a>')
+        self.assertContains(response, '<a href="http://example.com/invoice/">INV111222</a>')
+        self.assertContains(response, '<a href="http://example.com/client/">HANDLE</a>')
