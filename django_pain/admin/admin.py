@@ -36,7 +36,7 @@ class InvoicesInline(admin.TabularInline):
         """Return invoice link."""
         processor = get_processor_instance(obj.bankpayment.processor)
         if hasattr(processor, 'get_invoice_url'):
-            return mark_safe('<a href="{}">{}</a>'.format(processor.get_invoice_url(obj.invoice), obj.invoice.number))
+            return format_html('<a href="{}">{}</a>', processor.get_invoice_url(obj.invoice), obj.invoice.number)
         else:
             return obj.invoice.number
     invoice_link.short_description = _('Invoice number')  # type: ignore
@@ -122,8 +122,7 @@ class BankPaymentAdmin(admin.ModelAdmin):
 
         This is used for assigning different colors to payment rows based on payment state.
         """
-        return mark_safe('<div class="state_{}">{}</div>'.format(PaymentState(obj.state).value,
-                                                                 obj.get_state_display()))
+        return format_html('<div class="state_{}">{}</div>', PaymentState(obj.state).value, obj.get_state_display())
     state_styled.short_description = _('Payment state')  # type: ignore
 
     def invoice_link(self, obj):
@@ -154,7 +153,7 @@ class BankPaymentAdmin(admin.ModelAdmin):
         if client is not None:
             processor = get_processor_instance(obj.processor)
             if hasattr(processor, 'get_client_url'):
-                return mark_safe('<a href="{}">{}</a>'.format(processor.get_client_url(client), client.handle))
+                return format_html('<a href="{}">{}</a>', processor.get_client_url(client), client.handle)
             else:
                 return client.handle
         else:
