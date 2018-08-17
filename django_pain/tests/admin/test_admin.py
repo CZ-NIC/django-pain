@@ -73,7 +73,7 @@ class TestBankPaymentAdmin(TestCase):
     def test_get_detail(self):
         """Test GET request on model detail."""
         self.client.force_login(self.admin)
-        response = self.client.get('/admin/django_pain/bankpayment/%s/change/' % self.processed_payment.pk)
+        response = self.client.get('/admin/django_pain/bankpayment/{}/change/'.format(self.processed_payment.pk))
         self.assertContains(response, 'My Payment 2')
         self.assertContains(response, 'INV111222')
 
@@ -125,5 +125,5 @@ class TestBankPaymentAdminLinks(TestBankPaymentAdmin):
     def test_get_detail_links(self):
         """Test GET request on model detail."""
         self.client.force_login(self.admin)
-        response = self.client.get('/admin/django_pain/bankpayment/%s/change/' % self.processed_payment.pk)
+        response = self.client.get('/admin/django_pain/bankpayment/{}/change/'.format(self.processed_payment.pk))
         self.assertContains(response, '<a href="#">INV111222</a>')

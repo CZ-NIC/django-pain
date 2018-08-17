@@ -58,4 +58,4 @@ class Command(BaseCommand):
                         self.stderr.write(self.style.WARNING(message))
             else:
                 if self.options['verbosity'] >= 2:
-                    self.stdout.write(self.style.SUCCESS('Payment ID %s has been imported.' % payment.identifier))
+                    self.stdout.write(self.style.SUCCESS('Payment ID {} has been imported.'.format(payment.identifier)))

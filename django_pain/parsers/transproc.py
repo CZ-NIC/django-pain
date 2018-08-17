@@ -34,7 +34,7 @@ class TransprocXMLParser(CzechSlovakBankStatementParser):
         try:
             account = BankAccount.objects.get(account_number=account_number)
         except BankAccount.DoesNotExist:
-            raise BankAccount.DoesNotExist('Bank account %s does not exist.' % account_number)
+            raise BankAccount.DoesNotExist('Bank account {} does not exist.'.format(account_number))
 
         for item in tree.findall('//*/*/item'):
             attrs = dict((el.tag, el.text) for el in item.iterchildren())

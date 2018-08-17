@@ -34,7 +34,7 @@ class BankAccount(models.Model):
 
     def __str__(self):
         """Return string representation of bank account."""
-        return '%s %s' % (self.account_name, self.account_number)
+        return '{} {}'.format(self.account_name, self.account_number)
 
 
 class BankPayment(models.Model):
