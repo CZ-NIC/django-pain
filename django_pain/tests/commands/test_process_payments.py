@@ -63,8 +63,6 @@ class TestProcessPayments(TestCase):
         """Test processed payments."""
         call_command('process_payments', '--from', '2017-01-01 00:00', '--to', '2017-01-02 00:00')
 
-        print(self.payment.create_time)
-
         self.assertQuerysetEqual(
             BankPayment.objects.values_list('identifier', 'account', 'state', 'processor', 'objective'),
             [('PAYMENT_1', self.account.pk, PaymentState.IMPORTED, '', '')],
