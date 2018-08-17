@@ -6,8 +6,15 @@ from .bank import BankPayment
 
 
 class Client(models.Model):
-    """Client model."""
+    """
+    Client model.
+
+    Fields:
+        handle      short text representation of client
+        remote_id   id in an external system
+        payment     link to appropriate payment
+    """
 
     handle = models.TextField(verbose_name=_('Client ID'))
     remote_id = models.IntegerField()
-    payment = models.OneToOneField(BankPayment, models.CASCADE, related_name='client')
+    payment = models.OneToOneField(BankPayment, on_delete=models.CASCADE, related_name='client')
