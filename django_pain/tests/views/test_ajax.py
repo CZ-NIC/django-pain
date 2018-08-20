@@ -34,3 +34,9 @@ class TestLoadProcessorClientChoices(SimpleTestCase):
             'TNG': 'The Next Generation',
             'DS9': 'Deep Space 9',
         })
+
+    def test_dummy_processor(self):
+        """Test processor that doesn't implement get_client_choices method."""
+        response = self.client.get(reverse('processor_client_choices') +
+                                   '?processor=django_pain.tests.utils.DummyPaymentProcessor')
+        self.assertEqual(response.status_code, 404)

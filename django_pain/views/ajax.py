@@ -7,7 +7,11 @@ from django_pain.processors import get_processor_instance
 def load_processor_client_choices(request):
     """Load client choices from the appropriate payment processor."""
     try:
-        processor = get_processor_instance(request.GET['processor'])
+        processor = get_processor_instance(request.GET.get('processor', ''))
+    except ValueError:
+        raise Http404
+
+    if hasattr(processor, 'get_client_choices'):
         return JsonResponse(processor.get_client_choices())
-    except (KeyError, ImportError, AttributeError):
+    else:
         raise Http404
