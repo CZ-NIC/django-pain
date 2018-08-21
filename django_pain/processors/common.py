@@ -9,7 +9,20 @@ ProcessPaymentResult = namedtuple('ProcessPaymentResult', ['result', 'objective'
 
 
 class AbstractPaymentProcessor(ABC):
-    """Bank payment processor."""
+    """
+    Bank payment processor.
+
+    Aside from mandatory methods, payment processor MAY implement
+    these methods:
+        * get_invoice_url(self, invoice: Invoice) -> str
+        * get_client_url(self, client: Client) -> str
+        * get_client_choices(self) -> Dict[str,str]
+
+    Method get_invoice_url should return url of invoice in external system.
+    Method get_client_url should return url of client in external system.
+    Method get_client_choices returns dictionary with client handles as keys
+        and client names as values.
+    """
 
     @property
     @abstractmethod

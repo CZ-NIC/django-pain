@@ -25,6 +25,6 @@ class TestChoicesFieldListFilter(TestCase):
             {'selected': True, 'query_string': '?', 'display': 'All'},
             {'selected': False, 'query_string': '?state__exact=imported', 'display': 'imported'},
             {'selected': False, 'query_string': '?state__exact=processed', 'display': 'processed'},
-            {'selected': False, 'query_string': '?state__exact=deferred', 'display': 'deferred'},
+            {'selected': False, 'query_string': '?state__exact=deferred', 'display': 'not identified'},
             {'selected': False, 'query_string': '?state__exact=exported', 'display': 'exported'},
         ]))

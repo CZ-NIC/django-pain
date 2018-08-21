@@ -30,6 +30,8 @@ class TestTransprocXMLParser(TestCase):
                         <memo>See you later</memo>
                         <date>2012-12-20</date>
                         <name>Company Inc.</name>
+                        <status>1</status>
+                        <code>1</code>
                     </item>
                     <item>
                         <ident>222</ident>
@@ -42,6 +44,8 @@ class TestTransprocXMLParser(TestCase):
                         <memo></memo>
                         <date>2012-12-20</date>
                         <name>Company Ltd.</name>
+                        <status>1</status>
+                        <code>2</code>
                     </item>
                 </items>
             </statement>
@@ -53,7 +57,7 @@ class TestTransprocXMLParser(TestCase):
         parser = TransprocXMLParser()
         payments = list(parser.parse(BytesIO(self.XML_INPUT)))
 
-        payment1 = {
+        payment = {
             'identifier': '111',
             'account': account,
             'transaction_date': datetime(2012, 12, 20, 0, 0),
@@ -65,25 +69,11 @@ class TestTransprocXMLParser(TestCase):
             'variable_symbol': '11111111',
             'specific_symbol': '',
         }
-        payment2 = {
-            'identifier': '222',
-            'account': account,
-            'transaction_date': datetime(2012, 12, 20, 0, 0),
-            'counter_account_number': '123456888/1234',
-            'counter_account_name': 'Company Ltd.',
-            'amount': Money('2000.00', 'CZK'),
-            'description': '',
-            'constant_symbol': '0558',
-            'variable_symbol': '',
-            'specific_symbol': '600',
-        }
 
-        self.assertEqual(len(payments), 2)
+        self.assertEqual(len(payments), 1)
 
-        for field in payment1:
-            self.assertEqual(getattr(payments[0], field), payment1[field])
-        for field in payment2:
-            self.assertEqual(getattr(payments[1], field), payment2[field])
+        for field in payment:
+            self.assertEqual(getattr(payments[0], field), payment[field])
 
     def test_parse_account_not_exists(self):
         """Parser should raise an exception if bank account does not exist."""

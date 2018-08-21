@@ -14,3 +14,11 @@ class PaymentState(str, Enum):
     PROCESSED = 'processed'
     DEFERRED = 'deferred'
     EXPORTED = 'exported'
+
+
+@unique
+class InvoiceType(str, Enum):
+    """Invoice type constants."""
+
+    ADVANCE = 'advance'
+    ACCOUNT = 'account'

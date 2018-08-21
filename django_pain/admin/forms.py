@@ -1,11 +1,11 @@
 """Django admin forms."""
 from django import forms
-from django.utils import module_loading
 from django.utils.translation import gettext as _
 from djmoney.settings import CURRENCY_CHOICES
 
 from django_pain.constants import PaymentState
 from django_pain.models import BankAccount, BankPayment
+from django_pain.settings import get_processor_instance
 
 
 class BankAccountForm(forms.ModelForm):
@@ -46,8 +46,7 @@ class BankPaymentForm(forms.ModelForm):
         if cleaned_data.get('processor', None):
             # The only valid choices are those from PAIN_PROCESSORS settings.
             # Those are already validated during startup.
-            processor_class = module_loading.import_string(cleaned_data['processor'])
-            processor = processor_class()
+            processor = get_processor_instance(cleaned_data['processor'])
             result = processor.assign_payment(self.instance, cleaned_data['client_id'])
             if result.result:
                 cleaned_data['state'] = PaymentState.PROCESSED
@@ -68,3 +67,8 @@ class BankPaymentForm(forms.ModelForm):
 
         fields = '__all__'
         model = BankPayment
+
+    class Media:
+        """Media class."""
+
+        js = ('django_pain/js/processor_client_field.js',)

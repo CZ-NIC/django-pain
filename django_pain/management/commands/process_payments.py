@@ -6,7 +6,7 @@ from django.utils.dateparse import parse_datetime
 
 from django_pain.constants import PaymentState
 from django_pain.models import BankPayment
-from django_pain.settings import SETTINGS
+from django_pain.settings import SETTINGS, get_processor_instance
 
 
 class Command(BaseCommand):
@@ -29,9 +29,8 @@ class Command(BaseCommand):
         if options['time_to'] is not None:
             payments = payments.filter(create_time__lte=options['time_to'])
 
-        processors = [processor() for processor in SETTINGS.processors]
-
-        for processor in processors:
+        for processor_name in SETTINGS.processors:
+            processor = get_processor_instance(processor_name)
             if not payments:
                 break
 
@@ -41,7 +40,7 @@ class Command(BaseCommand):
             for payment, processed in zip(payments, results):
                 if processed.result:
                     payment.state = PaymentState.PROCESSED
-                    payment.processor = "%s.%s" % (type(processor).__module__, type(processor).__qualname__)
+                    payment.processor = processor_name
                     payment.objective = processed.objective
                     payment.save()
                 else:

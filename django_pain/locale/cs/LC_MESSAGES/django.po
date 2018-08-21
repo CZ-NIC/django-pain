@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django_pain 0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-07-23 15:11+0000\n"
+"POT-Creation-Date: 2018-08-13 14:35+0000\n"
 "PO-Revision-Date: 2018-04-19 06:31-0500\n"
 "Last-Translator: Jan Musílek <jan.musilek@nic.cz>\n"
 "Language-Team: Czech <jan.musilek@nic.cz>\n"
@@ -27,6 +27,18 @@ msgstr "Částka"
 msgid "Assign payment"
 msgstr "Spárovat platbu"
 
+msgid "Bank account"
+msgstr "Bankovní účet"
+
+msgid "Bank accounts"
+msgstr "Bankovní účty"
+
+msgid "Bank payment"
+msgstr "Platba"
+
+msgid "Bank payments"
+msgstr "Platby"
+
 msgid "Client ID"
 msgstr "Identifikátor klienta"
 
@@ -44,6 +56,24 @@ msgstr "Čas vytvoření"
 
 msgid "Description"
 msgstr "Poznámka"
+
+msgid "Destination account"
+msgstr "Cílový účet"
+
+msgid "Invoice"
+msgstr "Faktura"
+
+msgid "Invoice number"
+msgstr "Číslo faktury"
+
+msgid "Invoice related to payment"
+msgstr "Faktura související s platbou"
+
+msgid "Invoice type"
+msgstr "Typ faktury"
+
+msgid "Invoices related to payment"
+msgstr "Faktury související s platbou"
 
 msgid "Objective"
 msgstr "Účel"
@@ -69,14 +99,20 @@ msgstr "Nepodařilo se spárovat platbu"
 msgid "Variable symbol"
 msgstr "Variabilní symbol"
 
-msgid "deferred"
-msgstr "odložená"
+msgid "account"
+msgstr "standardní"
+
+msgid "advance"
+msgstr "zálohová"
 
 msgid "exported"
 msgstr "exportovaná"
 
 msgid "imported"
 msgstr "importovaná"
+
+msgid "not identified"
+msgstr "neidentifikovaná"
 
 msgid "processed"
 msgstr "zpracovaná"

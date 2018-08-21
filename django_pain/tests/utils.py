@@ -4,7 +4,8 @@ from typing import Any
 
 from djmoney.money import Money
 
-from django_pain.models import BankAccount, BankPayment
+from django_pain.constants import InvoiceType
+from django_pain.models import BankAccount, BankPayment, Client, Invoice
 from django_pain.processors import AbstractPaymentProcessor
 
 
@@ -43,3 +44,24 @@ def get_payment(**kwargs: Any) -> BankPayment:
     }
     default.update(kwargs)
     return BankPayment(**default)
+
+
+def get_invoice(**kwargs: Any) -> Invoice:
+    """Create invoice object."""
+    default = {
+        'number': '1111122222',
+        'remote_id': 0,
+        'invoice_type': InvoiceType.ADVANCE,
+    }
+    default.update(kwargs)
+    return Invoice(**default)
+
+
+def get_client(**kwargs: Any) -> Client:
+    """Create client object."""
+    default = {
+        'handle': 'HANDLE',
+        'remote_id': 0,
+    }
+    default.update(kwargs)
+    return Client(**default)

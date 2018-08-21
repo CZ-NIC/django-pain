@@ -7,14 +7,13 @@ from django.db.models import BLANK_CHOICE_DASH
 from django.utils.translation import gettext_lazy as _
 from djmoney.models.fields import CurrencyField, MoneyField
 
-from django_pain.constants import CURRENCY_PRECISION, PaymentState
-from django_pain.settings import SETTINGS
-from django_pain.utils import full_class_name
+from django_pain.constants import CURRENCY_PRECISION, InvoiceType, PaymentState
+from django_pain.settings import SETTINGS, get_processor_instance
 
 PAYMENT_STATE_CHOICES = (
     (PaymentState.IMPORTED, _('imported')),
     (PaymentState.PROCESSED, _('processed')),
-    (PaymentState.DEFERRED, _('deferred')),
+    (PaymentState.DEFERRED, _('not identified')),
     (PaymentState.EXPORTED, _('exported')),
 )
 
@@ -26,9 +25,15 @@ class BankAccount(models.Model):
     account_name = models.TextField(blank=True, verbose_name=_('Account name'))
     currency = CurrencyField()
 
+    class Meta:
+        """Meta class."""
+
+        verbose_name = _('Bank account')
+        verbose_name_plural = _('Bank accounts')
+
     def __str__(self):
         """Return string representation of bank account."""
-        return self.account_number
+        return '{} {}'.format(self.account_name, self.account_number)
 
 
 class BankPayment(models.Model):
@@ -36,7 +41,7 @@ class BankPayment(models.Model):
 
     identifier = models.TextField(verbose_name=_('Payment ID'))
     uuid = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
-    account = models.ForeignKey(BankAccount, on_delete=models.CASCADE)
+    account = models.ForeignKey(BankAccount, on_delete=models.CASCADE, verbose_name=_('Destination account'))
     create_time = models.DateTimeField(auto_now_add=True, verbose_name=_('Create time'))
     transaction_date = models.DateField(verbose_name=_('Transaction date'))
 
@@ -60,20 +65,32 @@ class BankPayment(models.Model):
         """Model Meta class."""
 
         unique_together = ('identifier', 'account')
+        verbose_name = _('Bank payment')
+        verbose_name_plural = _('Bank payments')
+
+    def __str__(self):
+        """Return string representation of bank payment."""
+        return self.identifier
 
     def clean(self):
         """Check whether payment currency is the same as currency of related bank account."""
         if self.account.currency != self.amount.currency.code:
             raise ValidationError('Bank payment {} is in different currency ({}) than bank account {} ({}).'.format(
-                self.identifier, self.amount.currency.code, self.account.account_number, self.account.currency
+                self.identifier, self.amount.currency.code, self.account, self.account.currency
             ))
         super().clean()
+
+    @property
+    def advance_invoice(self):
+        """Return advance invoice if it exists."""
+        invoices = self.invoices.filter(invoice_type=InvoiceType.ADVANCE)
+        return invoices.first()
 
     @classmethod
     def objective_choices(self):
         """Return payment processor default objectives choices."""
         choices = BLANK_CHOICE_DASH.copy()
-        for proc_class in SETTINGS.processors:
-            proc = proc_class()
-            choices.append((full_class_name(proc_class), proc.default_objective))
+        for proc_name in SETTINGS.processors:
+            proc = get_processor_instance(proc_name)
+            choices.append((proc_name, proc.default_objective))
         return choices
