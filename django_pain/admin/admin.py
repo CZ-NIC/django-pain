@@ -5,7 +5,7 @@ from django.utils.translation import gettext as _
 
 from django_pain.constants import PaymentState
 from django_pain.models import Invoice
-from django_pain.processors import get_processor_instance
+from django_pain.settings import get_processor_instance
 
 from .filters import PaymentStateListFilter
 from .forms import BankAccountForm, BankPaymentForm

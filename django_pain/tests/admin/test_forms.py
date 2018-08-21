@@ -4,6 +4,7 @@ from django.test import TestCase, override_settings
 from django_pain.admin.forms import BankPaymentForm
 from django_pain.constants import PaymentState
 from django_pain.processors import ProcessPaymentResult
+from django_pain.tests.mixins import CacheResetMixin
 from django_pain.tests.utils import DummyPaymentProcessor, get_account, get_payment
 
 
@@ -17,14 +18,15 @@ class FailurePaymentProcessor(DummyPaymentProcessor):
         return ProcessPaymentResult(result=False, objective='Not so generous bribe')
 
 
-@override_settings(PAIN_PROCESSORS=[
-    'django_pain.tests.admin.test_forms.SuccessPaymentProcessor',
-    'django_pain.tests.admin.test_forms.FailurePaymentProcessor',
-])
-class TestBankPaymentForm(TestCase):
+@override_settings(PAIN_PROCESSORS={
+    'success': 'django_pain.tests.admin.test_forms.SuccessPaymentProcessor',
+    'failure': 'django_pain.tests.admin.test_forms.FailurePaymentProcessor',
+})
+class TestBankPaymentForm(CacheResetMixin, TestCase):
     """Test BankPaymentForm."""
 
     def setUp(self):
+        super().setUp()
         self.account = get_account()
         self.account.save()
         self.payment = get_payment(account=self.account, state=PaymentState.IMPORTED)
@@ -42,7 +44,7 @@ class TestBankPaymentForm(TestCase):
     def test_clean_success(self):
         """Test clean method success."""
         form = BankPaymentForm(data={
-            'processor': 'django_pain.tests.admin.test_forms.SuccessPaymentProcessor',
+            'processor': 'success',
             'client_id': '',
         }, instance=self.payment)
         self.assertTrue(form.is_valid())
@@ -50,7 +52,7 @@ class TestBankPaymentForm(TestCase):
     def test_clean_failure(self):
         """Test clean method failure."""
         form = BankPaymentForm(data={
-            'processor': 'django_pain.tests.admin.test_forms.FailurePaymentProcessor',
+            'processor': 'failure',
             'client_id': '',
         }, instance=self.payment)
         self.assertFalse(form.is_valid())
@@ -59,7 +61,7 @@ class TestBankPaymentForm(TestCase):
     def test_save_processed(self):
         """Test manual assignment save method."""
         form = BankPaymentForm(data={
-            'processor': 'django_pain.tests.admin.test_forms.SuccessPaymentProcessor',
+            'processor': 'success',
             'client_id': '',
         }, instance=self.payment)
         form.is_valid()

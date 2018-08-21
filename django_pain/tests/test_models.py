@@ -7,6 +7,7 @@ from djmoney.money import Money
 from django_pain.constants import InvoiceType
 from django_pain.models import BankPayment
 
+from .mixins import CacheResetMixin
 from .utils import get_account, get_invoice, get_payment
 
 
@@ -19,7 +20,7 @@ class TestBankAccount(SimpleTestCase):
         self.assertEqual(str(account), 'Account 123')
 
 
-class TestBankPayment(TestCase):
+class TestBankPayment(CacheResetMixin, TestCase):
     """Test BankPayment model."""
 
     def test_str(self):
@@ -41,10 +42,10 @@ class TestBankPayment(TestCase):
                                                        'than bank account ACCOUNT 123 (USD).'):
             payment.clean()
 
-    @override_settings(PAIN_PROCESSORS=['django_pain.tests.utils.DummyPaymentProcessor'])
+    @override_settings(PAIN_PROCESSORS={'dummy': 'django_pain.tests.utils.DummyPaymentProcessor'})
     def test_objective_choices(self):
         self.assertEqual(BankPayment.objective_choices(), BLANK_CHOICE_DASH + [
-            ('django_pain.tests.utils.DummyPaymentProcessor', 'Dummy objective'),
+            ('dummy', 'Dummy objective'),
         ])
 
     def test_advance_invoice(self):

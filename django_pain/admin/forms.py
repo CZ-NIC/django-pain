@@ -5,7 +5,7 @@ from djmoney.settings import CURRENCY_CHOICES
 
 from django_pain.constants import PaymentState
 from django_pain.models import BankAccount, BankPayment
-from django_pain.processors import get_processor_instance
+from django_pain.settings import get_processor_instance
 
 
 class BankAccountForm(forms.ModelForm):

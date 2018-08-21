@@ -7,6 +7,7 @@ from django.urls import reverse
 from django_pain.admin import BankPaymentAdmin
 from django_pain.constants import InvoiceType, PaymentState
 from django_pain.models import BankPayment
+from django_pain.tests.mixins import CacheResetMixin
 from django_pain.tests.utils import DummyPaymentProcessor, get_account, get_client, get_invoice, get_payment
 
 
@@ -38,11 +39,14 @@ class TestBankAccountAdmin(TestCase):
         self.assertContains(response, '123456/0300')
 
 
-@override_settings(ROOT_URLCONF='django_pain.urls')
-class TestBankPaymentAdmin(TestCase):
+@override_settings(
+    ROOT_URLCONF='django_pain.urls',
+    PAIN_PROCESSORS={'dummy': 'django_pain.tests.utils.DummyPaymentProcessor'})
+class TestBankPaymentAdmin(CacheResetMixin, TestCase):
     """Test BankAccountAdmin."""
 
     def setUp(self):
+        super().setUp()
         self.admin = User.objects.create_superuser('admin', 'admin@example.com', 'password')
         self.request_factory = RequestFactory()
 
@@ -54,7 +58,7 @@ class TestBankPaymentAdmin(TestCase):
         self.imported_payment.save()
         self.processed_payment = get_payment(
             identifier='My Payment 2', account=self.account, state=PaymentState.PROCESSED,
-            processor='django_pain.tests.utils.DummyPaymentProcessor'
+            processor='dummy'
         )
         self.processed_payment.save()
         self.invoice = get_invoice(number='INV111222')
@@ -96,12 +100,15 @@ class TestBankPaymentAdmin(TestCase):
         self.assertEqual(len(fieldsets), 1)
 
 
+@override_settings(PAIN_PROCESSORS={
+    'linked_dummy': 'django_pain.tests.admin.test_admin.LinkedDummyPaymentProcessor',
+})
 class TestBankPaymentAdminLinks(TestBankPaymentAdmin):
     """Test BankAccountAdmin with invoice and client links."""
 
     def setUp(self):
         super().setUp()
-        self.processed_payment.processor = 'django_pain.tests.admin.test_admin.LinkedDummyPaymentProcessor'
+        self.processed_payment.processor = 'linked_dummy'
         self.processed_payment.save()
         self.invoice2 = get_invoice(number='INV222333', invoice_type=InvoiceType.ACCOUNT)
         self.invoice2.save()

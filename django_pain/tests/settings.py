@@ -36,4 +36,4 @@ TEMPLATES = [
     },
 ]
 
-PAIN_PROCESSORS = []  # type: list
+PAIN_PROCESSORS = {}  # type: dict

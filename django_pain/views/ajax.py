@@ -1,7 +1,7 @@
 """AJAX helper views."""
 from django.http import Http404, JsonResponse
 
-from django_pain.processors import get_processor_instance
+from django_pain.settings import get_processor_instance
 
 
 def load_processor_client_choices(request):
