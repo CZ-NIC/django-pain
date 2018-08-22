@@ -5,6 +5,25 @@
 Django application for processing bank payments and invoices.
 
 
+-------
+Plugins
+-------
+
+``fred-pain``
+=============
+
+https://gitlab.office.nic.cz/fred/pain
+
+Provides payment processor for FRED.
+
+``payments-pain``
+=================
+
+https://gitlab.office.nic.cz/ginger/payments-pain
+
+Provides payment processor for Payments (and therefore the Academy).
+
+
 --------
 Settings
 --------
