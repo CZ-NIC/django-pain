@@ -11,7 +11,18 @@ Settings
 ``PAIN_PROCESSORS``
 ===================
 
-Required setting containing list of dotted paths to payment processors.
-The payments are offered to different payment processors in that order.
+Required setting containing dictionary of payment processor names and dotted paths to payment processors classes.
+The payments are subsequently offered to all payment processors, until the payment is accepted.
 
-If you do not wish to use ``process_payments`` command, you may set it to ``[]``.
+Example configuration:
+
+.. code-block:: python
+
+    PAIN_PROCESSORS = {
+        'fred': 'fred_pain.processors.FredPaymentProcessor',
+        'payments': 'payments_pain.processors.PaymentsPaymentProcessor',
+        'ignore': 'django_pain.processors.IgnorePaymentProcessor',
+    }
+
+You should not change processor names unless you have a very good reason.
+In that case, you also need to take care of changing processor names saved in database.
