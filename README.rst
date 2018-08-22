@@ -8,6 +8,31 @@ Django application for processing bank payments and invoices.
 Settings
 --------
 
+``CURRENCIES``
+==============
+
+List of currency codes used in the application.
+Default is list of all available currencies (which is pretty long).
+
+Example configuration:
+
+.. code-block:: python
+
+    CURRENCIES = ['CZK', 'EUR', 'USD']
+
+``DEFAULT_CURRENCY``
+====================
+
+Currency code of default currency.
+It should be one of currencies defined in ``CURRENCIES`` setting.
+Default is ``XYZ``.
+
+Example configuration:
+
+.. code-block:: python
+
+    DEFAULT_CURRENCY = 'CZK'
+
 ``PAIN_PROCESSORS``
 ===================
 
