@@ -156,3 +156,12 @@ Otherwise, it's state is changed to ``deferred``.
 
 Options ``--from`` and ``--to`` limit payments to process by their creation date.
 They expect ISO formatted datetime value.
+
+
+---------
+ Changes
+---------
+
+See changelog_.
+
+.. _changelog: CHANGELOG.rst
