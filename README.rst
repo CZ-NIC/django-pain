@@ -4,6 +4,19 @@
 
 Django application for processing bank payments and invoices.
 
+Bank statements are passed through parser and imported to database.
+So far, there is only one parser available, ``TransprocXMLParser``,
+used to process bank statements downloaded and processed by `fred-transproc`_.
+Parsers may also be implemented as ``django-pain`` plugins.
+
+Imported payments are regularly processed by payment processors.
+Processors are usually implemented as ``django-pain`` plugins, implementing payment processor API.
+
+Bank accounts and payments may be accessed through django admin site interface.
+
+.. _fred-transproc: https://github.com/CZ-NIC/fred-transproc
+
+
 
 -------
 Plugins
