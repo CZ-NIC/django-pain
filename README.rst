@@ -17,6 +17,20 @@ Bank accounts and payments may be accessed through django admin site interface.
 .. _fred-transproc: https://github.com/CZ-NIC/fred-transproc
 
 
+------------
+Installation
+------------
+
+After installing ``django-pain`` package and configuring your django project, you need to generate migrations.
+Call ``django-admin makemigrations``.
+These migrations depend on ``LANGUAGES`` and ``CURRENCIES`` settings, so think carefully how you set them.
+If you decide to change these settings in the future, you need to generate the migrations again.
+
+Also, JavaScript files use new ECMAScript 2017 notation and needs to be transpiled to work in most of current browsers.
+Assuming you have ``Node.js`` and ``npm`` installed,
+you first need to install necessary packages by calling ``npm install`` from the command line.
+After that you can transpile the JavaScript code by calling ``npm run build``.
+
 
 -------
 Plugins
