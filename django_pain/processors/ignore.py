@@ -25,8 +25,8 @@ class IgnorePaymentProcessor(AbstractPaymentProcessor):
     def process_payments(self, payments: Iterable[BankPayment]) -> Iterable[ProcessPaymentResult]:
         """Reject all payments."""
         for payment in payments:
-            yield ProcessPaymentResult(result=False, objective=self.default_objective)
+            yield ProcessPaymentResult(result=False)
 
     def assign_payment(self, payment: BankPayment, client_id: str) -> ProcessPaymentResult:
         """Accept any payment."""
-        return ProcessPaymentResult(result=True, objective=self.default_objective)
+        return ProcessPaymentResult(result=True)
