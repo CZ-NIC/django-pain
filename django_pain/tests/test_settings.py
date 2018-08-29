@@ -2,7 +2,7 @@
 from django.core.exceptions import ImproperlyConfigured
 from django.test import SimpleTestCase, override_settings
 
-from django_pain.settings import SETTINGS, get_processor_class, get_processor_instance
+from django_pain.settings import SETTINGS, get_processor_class, get_processor_instance, get_processor_objective
 
 from .mixins import CacheResetMixin
 from .utils import DummyPaymentProcessor
@@ -65,4 +65,16 @@ class TestGetProcessorInstance(CacheResetMixin, SimpleTestCase):
         self.assertIsInstance(
             get_processor_instance('dummy'),
             DummyPaymentProcessor
+        )
+
+
+@override_settings(PAIN_PROCESSORS={'dummy': 'django_pain.tests.utils.DummyPaymentProcessor'})
+class TestGetProcessorObjective(CacheResetMixin, SimpleTestCase):
+    """Test get_processor_objective."""
+
+    def test_success(self):
+        """Test success."""
+        self.assertEqual(
+            get_processor_objective('dummy'),
+            'Dummy objective'
         )
