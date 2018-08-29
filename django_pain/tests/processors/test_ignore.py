@@ -15,9 +15,9 @@ class TestIgnorePaymentProcessor(SimpleTestCase):
     def test_process_payments(self):
         """Test process_payments."""
         self.assertEqual(list(self.processor.process_payments([self.payment])),
-                         [ProcessPaymentResult(False, 'Ignore payment')])
+                         [ProcessPaymentResult(False)])
 
     def test_assign_payment(self):
         """Test assign_payment."""
         self.assertEqual(self.processor.assign_payment(self.payment, ''),
-                         ProcessPaymentResult(True, 'Ignore payment'))
+                         ProcessPaymentResult(True))

@@ -50,7 +50,6 @@ class BankPaymentForm(forms.ModelForm):
             result = processor.assign_payment(self.instance, cleaned_data['client_id'])
             if result.result:
                 cleaned_data['state'] = PaymentState.PROCESSED
-                cleaned_data['objective'] = result.objective
                 return cleaned_data
             else:
                 raise forms.ValidationError(_('Unable to assign payment'), code='unable_to_assign')
@@ -59,7 +58,6 @@ class BankPaymentForm(forms.ModelForm):
         """Manually assign payment objective and save payment."""
         if 'state' in self.cleaned_data:
             self.instance.state = self.cleaned_data['state']
-            self.instance.objective = self.cleaned_data['objective']
         return super().save(commit=commit)
 
     class Meta:

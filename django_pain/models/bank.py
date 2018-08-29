@@ -8,7 +8,7 @@ from django.utils.translation import gettext_lazy as _
 from djmoney.models.fields import CurrencyField, MoneyField
 
 from django_pain.constants import CURRENCY_PRECISION, InvoiceType, PaymentState
-from django_pain.settings import SETTINGS, get_processor_instance
+from django_pain.settings import SETTINGS, get_processor_instance, get_processor_objective
 
 PAYMENT_STATE_CHOICES = (
     (PaymentState.IMPORTED, _('imported')),
@@ -59,7 +59,6 @@ class BankPayment(models.Model):
     specific_symbol = models.CharField(max_length=10, blank=True, verbose_name=_('Specific symbol'))
 
     processor = models.TextField(verbose_name=_('Processor'), blank=True)
-    objective = models.TextField(verbose_name=_('Objective'), blank=True)
 
     class Meta:
         """Model Meta class."""
@@ -85,6 +84,15 @@ class BankPayment(models.Model):
         """Return advance invoice if it exists."""
         invoices = self.invoices.filter(invoice_type=InvoiceType.ADVANCE)
         return invoices.first()
+
+    @property
+    def objective(self):
+        """Return processed payment objective."""
+        if self.processor:
+            return get_processor_objective(self.processor)
+        else:
+            return ''
+    objective.fget.short_description = _('Objective')  # type: ignore
 
     @classmethod
     def objective_choices(self):

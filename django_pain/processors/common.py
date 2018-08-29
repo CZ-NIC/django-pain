@@ -5,7 +5,7 @@ from typing import Iterable
 
 from django_pain.models import BankPayment
 
-ProcessPaymentResult = namedtuple('ProcessPaymentResult', ['result', 'objective'])
+ProcessPaymentResult = namedtuple('ProcessPaymentResult', ['result'])
 
 
 class AbstractPaymentProcessor(ABC):

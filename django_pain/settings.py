@@ -63,3 +63,10 @@ def get_processor_instance(processor: str):
     """Get processor class instance."""
     processor_class = get_processor_class(processor)
     return processor_class()
+
+
+@lru_cache()
+def get_processor_objective(processor: str):
+    """Get processor objective."""
+    proc = get_processor_instance(processor)
+    return proc.default_objective

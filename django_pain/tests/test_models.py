@@ -63,3 +63,11 @@ class TestBankPayment(CacheResetMixin, TestCase):
         advance_invoice.save()
         advance_invoice.payments.add(payment)
         self.assertEqual(payment.advance_invoice, advance_invoice)
+
+    @override_settings(PAIN_PROCESSORS={'dummy': 'django_pain.tests.utils.DummyPaymentProcessor'})
+    def test_objective(self):
+        payment = get_payment()
+        self.assertEqual(payment.objective, '')
+
+        payment = get_payment(processor='dummy')
+        self.assertEqual(payment.objective, 'Dummy objective')

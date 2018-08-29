@@ -41,7 +41,6 @@ class Command(BaseCommand):
                 if processed.result:
                     payment.state = PaymentState.PROCESSED
                     payment.processor = processor_name
-                    payment.objective = processed.objective
                     payment.save()
                 else:
                     unprocessed_payments.append(payment)
