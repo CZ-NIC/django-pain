@@ -32,6 +32,19 @@ you first need to install necessary packages by calling ``npm install`` from the
 After that you can transpile the JavaScript code by calling ``npm run build``.
 
 
+------------
+Requirements
+------------
+
+All requirements (both mandatory and optional) are listed in ``requirements.txt``.
+
+* ``django-modeltranslation`` is optional.
+  If you want to use only one language, don't install ``django-modeltranslation``.
+  You will save yourself some trouble with managing migrations.
+
+* All other requirements are mandatory.
+
+
 -------
 Plugins
 -------
@@ -122,7 +135,7 @@ See `django docs`__.
 It's really advisable to set this only to languages you intend to support.
 ``django-pain`` natively comes with English and Czech.
 If you don't set ``LANGUAGES`` setting, default is list of all available languages,
-which will force the models with ``modeltranslation`` feature to generate **really wide** database tables.
+which will force the models with ``django-modeltranslation`` to generate **really wide** database tables.
 
 __ https://docs.djangoproject.com/en/dev/ref/settings/#languages
 
