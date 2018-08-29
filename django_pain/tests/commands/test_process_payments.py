@@ -16,14 +16,14 @@ class DummyTruePaymentProcessor(DummyPaymentProcessor):
     default_objective = 'True objective'
 
     def process_payments(self, payments):
-        return [ProcessPaymentResult(result=True, objective=self.default_objective)]
+        return [ProcessPaymentResult(result=True)]
 
 
 class DummyFalsePaymentProcessor(DummyPaymentProcessor):
     """Simple processor that just returns failure."""
 
     def process_payments(self, payments):
-        return [ProcessPaymentResult(result=False, objective=self.default_objective)]
+        return [ProcessPaymentResult(result=False)]
 
 
 @freeze_time('2018-01-01')
@@ -34,8 +34,8 @@ class TestProcessPayments(CacheResetMixin, TestCase):
         super().setUp()
         self.account = BankAccount(account_number='123456/7890', currency='CZK')
         self.account.save()
-        self.payment = get_payment(identifier='PAYMENT_1', account=self.account, state=PaymentState.IMPORTED)
-        self.payment.save()
+        payment = get_payment(identifier='PAYMENT_1', account=self.account, state=PaymentState.IMPORTED)
+        payment.save()
 
     @override_settings(PAIN_PROCESSORS={
         'dummy': 'django_pain.tests.commands.test_process_payments.DummyTruePaymentProcessor'})
@@ -44,10 +44,10 @@ class TestProcessPayments(CacheResetMixin, TestCase):
         call_command('process_payments')
 
         self.assertQuerysetEqual(
-            BankPayment.objects.values_list('identifier', 'account', 'state', 'processor', 'objective'),
-            [('PAYMENT_1', self.account.pk, PaymentState.PROCESSED,
-              'dummy', 'True objective')],
+            BankPayment.objects.values_list('identifier', 'account', 'state', 'processor'),
+            [('PAYMENT_1', self.account.pk, PaymentState.PROCESSED, 'dummy')],
             transform=tuple, ordered=False)
+        self.assertEqual(BankPayment.objects.first().objective, 'True objective')
 
     @override_settings(PAIN_PROCESSORS={
         'dummy': 'django_pain.tests.commands.test_process_payments.DummyFalsePaymentProcessor'})
@@ -56,9 +56,10 @@ class TestProcessPayments(CacheResetMixin, TestCase):
         call_command('process_payments')
 
         self.assertQuerysetEqual(
-            BankPayment.objects.values_list('identifier', 'account', 'state', 'processor', 'objective'),
-            [('PAYMENT_1', self.account.pk, PaymentState.DEFERRED, '', '')],
+            BankPayment.objects.values_list('identifier', 'account', 'state', 'processor'),
+            [('PAYMENT_1', self.account.pk, PaymentState.DEFERRED, '')],
             transform=tuple, ordered=False)
+        self.assertEqual(BankPayment.objects.first().objective, '')
 
     @override_settings(PAIN_PROCESSORS={
         'dummy_false': 'django_pain.tests.commands.test_process_payments.DummyFalsePaymentProcessor',
@@ -68,6 +69,7 @@ class TestProcessPayments(CacheResetMixin, TestCase):
         call_command('process_payments', '--from', '2017-01-01 00:00', '--to', '2017-01-02 00:00')
 
         self.assertQuerysetEqual(
-            BankPayment.objects.values_list('identifier', 'account', 'state', 'processor', 'objective'),
-            [('PAYMENT_1', self.account.pk, PaymentState.IMPORTED, '', '')],
+            BankPayment.objects.values_list('identifier', 'account', 'state', 'processor'),
+            [('PAYMENT_1', self.account.pk, PaymentState.IMPORTED, '')],
             transform=tuple, ordered=False)
+        self.assertEqual(BankPayment.objects.first().objective, '')

@@ -9,13 +9,17 @@ from django_pain.tests.utils import DummyPaymentProcessor, get_account, get_paym
 
 
 class SuccessPaymentProcessor(DummyPaymentProcessor):
+    default_objective = 'Generous bribe'
+
     def assign_payment(self, payment, client_id):
-        return ProcessPaymentResult(result=True, objective='Generous bribe')
+        return ProcessPaymentResult(result=True)
 
 
 class FailurePaymentProcessor(DummyPaymentProcessor):
+    default_objective = 'Not so generous bribe'
+
     def assign_payment(self, payment, client_id):
-        return ProcessPaymentResult(result=False, objective='Not so generous bribe')
+        return ProcessPaymentResult(result=False)
 
 
 @override_settings(PAIN_PROCESSORS={
