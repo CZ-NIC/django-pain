@@ -55,6 +55,35 @@ Provides payment processor for Payments (and therefore the Academy).
 Settings
 --------
 
+In order for ``django-pain`` to work, you need to define some settings in your ``settings.py``.
+
+``PAIN_PROCESSORS``
+===================
+
+Required setting containing dictionary of payment processor names and dotted paths to payment processors classes.
+The payments are offered to different payment processors in that order.
+
+Example configuration:
+
+.. code-block:: python
+
+    PAIN_PROCESSORS = {
+        'fred': 'fred_pain.processors.FredPaymentProcessor',
+        'payments': 'payments_pain.processors.PaymentsPaymentProcessor',
+        'ignore': 'django_pain.processors.IgnorePaymentProcessor',
+    }
+
+You should not change processor names unless you have a very good reason.
+In that case, you also need to take care of changing processor names saved in database.
+
+
+----------------------
+Other related settings
+----------------------
+
+Plugins usually have settings on their own – see the docs.
+Apart from that, there are several settings that doesn't have to be set, but it's really advisable to do so.
+
 ``CURRENCIES``
 ==============
 
@@ -67,7 +96,9 @@ Example configuration:
 
     CURRENCIES = ['CZK', 'EUR', 'USD']
 
-Changing this setting requires generating migrations.
+This setting comes from django-money_ app. Changing this setting requires generating migrations.
+
+.. _django-money: https://github.com/django-money/django-money
 
 ``DEFAULT_CURRENCY``
 ====================
@@ -82,26 +113,18 @@ Example configuration:
 
     DEFAULT_CURRENCY = 'CZK'
 
-Changing this setting requires generating migrations.
+This setting comes from django-money_ app. Changing this setting requires generating migrations.
 
-``PAIN_PROCESSORS``
-===================
+``LANGUAGES``
+=============
 
-Required setting containing dictionary of payment processor names and dotted paths to payment processors classes.
-The payments are subsequently offered to all payment processors, until the payment is accepted.
+See `django docs`__.
+It's really advisable to set this only to languages you intend to support.
+``django-pain`` natively comes with English and Czech.
+If you don't set ``LANGUAGES`` setting, default is list of all available languages,
+which will force the models with ``modeltranslation`` feature to generate **really wide** database tables.
 
-Example configuration:
-
-.. code-block:: python
-
-    PAIN_PROCESSORS = {
-        'fred': 'fred_pain.processors.FredPaymentProcessor',
-        'payments': 'payments_pain.processors.PaymentsPaymentProcessor',
-        'ignore': 'django_pain.processors.IgnorePaymentProcessor',
-    }
-
-You should not change processor names unless you have a very good reason.
-In that case, you also need to take care of changing processor names saved in database.
+__ https://docs.djangoproject.com/en/dev/ref/settings/#languages
 
 
 --------
