@@ -21,6 +21,23 @@ Bank accounts and payments may be accessed through django admin site interface.
 Installation
 ------------
 
+You need to add ``django_pain.apps.DjangoPainConfig`` to your ``INSTALLED_APPS``.
+In order for user interface to work, you also need to add django admin site.
+See `django docs`__ for detailed description.
+
+__ https://docs.djangoproject.com/en/dev/ref/contrib/admin/
+
+You also need to include ``django_pain`` and ``admin`` urls into your project ``urls.py``:
+
+.. code-block:: python
+
+    urlpatterns = [
+        ...
+        path('pain/', include('django_pain.urls')),
+        path('admin/', admin.site.urls),
+        ...
+    ]
+
 After installing ``django-pain`` package and configuring your django project, you need to generate migrations.
 Call ``django-admin makemigrations``.
 These migrations depend on ``LANGUAGES`` and ``CURRENCIES`` settings, so think carefully how you set them.

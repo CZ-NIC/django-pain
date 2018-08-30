@@ -23,7 +23,7 @@ class LinkedDummyPaymentProcessor(DummyPaymentProcessor):
         return 'http://example.com/client/'
 
 
-@override_settings(ROOT_URLCONF='django_pain.urls')
+@override_settings(ROOT_URLCONF='django_pain.tests.urls')
 class TestBankAccountAdmin(TestCase):
     """Test BankAccountAdmin."""
 
@@ -40,7 +40,7 @@ class TestBankAccountAdmin(TestCase):
 
 
 @override_settings(
-    ROOT_URLCONF='django_pain.urls',
+    ROOT_URLCONF='django_pain.tests.urls',
     PAIN_PROCESSORS={'dummy': 'django_pain.tests.utils.DummyPaymentProcessor'})
 class TestBankPaymentAdmin(CacheResetMixin, TestCase):
     """Test BankAccountAdmin."""
