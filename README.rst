@@ -55,6 +55,10 @@ Requirements
 
 All requirements are listed in ``requirements.txt``.
 
+If you wish to use LDAP authentication, you can use django-python3-ldap__.
+
+__ https://github.com/etianen/django-python3-ldap
+
 
 -------
 Plugins
