@@ -1,11 +1,17 @@
 """Test process_payments command."""
+import fcntl
+import os
+from io import StringIO
+
 from django.core.management import call_command
 from django.test import TestCase, override_settings
 from freezegun import freeze_time
+from testfixtures import tempdir
 
 from django_pain.constants import PaymentState
 from django_pain.models import BankAccount, BankPayment
 from django_pain.processors import ProcessPaymentResult
+from django_pain.settings import SETTINGS
 from django_pain.tests.mixins import CacheResetMixin
 from django_pain.tests.utils import DummyPaymentProcessor, get_payment
 
@@ -73,3 +79,19 @@ class TestProcessPayments(CacheResetMixin, TestCase):
             [('PAYMENT_1', self.account.pk, PaymentState.IMPORTED, '')],
             transform=tuple, ordered=False)
         self.assertEqual(BankPayment.objects.first().objective, '')
+
+    @tempdir()
+    def test_lock(self, tempdir):
+        """Test process payments lock."""
+        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(tempdir.path, 'test.lock')):
+            lock = open(SETTINGS.process_payments_lock_file, 'a')
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            out = StringIO()
+            err = StringIO()
+            call_command('process_payments', '--no-color', stdout=out, stderr=err)
+            self.assertEqual(out.getvalue(), '')
+            self.assertEqual(err.getvalue(), 'Command process_payments is already running. Terminating.\n')
+            self.assertQuerysetEqual(
+                BankPayment.objects.values_list('identifier', 'account', 'state', 'processor'),
+                [('PAYMENT_1', self.account.pk, PaymentState.IMPORTED, '')],
+                transform=tuple, ordered=False)
