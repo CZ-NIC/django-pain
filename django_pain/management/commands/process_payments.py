@@ -1,4 +1,5 @@
 """Command for processing bank payments."""
+import fcntl
 from copy import deepcopy
 
 from django.core.management.base import BaseCommand
@@ -22,32 +23,48 @@ class Command(BaseCommand):
                             help="ISO datetime before which payments should be processed")
 
     def handle(self, *args, **options):
-        """Run command."""
-        payments = BankPayment.objects.filter(state__in=[PaymentState.IMPORTED, PaymentState.DEFERRED])
-        if options['time_from'] is not None:
-            payments = payments.filter(create_time__gte=options['time_from'])
-        if options['time_to'] is not None:
-            payments = payments.filter(create_time__lte=options['time_to'])
-        payments = payments.order_by('transaction_date')
+        """
+        Run command.
 
-        for processor_name in SETTINGS.processors:
-            processor = get_processor_instance(processor_name)
-            if not payments:
-                break
+        If can't acquire lock, display warning and terminate.
+        """
+        try:
+            LOCK = open(SETTINGS.process_payments_lock_file, 'a')
+            fcntl.flock(LOCK, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            self.stderr.write(self.style.WARNING('Command process_payments is already running. Terminating.'))
+            LOCK.close()
+            return
 
-            results = processor.process_payments(deepcopy(payment) for payment in payments)  # pragma: no cover
-            unprocessed_payments = []
+        try:
+            payments = BankPayment.objects.filter(state__in=[PaymentState.IMPORTED, PaymentState.DEFERRED])
+            if options['time_from'] is not None:
+                payments = payments.filter(create_time__gte=options['time_from'])
+            if options['time_to'] is not None:
+                payments = payments.filter(create_time__lte=options['time_to'])
+            payments = payments.order_by('transaction_date')
 
-            for payment, processed in zip(payments, results):
-                if processed.result:
-                    payment.state = PaymentState.PROCESSED
-                    payment.processor = processor_name
-                    payment.save()
-                else:
-                    unprocessed_payments.append(payment)
+            for processor_name in SETTINGS.processors:
+                processor = get_processor_instance(processor_name)
+                if not payments:
+                    break
 
-            payments = unprocessed_payments
+                results = processor.process_payments(deepcopy(payment) for payment in payments)  # pragma: no cover
+                unprocessed_payments = []
 
-        for unprocessed_payment in payments:
-            unprocessed_payment.state = PaymentState.DEFERRED
-            unprocessed_payment.save()
+                for payment, processed in zip(payments, results):
+                    if processed.result:
+                        payment.state = PaymentState.PROCESSED
+                        payment.processor = processor_name
+                        payment.save()
+                    else:
+                        unprocessed_payments.append(payment)
+
+                payments = unprocessed_payments
+
+            for unprocessed_payment in payments:
+                unprocessed_payment.state = PaymentState.DEFERRED
+                unprocessed_payment.save()
+        finally:
+            fcntl.flock(LOCK, fcntl.LOCK_UN)
+            LOCK.close()

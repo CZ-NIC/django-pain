@@ -104,6 +104,12 @@ Example configuration:
 You should not change processor names unless you have a very good reason.
 In that case, you also need to take care of changing processor names saved in database.
 
+``PAIN_PROCESS_PAYMENTS_LOCK_FILE``
+===================================
+
+Path to lock file for ``process_payments`` command.
+Default value is ``/tmp/pain_process_payments.lock``.
+
 
 ----------------------
 Other related settings
