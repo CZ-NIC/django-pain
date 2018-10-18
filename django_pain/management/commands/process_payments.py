@@ -28,6 +28,7 @@ class Command(BaseCommand):
             payments = payments.filter(create_time__gte=options['time_from'])
         if options['time_to'] is not None:
             payments = payments.filter(create_time__lte=options['time_to'])
+        payments = payments.order_by('transaction_date')
 
         for processor_name in SETTINGS.processors:
             processor = get_processor_instance(processor_name)
