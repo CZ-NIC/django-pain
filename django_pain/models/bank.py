@@ -42,20 +42,20 @@ class BankPayment(models.Model):
     identifier = models.TextField(verbose_name=_('Payment ID'))
     uuid = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
     account = models.ForeignKey(BankAccount, on_delete=models.CASCADE, verbose_name=_('Destination account'))
-    create_time = models.DateTimeField(auto_now_add=True, verbose_name=_('Create time'))
-    transaction_date = models.DateField(verbose_name=_('Transaction date'))
+    create_time = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name=_('Create time'))
+    transaction_date = models.DateField(db_index=True, verbose_name=_('Transaction date'))
 
     counter_account_number = models.TextField(verbose_name=_('Counter account number'))
-    counter_account_name = models.TextField(blank=True, verbose_name=_('Counter account name'), db_index=True)
+    counter_account_name = models.TextField(blank=True, verbose_name=_('Counter account name'))
 
     amount = MoneyField(max_digits=64, decimal_places=CURRENCY_PRECISION, verbose_name=_('Amount'))
-    description = models.TextField(blank=True, verbose_name=_('Description'), db_index=True)
-    state = models.TextField(choices=PAYMENT_STATE_CHOICES, default=PaymentState.IMPORTED,
+    description = models.TextField(blank=True, verbose_name=_('Description'))
+    state = models.TextField(choices=PAYMENT_STATE_CHOICES, default=PaymentState.IMPORTED, db_index=True,
                              verbose_name=_('Payment state'))
 
     # Payment symbols (specific for Czech Republic and Slovak Republic).
     constant_symbol = models.CharField(max_length=10, blank=True, verbose_name=_('Constant symbol'))
-    variable_symbol = models.CharField(max_length=10, blank=True, verbose_name=_('Variable symbol'), db_index=True)
+    variable_symbol = models.CharField(max_length=10, blank=True, verbose_name=_('Variable symbol'))
     specific_symbol = models.CharField(max_length=10, blank=True, verbose_name=_('Specific symbol'))
 
     processor = models.TextField(verbose_name=_('Processor'), blank=True)
