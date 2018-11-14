@@ -38,10 +38,9 @@ class Command(BaseCommand):
 
             try:
                 payments = parser.parse(handle)
+                self.save_payments(payments)
             except BankAccount.DoesNotExist as e:
                 raise CommandError(e)
-            else:
-                self.save_payments(payments)
             finally:
                 handle.close()
 
