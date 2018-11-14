@@ -32,12 +32,17 @@ test('Test not found', async t => {
 })
 
 test('Test render client choices', async t => {
+    global.$ = () => {
+        return {
+            select2: () => {},
+        }
+    }
     document.body.innerHTML = TEST_PAGE
     fetchMock.get('/ajax/processor_client_choices/?processor=DummyProcessor',
         {'TNG': 'The Next Generation', 'DS9': 'Deep space 9'})
     await load_processor_client_field()
 
     t.regex(document.querySelector('div.field-client_id div').innerHTML, new RegExp(
-        '<select name="client_id"><option value="TNG">The Next Generation</option>' +
+        '<select name="client_id"[^>]*><option value="TNG">The Next Generation</option>' +
         '<option value="DS9">Deep space 9</option></select>'))
 })
