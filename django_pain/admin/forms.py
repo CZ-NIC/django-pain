@@ -69,4 +69,11 @@ class BankPaymentForm(forms.ModelForm):
     class Media:
         """Media class."""
 
-        js = ('django_pain/js/processor_client_field.js',)
+        js = (
+            'django_pain/js/processor_client_field.js',
+            'admin/js/vendor/jquery/jquery.min.js',
+            'admin/js/vendor/select2/select2.full.min.js'
+        )
+        css = {
+           'all': ('admin/css/vendor/select2/select2.min.css',)
+        }
