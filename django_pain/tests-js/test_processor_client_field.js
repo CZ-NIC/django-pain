@@ -32,7 +32,7 @@ test('Test not found', async t => {
 })
 
 test('Test render client choices', async t => {
-    global.$ = () => {
+    global.jQuery = () => {
         return {
             select2: () => {},
         }

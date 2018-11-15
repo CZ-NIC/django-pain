@@ -70,8 +70,12 @@ class BankPaymentForm(forms.ModelForm):
         """Media class."""
 
         js = (
+            # The ordering is important!
+            # First, jQuery introduces django.jQuery global.
+            # Then, processor_client_field exposes jQuery global as alias for django.jQuery.
+            # At last, Select2 is loaded, which needs jQuery global to run correctly.
+            'admin/js/vendor/jquery/jquery.js',
             'django_pain/js/processor_client_field.js',
-            'admin/js/vendor/jquery/jquery.min.js',
             'admin/js/vendor/select2/select2.full.min.js'
         )
         css = {
