@@ -21,7 +21,7 @@ export async function load_processor_client_field() {
         // Construct select box from received choices
         response.json().then(data => {
             let selectbox = '<select name="client_id" id="select_client_id">'
-            Object.keys(data).sort((a, b) => { data[a].localeCompare(data[b]) }).forEach(key => {
+            Object.keys(data).sort((a, b) => data[a].localeCompare(data[b])).forEach(key => {
                 selectbox += `<option value="${key}">${data[key]}</option>`
             })
             selectbox += '</select>'
