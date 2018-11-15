@@ -1,3 +1,10 @@
+/* global django: true, jQuery: true */
+
+/* Expose global jQuery because of Select2 library */
+if (jQuery === undefined && django !== undefined) {
+    jQuery = django.jQuery
+}
+
 /**
  * Load available client choices from chosen payment processor.
  *
@@ -20,7 +27,7 @@ export async function load_processor_client_field() {
             selectbox += '</select>'
             client_id_field.innerHTML = client_id_field.innerHTML.replace(
                 /<\/label>[^]*/, '</label>' + selectbox)
-            $('#select_client_id').select2()
+            jQuery('#select_client_id').select2()
         })
     } else {
         // Render default text input widget
