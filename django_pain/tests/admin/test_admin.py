@@ -136,3 +136,42 @@ class TestBankPaymentAdminLinks(TestBankPaymentAdmin):
         response = self.client.get(reverse('admin:django_pain_bankpayment_change', args=[self.processed_payment.pk]))
         self.assertContains(response, '<a href="http://example.com/invoice/">INV111222</a>')
         self.assertContains(response, '<a href="http://example.com/client/">HANDLE</a>')
+
+
+@override_settings(ROOT_URLCONF='django_pain.tests.urls')
+class TestUserAdmin(TestCase):
+    """Test UserAdmin."""
+
+    def setUp(self):
+        self.admin = User.objects.create_superuser('admin', 'admin@example.com', 'password')
+
+    def test_get_add(self):
+        """Test GET request on add view."""
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('admin:auth_user_add'))
+        self.assertContains(
+            response,
+            "If you use external authentication system such as LDAP, you don't have to choose a password."
+        )
+
+    def test_post_add_password(self):
+        """Test POST request on add view."""
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            reverse('admin:auth_user_add'),
+            data={'username': 'yoda', 'password1': 'usetheforce', 'password2': 'usetheforce'},
+        )
+        user = User.objects.get(username='yoda')
+        self.assertRedirects(response, reverse('admin:auth_user_change', args=(user.pk,)))
+        self.assertTrue(user.has_usable_password())
+
+    def test_post_add_no_password(self):
+        """Test POST request on add view without password."""
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            reverse('admin:auth_user_add'),
+            data={'username': 'yoda', 'password1': '', 'password2': ''},
+        )
+        user = User.objects.get(username='yoda')
+        self.assertRedirects(response, reverse('admin:auth_user_change', args=(user.pk,)))
+        self.assertFalse(user.has_usable_password())
