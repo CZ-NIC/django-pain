@@ -43,6 +43,9 @@ test('Test render client choices', async t => {
     await load_processor_client_field()
 
     t.regex(document.querySelector('div.field-client_id div').innerHTML, new RegExp(
-        '<select name="client_id"[^>]*><option value="TNG">The Next Generation</option>' +
-        '<option value="DS9">Deep space 9</option></select>'))
+        '<select name="client_id"[^>]*>' +
+        '<option value="DS9">Deep space 9</option>' +
+        '<option value="TNG">The Next Generation</option>' +
+        '</select>'
+    ))
 })
