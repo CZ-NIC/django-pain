@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django_pain 0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-08-21 14:51+0000\n"
+"POT-Creation-Date: 2018-11-16 03:27-0600\n"
 "PO-Revision-Date: 2018-04-19 06:31-0500\n"
 "Last-Translator: Jan Musílek <jan.musilek@nic.cz>\n"
 "Language-Team: Czech <jan.musilek@nic.cz>\n"
@@ -60,6 +60,16 @@ msgstr "Poznámka"
 msgid "Destination account"
 msgstr "Cílový účet"
 
+msgid "Fill out both fields"
+msgstr "Vyplňte obě pole"
+
+msgid ""
+"If you use external authentication system such as LDAP, you don't have to "
+"choose a password."
+msgstr ""
+"Pokud používáte externí autentizační systém (např. LDAP), nemusíte vyplňovat "
+"heslo."
+
 msgid "Ignore payment"
 msgstr "Ignorovat platbu"
 
@@ -80,6 +90,9 @@ msgstr "Faktury související s platbou"
 
 msgid "Objective"
 msgstr "Účel"
+
+msgid "Password"
+msgstr "Heslo"
 
 msgid "Payment ID"
 msgstr "Identifikátor platby"

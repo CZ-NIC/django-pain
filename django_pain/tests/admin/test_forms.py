@@ -1,7 +1,7 @@
 """Test admin forms."""
 from django.test import TestCase, override_settings
 
-from django_pain.admin.forms import BankPaymentForm
+from django_pain.admin.forms import BankPaymentForm, UserCreationForm
 from django_pain.constants import PaymentState
 from django_pain.processors import ProcessPaymentResult
 from django_pain.tests.mixins import CacheResetMixin
@@ -83,3 +83,33 @@ class TestBankPaymentForm(CacheResetMixin, TestCase):
         form.cleaned_data.pop('state', None)
         instance = form.save(commit=False)
         self.assertEqual(instance, self.payment)
+
+
+class TestUserCreationForm(TestCase):
+    """Test UserCreationForm."""
+
+    def test_required_fields(self):
+        """Test required fields."""
+        form = UserCreationForm()
+        self.assertTrue(form.fields['username'].required)
+        self.assertFalse(form.fields['password1'].required)
+        self.assertFalse(form.fields['password2'].required)
+
+    def test_clean_success(self):
+        """Test clean method success."""
+        form = UserCreationForm(data={
+            'username': 'yoda',
+            'password1': '',
+            'password2': '',
+        })
+        self.assertTrue(form.is_valid())
+
+    def test_clean_failure(self):
+        """Test clean method failure."""
+        form = UserCreationForm(data={
+            'username': 'yoda',
+            'password1': 'usetheforce',
+            'password2': '',
+        })
+        self.assertFalse(form.is_valid())
+        self.assertEqual(form.errors, {'password2': ['Fill out both fields']})

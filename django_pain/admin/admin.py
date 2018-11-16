@@ -1,5 +1,6 @@
 """Admin interface for django_pain."""
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
@@ -8,7 +9,7 @@ from django_pain.models import Invoice
 from django_pain.settings import get_processor_instance
 
 from .filters import PaymentStateListFilter
-from .forms import BankAccountForm, BankPaymentForm
+from .forms import BankAccountForm, BankPaymentForm, UserCreationForm
 
 
 class BankAccountAdmin(admin.ModelAdmin):
@@ -172,3 +173,26 @@ class BankPaymentAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         """Forbid deleting payments through admin interface."""
         return False
+
+
+class UserAdmin(DjangoUserAdmin):
+    """Model admin for Django user."""
+
+    add_form = UserCreationForm
+
+    add_fieldsets = (
+        (None, {
+            'fields': ('username',),
+        }),
+        (_('Password'), {
+            'description': _("If you use external authentication system such as LDAP, "
+                             "you don't have to choose a password."),
+            'fields': ('password1', 'password2',),
+        }),
+    )
+
+    def save_model(self, request, obj, form, change):
+        """If password isn't provided, set unusable password."""
+        if not change and (not form.cleaned_data['password1'] or not obj.has_usable_password()):
+            obj.set_unusable_password()
+        super().save_model(request, obj, form, change)

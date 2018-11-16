@@ -1,5 +1,6 @@
 """Django admin forms."""
 from django import forms
+from django.contrib.auth.forms import UserCreationForm as DjangoUserCreationForm
 from django.utils.translation import gettext_lazy as _
 from djmoney.settings import CURRENCY_CHOICES
 
@@ -81,3 +82,21 @@ class BankPaymentForm(forms.ModelForm):
         css = {
            'all': ('admin/css/vendor/select2/select2.min.css',)
         }
+
+
+class UserCreationForm(DjangoUserCreationForm):
+    """User creation form without mandatory password."""
+
+    def __init__(self, *args, **kwargs):
+        """Don't require password fields."""
+        super().__init__(*args, **kwargs)
+        self.fields['password1'].required = False
+        self.fields['password2'].required = False
+
+    def clean_password2(self):
+        """Check whether both password fields are filled in or none of them is."""
+        password1 = self.cleaned_data.get('password1')
+        password2 = super().clean_password2()
+        if bool(password1) ^ bool(password2):
+            raise forms.ValidationError(_('Fill out both fields'))
+        return password2
