@@ -21,7 +21,7 @@ PAYMENT_STATE_CHOICES = (
 class BankAccount(models.Model):
     """Bank account."""
 
-    account_number = models.TextField(verbose_name=_('Account number'))
+    account_number = models.TextField(unique=True, verbose_name=_('Account number'))
     account_name = models.TextField(blank=True, verbose_name=_('Account name'))
     currency = CurrencyField()
 
