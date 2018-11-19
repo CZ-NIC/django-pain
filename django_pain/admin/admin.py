@@ -17,6 +17,13 @@ class BankAccountAdmin(admin.ModelAdmin):
 
     form = BankAccountForm
 
+    def get_readonly_fields(self, request, obj):
+        """Currency field should be editable only when creating new bank account."""
+        if obj is None:
+            return ()
+        else:
+            return ('currency',)
+
 
 class InvoicesInline(admin.TabularInline):
     """Inline model admin for invoices related to payment."""
