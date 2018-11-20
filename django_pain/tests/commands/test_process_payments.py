@@ -6,7 +6,7 @@ from io import StringIO
 from django.core.management import call_command
 from django.test import TestCase, override_settings
 from freezegun import freeze_time
-from testfixtures import tempdir
+from testfixtures import LogCapture, tempdir
 
 from django_pain.constants import PaymentState
 from django_pain.models import BankAccount, BankPayment
@@ -42,6 +42,10 @@ class TestProcessPayments(CacheResetMixin, TestCase):
         self.account.save()
         payment = get_payment(identifier='PAYMENT_1', account=self.account, state=PaymentState.IMPORTED)
         payment.save()
+        self.log_handler = LogCapture('django_pain.management.commands.process_payments', propagate=False)
+
+    def tearDown(self):
+        self.log_handler.uninstall()
 
     @override_settings(PAIN_PROCESSORS={
         'dummy': 'django_pain.tests.commands.test_process_payments.DummyTruePaymentProcessor'})
@@ -54,6 +58,14 @@ class TestProcessPayments(CacheResetMixin, TestCase):
             [('PAYMENT_1', self.account.pk, PaymentState.PROCESSED, 'dummy')],
             transform=tuple, ordered=False)
         self.assertEqual(BankPayment.objects.first().objective, 'True objective')
+        self.log_handler.check(
+            ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments started.'),
+            ('django_pain.management.commands.process_payments', 'INFO', 'Lock acquired.'),
+            ('django_pain.management.commands.process_payments', 'INFO', 'Processing 1 unprocessed payments.'),
+            ('django_pain.management.commands.process_payments', 'INFO', 'Processing payments with processor dummy.'),
+            ('django_pain.management.commands.process_payments', 'INFO', 'Marking 0 unprocessed payments as DEFERRED.'),
+            ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments finished.'),
+        )
 
     @override_settings(PAIN_PROCESSORS={
         'dummy': 'django_pain.tests.commands.test_process_payments.DummyFalsePaymentProcessor'})
@@ -66,6 +78,14 @@ class TestProcessPayments(CacheResetMixin, TestCase):
             [('PAYMENT_1', self.account.pk, PaymentState.DEFERRED, '')],
             transform=tuple, ordered=False)
         self.assertEqual(BankPayment.objects.first().objective, '')
+        self.log_handler.check(
+            ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments started.'),
+            ('django_pain.management.commands.process_payments', 'INFO', 'Lock acquired.'),
+            ('django_pain.management.commands.process_payments', 'INFO', 'Processing 1 unprocessed payments.'),
+            ('django_pain.management.commands.process_payments', 'INFO', 'Processing payments with processor dummy.'),
+            ('django_pain.management.commands.process_payments', 'INFO', 'Marking 1 unprocessed payments as DEFERRED.'),
+            ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments finished.'),
+        )
 
     @override_settings(PAIN_PROCESSORS={
         'dummy_false': 'django_pain.tests.commands.test_process_payments.DummyFalsePaymentProcessor',
@@ -95,3 +115,7 @@ class TestProcessPayments(CacheResetMixin, TestCase):
                 BankPayment.objects.values_list('identifier', 'account', 'state', 'processor'),
                 [('PAYMENT_1', self.account.pk, PaymentState.IMPORTED, '')],
                 transform=tuple, ordered=False)
+            self.log_handler.check(
+                ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments started.'),
+                ('django_pain.management.commands.process_payments', 'INFO', 'Command already running. Terminating.'),
+            )
