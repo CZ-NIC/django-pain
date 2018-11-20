@@ -29,7 +29,7 @@ class TestHelperFunctions(SimpleTestCase):
                               counter_account_name='Acc')
         self.assertRegex(
             format_payment(payment),
-            r'ID\s+2018-01-01T12:00:00\s+amount:\s+Kč42.00\s+acount_memo: Memo...\s+account_name: Acc'
+            r'ID\s+2018-01-01T12:00:00\s+amount:\s+42.00 Kč\s+acount_memo: Memo...\s+account_name: Acc'
         )
 
 
@@ -64,13 +64,14 @@ class TestListPayments(TestCase):
 
         self.assertRegex(
             out.getvalue(),
-            r'7\s+[0-9T:.-]+\s+amount:\s+Kč42.00\s+acount_memo:\s+account_name: Account seven\n'
-            r'6\s+[0-9T:.-]+\s+amount:\s+Kč42.00\s+acount_memo: May the force be with you\s+account_name: Account six\n'
-            r'5\s+[0-9T:.-]+\s+amount:\s+Kč42.00\s+acount_memo:\s+account_name: Account five\n'
-            r'4\s+[0-9T:.-]+\s+amount:\s+Kč42.00\s+acount_memo: I am your father!\s+account_name: Account four\n'
-            r'3\s+[0-9T:.-]+\s+amount:\s+Kč42.00\s+acount_memo:\s+account_name: Account three\n'
-            r'2\s+[0-9T:.-]+\s+amount:\s+Kč42.00\s+acount_memo:\s+account_name: Account two\n'
-            r'1\s+[0-9T:.-]+\s+amount:\s+Kč42.00\s+acount_memo:\s+account_name: Account one\n'
+            r'7\s+[0-9T:.-]+\s+amount:\s+42.00 Kč\s+acount_memo:\s+account_name: Account seven\n'
+            r'6\s+[0-9T:.-]+\s+amount:\s+42.00 Kč\s+acount_memo: May the force be with you\s+'
+            r'account_name: Account six\n'
+            r'5\s+[0-9T:.-]+\s+amount:\s+42.00 Kč\s+acount_memo:\s+account_name: Account five\n'
+            r'4\s+[0-9T:.-]+\s+amount:\s+42.00 Kč\s+acount_memo: I am your father!\s+account_name: Account four\n'
+            r'3\s+[0-9T:.-]+\s+amount:\s+42.00 Kč\s+acount_memo:\s+account_name: Account three\n'
+            r'2\s+[0-9T:.-]+\s+amount:\s+42.00 Kč\s+acount_memo:\s+account_name: Account two\n'
+            r'1\s+[0-9T:.-]+\s+amount:\s+42.00 Kč\s+acount_memo:\s+account_name: Account one\n'
         )
 
     def test_list_by_state(self):
@@ -80,8 +81,8 @@ class TestListPayments(TestCase):
 
         self.assertRegex(
             out.getvalue(),
-            r'4\s+[0-9T:.-]+\s+amount:\s+Kč42.00\s+acount_memo: I am your father!\s+account_name: Account four\n'
-            r'3\s+[0-9T:.-]+\s+amount:\s+Kč42.00\s+acount_memo:\s+account_name: Account three\n'
+            r'4\s+[0-9T:.-]+\s+amount:\s+42.00 Kč\s+acount_memo: I am your father!\s+account_name: Account four\n'
+            r'3\s+[0-9T:.-]+\s+amount:\s+42.00 Kč\s+acount_memo:\s+account_name: Account three\n'
         )
 
     def test_list_limit(self):
@@ -91,9 +92,10 @@ class TestListPayments(TestCase):
 
         self.assertRegex(
             out.getvalue(),
-            r'7\s+[0-9T:.-]+\s+amount:\s+Kč42.00\s+acount_memo:\s+account_name: Account seven\n'
-            r'6\s+[0-9T:.-]+\s+amount:\s+Kč42.00\s+acount_memo: May the force be with you\s+account_name: Account six\n'
-            r'5\s+[0-9T:.-]+\s+amount:\s+Kč42.00\s+acount_memo:\s+account_name: Account five\n'
+            r'7\s+[0-9T:.-]+\s+amount:\s+42.00 Kč\s+acount_memo:\s+account_name: Account seven\n'
+            r'6\s+[0-9T:.-]+\s+amount:\s+42.00 Kč\s+acount_memo: May the force be with you\s+'
+            r'account_name: Account six\n'
+            r'5\s+[0-9T:.-]+\s+amount:\s+42.00 Kč\s+acount_memo:\s+account_name: Account five\n'
             r'... and 4 more payments'
         )
 
@@ -114,10 +116,11 @@ class TestListPayments(TestCase):
 
         self.assertRegex(
             out.getvalue(),
-            r'6\s+[0-9T:.-]+\s+amount:\s+Kč42.00\s+acount_memo: May the force be with you\s+account_name: Account six\n'
-            r'5\s+[0-9T:.-]+\s+amount:\s+Kč42.00\s+acount_memo:\s+account_name: Account five\n'
-            r'3\s+[0-9T:.-]+\s+amount:\s+Kč42.00\s+acount_memo:\s+account_name: Account three\n'
-            r'1\s+[0-9T:.-]+\s+amount:\s+Kč42.00\s+acount_memo:\s+account_name: Account one\n'
+            r'6\s+[0-9T:.-]+\s+amount:\s+42.00 Kč\s+acount_memo: May the force be with you\s+'
+            r'account_name: Account six\n'
+            r'5\s+[0-9T:.-]+\s+amount:\s+42.00 Kč\s+acount_memo:\s+account_name: Account five\n'
+            r'3\s+[0-9T:.-]+\s+amount:\s+42.00 Kč\s+acount_memo:\s+account_name: Account three\n'
+            r'1\s+[0-9T:.-]+\s+amount:\s+42.00 Kč\s+acount_memo:\s+account_name: Account one\n'
         )
 
     def test_exclude_accounts(self):
@@ -127,8 +130,9 @@ class TestListPayments(TestCase):
 
         self.assertRegex(
             out.getvalue(),
-            r'6\s+[0-9T:.-]+\s+amount:\s+Kč42.00\s+acount_memo: May the force be with you\s+account_name: Account six\n'
-            r'5\s+[0-9T:.-]+\s+amount:\s+Kč42.00\s+acount_memo:\s+account_name: Account five\n'
-            r'3\s+[0-9T:.-]+\s+amount:\s+Kč42.00\s+acount_memo:\s+account_name: Account three\n'
-            r'1\s+[0-9T:.-]+\s+amount:\s+Kč42.00\s+acount_memo:\s+account_name: Account one\n'
+            r'6\s+[0-9T:.-]+\s+amount:\s+42.00 Kč\s+acount_memo: May the force be with you\s+'
+            r'account_name: Account six\n'
+            r'5\s+[0-9T:.-]+\s+amount:\s+42.00 Kč\s+acount_memo:\s+account_name: Account five\n'
+            r'3\s+[0-9T:.-]+\s+amount:\s+42.00 Kč\s+acount_memo:\s+account_name: Account three\n'
+            r'1\s+[0-9T:.-]+\s+amount:\s+42.00 Kč\s+acount_memo:\s+account_name: Account one\n'
         )

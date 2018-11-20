@@ -1,4 +1,5 @@
 Django>=2.0
 django-money>=0.14.3
+py-moneyed>=0.8.0
 django-app-settings
 lxml
