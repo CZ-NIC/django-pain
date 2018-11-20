@@ -8,7 +8,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase
 from djmoney.money import Money
-from testfixtures import TempDirectory
+from testfixtures import LogCapture, TempDirectory
 
 from django_pain.models import BankAccount, BankPayment
 from django_pain.parsers import AbstractBankStatementParser
@@ -40,6 +40,10 @@ class TestImportPayments(TestCase):
         account = BankAccount(account_number='123456/7890', currency='CZK')
         account.save()
         self.account = account
+        self.log_handler = LogCapture('django_pain.management.commands.import_payments', propagate=False)
+
+    def tearDown(self):
+        self.log_handler.uninstall()
 
     def test_import_payments(self):
         """Test import_payments command."""
@@ -60,6 +64,14 @@ class TestImportPayments(TestCase):
             ('PAYMENT_2', self.account.pk, '098765/4321', date(2018, 5, 9), Decimal('370.00'), 'CZK', ''),
         ], transform=tuple, ordered=False)
 
+        self.log_handler.check(
+            ('django_pain.management.commands.import_payments', 'INFO', 'Command import_payments started.'),
+            ('django_pain.management.commands.import_payments', 'DEBUG', 'Importing payments from -.'),
+            ('django_pain.management.commands.import_payments', 'DEBUG', 'Parsing payments from -.'),
+            ('django_pain.management.commands.import_payments', 'DEBUG', 'Saving 2 payments from - to database.'),
+            ('django_pain.management.commands.import_payments', 'INFO', 'Command import_payments finished.'),
+        )
+
     def test_account_not_exist(self):
         """Test command while account does not exist."""
         with self.assertRaises(CommandError) as cm:
@@ -67,6 +79,12 @@ class TestImportPayments(TestCase):
                          '--parser=django_pain.tests.commands.test_import_payments.DummyExceptionParser', '--no-color')
 
         self.assertEqual(str(cm.exception), 'Bank account ACCOUNT does not exist.')
+        self.log_handler.check(
+            ('django_pain.management.commands.import_payments', 'INFO', 'Command import_payments started.'),
+            ('django_pain.management.commands.import_payments', 'DEBUG', 'Importing payments from -.'),
+            ('django_pain.management.commands.import_payments', 'DEBUG', 'Parsing payments from -.'),
+            ('django_pain.management.commands.import_payments', 'ERROR', 'Bank account ACCOUNT does not exist.'),
+        )
 
     def test_payment_already_exist(self):
         """Test command for payments that already exist in database."""
@@ -81,6 +99,23 @@ class TestImportPayments(TestCase):
             'Bank payment with this Payment ID and Destination account already exists.',
             'Bank payment with this Payment ID and Destination account already exists.',
         ])
+        self.log_handler.check(
+            ('django_pain.management.commands.import_payments', 'INFO', 'Command import_payments started.'),
+            ('django_pain.management.commands.import_payments', 'DEBUG', 'Importing payments from -.'),
+            ('django_pain.management.commands.import_payments', 'DEBUG', 'Parsing payments from -.'),
+            ('django_pain.management.commands.import_payments', 'DEBUG', 'Saving 2 payments from - to database.'),
+            ('django_pain.management.commands.import_payments', 'INFO', 'Command import_payments finished.'),
+
+            ('django_pain.management.commands.import_payments', 'INFO', 'Command import_payments started.'),
+            ('django_pain.management.commands.import_payments', 'DEBUG', 'Importing payments from -.'),
+            ('django_pain.management.commands.import_payments', 'DEBUG', 'Parsing payments from -.'),
+            ('django_pain.management.commands.import_payments', 'DEBUG', 'Saving 2 payments from - to database.'),
+            ('django_pain.management.commands.import_payments', 'WARNING',
+                'Bank payment with this Payment ID and Destination account already exists.'),
+            ('django_pain.management.commands.import_payments', 'WARNING',
+                'Bank payment with this Payment ID and Destination account already exists.'),
+            ('django_pain.management.commands.import_payments', 'INFO', 'Command import_payments finished.'),
+        )
 
     def test_quiet_command(self):
         """Test command call with verbosity set to 0."""
