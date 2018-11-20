@@ -1,5 +1,6 @@
 """Command for processing bank payments."""
 import fcntl
+import logging
 from copy import deepcopy
 
 from django.core.management.base import BaseCommand
@@ -8,6 +9,8 @@ from django.utils.dateparse import parse_datetime
 from django_pain.constants import PaymentState
 from django_pain.models import BankPayment
 from django_pain.settings import SETTINGS, get_processor_instance
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -28,12 +31,15 @@ class Command(BaseCommand):
 
         If can't acquire lock, display warning and terminate.
         """
+        LOGGER.info('Command process_payments started.')
         try:
             LOCK = open(SETTINGS.process_payments_lock_file, 'a')
             fcntl.flock(LOCK, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            LOGGER.info('Lock acquired.')
         except OSError:
             self.stderr.write(self.style.WARNING('Command process_payments is already running. Terminating.'))
             LOCK.close()
+            LOGGER.info('Command already running. Terminating.')
             return
 
         try:
@@ -44,11 +50,14 @@ class Command(BaseCommand):
                 payments = payments.filter(create_time__lte=options['time_to'])
             payments = payments.order_by('transaction_date')
 
+            LOGGER.info('Processing %s unprocessed payments.', payments.count())
+
             for processor_name in SETTINGS.processors:
                 processor = get_processor_instance(processor_name)
                 if not payments:
                     break
 
+                LOGGER.info('Processing payments with processor %s.', processor_name)
                 results = processor.process_payments(deepcopy(payment) for payment in payments)  # pragma: no cover
                 unprocessed_payments = []
 
@@ -62,9 +71,11 @@ class Command(BaseCommand):
 
                 payments = unprocessed_payments
 
+            LOGGER.info('Marking %s unprocessed payments as DEFERRED.', len(payments))
             for unprocessed_payment in payments:
                 unprocessed_payment.state = PaymentState.DEFERRED
                 unprocessed_payment.save()
         finally:
             fcntl.flock(LOCK, fcntl.LOCK_UN)
             LOCK.close()
+        LOGGER.info('Command process_payments finished.')

@@ -1,4 +1,5 @@
 """Command for importing payments from bank."""
+import logging
 import sys
 from typing import Iterable
 
@@ -9,6 +10,8 @@ from django.utils import module_loading
 
 from django_pain.models import BankAccount, BankPayment
 from django_pain.parsers.common import AbstractBankStatementParser
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -24,6 +27,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """Run command."""
         self.options = options
+        LOGGER.info('Command import_payments started.')
 
         parser_class = module_loading.import_string(options['parser'])
         if not issubclass(parser_class, AbstractBankStatementParser):
@@ -31,18 +35,23 @@ class Command(BaseCommand):
         parser = parser_class()  # type: AbstractBankStatementParser
 
         for input_file in options['input_file']:
+            LOGGER.debug('Importing payments from %s.', input_file)
             if input_file == '-':
                 handle = sys.stdin
             else:
                 handle = open(input_file)
 
             try:
-                payments = parser.parse(handle)
+                LOGGER.debug('Parsing payments from %s.', input_file)
+                payments = list(parser.parse(handle))
+                LOGGER.debug('Saving %s payments from %s to database.', len(payments), input_file)
                 self.save_payments(payments)
             except BankAccount.DoesNotExist as e:
+                LOGGER.error(str(e))
                 raise CommandError(e)
             finally:
                 handle.close()
+        LOGGER.info('Command import_payments finished.')
 
     def save_payments(self, payments: Iterable[BankPayment]) -> None:
         """Save payments and related objects to database."""
@@ -52,8 +61,9 @@ class Command(BaseCommand):
                     payment.full_clean()
                     payment.save()
             except ValidationError as error:
-                if self.options['verbosity'] >= 1:
-                    for message in error.messages:
+                for message in error.messages:
+                    LOGGER.warning(message)
+                    if self.options['verbosity'] >= 1:
                         self.stderr.write(self.style.WARNING(message))
             else:
                 if self.options['verbosity'] >= 2:
