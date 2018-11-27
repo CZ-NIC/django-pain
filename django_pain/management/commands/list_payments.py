@@ -1,7 +1,7 @@
 """Command for listing bank payments."""
 import argparse
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, no_translations
 
 from django_pain.models import BankPayment
 
@@ -22,6 +22,7 @@ def non_negative_integer(x: str) -> int:
     return value
 
 
+@no_translations
 class Command(BaseCommand):
     """List bank payments."""
 

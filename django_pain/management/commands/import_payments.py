@@ -4,7 +4,7 @@ import sys
 from typing import Iterable
 
 from django.core.exceptions import ValidationError
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand, CommandError, no_translations
 from django.db import transaction
 from django.utils import module_loading
 
@@ -24,6 +24,7 @@ class Command(BaseCommand):
         parser.add_argument('-p', '--parser', type=str, required=True, help='dotted path to parser class')
         parser.add_argument('input_file', nargs='*', type=str, default=['-'], help='input file with bank statement')
 
+    @no_translations
     def handle(self, *args, **options):
         """Run command."""
         self.options = options
