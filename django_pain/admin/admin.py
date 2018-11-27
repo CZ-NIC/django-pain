@@ -69,7 +69,7 @@ class BankPaymentAdmin(admin.ModelAdmin):
 
     list_display = (
         'detail_link', 'counter_account_number', 'variable_symbol', 'unbreakable_amount', 'short_transaction_date',
-        'client_link', 'description', 'advance_invoice_link', 'counter_account_name', 'account', 'state_styled'
+        'client_link', 'description', 'advance_invoice_link', 'counter_account_name', 'account'
     )
 
     list_filter = (
@@ -127,18 +127,10 @@ class BankPaymentAdmin(admin.ModelAdmin):
                 }),
             ]
 
-    def state_styled(self, obj):
-        """
-        Payment state enclosed in div with appropriate css class.
-
-        This is used for assigning different colors to payment rows based on payment state.
-        """
-        return format_html('<div class="state_{}">{}</div>', PaymentState(obj.state).value, obj.get_state_display())
-    state_styled.short_description = _('Payment state')  # type: ignore
-
     def detail_link(self, obj):
         """Object detail link."""
-        return format_html('<a href="{}"><img src="{}" class="open-detail-icon" /></a>',
+        return format_html('<div class="state_{}"></div><a href="{}"><img src="{}" class="open-detail-icon" /></a>',
+                           PaymentState(obj.state).value,
                            reverse('admin:django_pain_bankpayment_change', args=[obj.pk]),
                            static('django_pain/images/folder-open.svg'))
     detail_link.short_description = ''  # type: ignore

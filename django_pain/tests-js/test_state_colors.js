@@ -6,19 +6,16 @@ const TEST_PAGE = `
         <thead>...</thead>
         <tbody>
             <tr class="row1">
-                <th class="field-identifier"><a href="#">11112222</a></th>
+                <th class="field-detail_link"><div class="state_deferred"></div><a href="#">OPEN</a></th>
                 <td class="field-account_number">123456/0300</td>
-                <td class="field-state_styled"><div class="state_deferred">deferred</div></td>
             </tr>
             <tr class="row2">
-                <th class="field-identifier"><a href="#">22223333</a></th>
+                <th class="field-detail_link"><div class="state_processed"></div><a href="#">OPEN</a></th>
                 <td class="field-account_number">123456/0300</td>
-                <td class="field-state_styled"><div class="state_processed">processed</div></td>
             </tr>
             <tr class="row3">
-                <th class="field-identifier"><a href="#">33331111</a></th>
+                <th class="field-detail_link"><div class="state_imported"></div><a href="#">OPEN</a></th>
                 <td class="field-account_number">123456/0300</td>
-                <td class="field-state_styled">imported</td>
             </tr>
         </tbody>
     </table>`
