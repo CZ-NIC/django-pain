@@ -96,7 +96,9 @@ class TestImportPayments(TestCase):
                      '--no-color', stderr=err)
 
         self.assertEqual(err.getvalue().strip().split('\n'), [
+            'Payment ID PAYMENT_1 has not been saved due to the following errors:',
             'Bank payment with this Payment ID and Destination account already exists.',
+            'Payment ID PAYMENT_2 has not been saved due to the following errors:',
             'Bank payment with this Payment ID and Destination account already exists.',
         ])
         self.log_handler.check(
@@ -111,7 +113,11 @@ class TestImportPayments(TestCase):
             ('django_pain.management.commands.import_payments', 'DEBUG', 'Parsing payments from -.'),
             ('django_pain.management.commands.import_payments', 'DEBUG', 'Saving 2 payments from - to database.'),
             ('django_pain.management.commands.import_payments', 'WARNING',
+                'Payment ID PAYMENT_1 has not been saved due to the following errors:'),
+            ('django_pain.management.commands.import_payments', 'WARNING',
                 'Bank payment with this Payment ID and Destination account already exists.'),
+            ('django_pain.management.commands.import_payments', 'WARNING',
+                'Payment ID PAYMENT_2 has not been saved due to the following errors:'),
             ('django_pain.management.commands.import_payments', 'WARNING',
                 'Bank payment with this Payment ID and Destination account already exists.'),
             ('django_pain.management.commands.import_payments', 'INFO', 'Command import_payments finished.'),
