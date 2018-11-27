@@ -1,4 +1,4 @@
-Django>=2.0
+Django>=2.1
 django-money>=0.14.3
 py-moneyed>=0.8.0
 django-app-settings

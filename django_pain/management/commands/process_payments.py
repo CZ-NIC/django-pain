@@ -3,7 +3,7 @@ import fcntl
 import logging
 from copy import deepcopy
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, no_translations
 from django.utils.dateparse import parse_datetime
 
 from django_pain.constants import PaymentState
@@ -25,6 +25,7 @@ class Command(BaseCommand):
         parser.add_argument('-t', '--to', dest='time_to', type=parse_datetime,
                             help="ISO datetime before which payments should be processed")
 
+    @no_translations
     def handle(self, *args, **options):
         """
         Run command.
