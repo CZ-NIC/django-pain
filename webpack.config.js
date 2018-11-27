@@ -9,6 +9,7 @@ module.exports = {
             'babel-polyfill',
             path.resolve(__dirname, 'django_pain/static/django_pain/js/es6/processor_client_field.js'),
         ],
+        edit_confirmation: path.resolve(__dirname, 'django_pain/static/django_pain/js/es6/edit_confirmation.js'),
     },
     output: {
         filename: '[name].js',
