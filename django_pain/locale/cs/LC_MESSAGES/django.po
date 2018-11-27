@@ -54,6 +54,9 @@ msgstr "Číslo účtu protistrany"
 msgid "Create time"
 msgstr "Čas vytvoření"
 
+msgid "Date"
+msgstr "Datum"
+
 msgid "Description"
 msgstr "Poznámka"
 
