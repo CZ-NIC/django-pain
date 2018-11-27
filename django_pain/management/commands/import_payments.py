@@ -62,6 +62,11 @@ class Command(BaseCommand):
                     payment.full_clean()
                     payment.save()
             except ValidationError as error:
+                message = 'Payment ID %s has not been saved due to the following errors:'
+                LOGGER.warning(message, payment.identifier)
+                if self.options['verbosity'] >= 1:
+                    self.stderr.write(self.style.WARNING(message % payment.identifier))
+
                 for message in error.messages:
                     LOGGER.warning(message)
                     if self.options['verbosity'] >= 1:
