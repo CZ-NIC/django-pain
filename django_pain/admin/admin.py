@@ -5,6 +5,7 @@ from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.formats import date_format
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from django_pain.constants import PaymentState
@@ -67,7 +68,7 @@ class BankPaymentAdmin(admin.ModelAdmin):
     form = BankPaymentForm
 
     list_display = (
-        'detail_link', 'counter_account_number', 'variable_symbol', 'amount', 'short_transaction_date',
+        'detail_link', 'counter_account_number', 'variable_symbol', 'unbreakable_amount', 'short_transaction_date',
         'client_link', 'description', 'advance_invoice_link', 'counter_account_name', 'account', 'state_styled'
     )
 
@@ -141,6 +142,11 @@ class BankPaymentAdmin(admin.ModelAdmin):
                            reverse('admin:django_pain_bankpayment_change', args=[obj.pk]),
                            static('django_pain/images/folder-open.svg'))
     detail_link.short_description = ''  # type: ignore
+
+    def unbreakable_amount(self, obj):
+        """Amount with unbreakable spaces."""
+        return mark_safe(str(obj.amount).replace(' ', '&nbsp;'))
+    unbreakable_amount.short_description = _('Amount')  # type: ignore
 
     def short_transaction_date(self, obj):
         """Short transaction date."""
