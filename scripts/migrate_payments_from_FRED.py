@@ -27,15 +27,12 @@ def compose_account_number(account_number: str, bank_code: str) -> str:
 
 
 def process_payment(payment: BankPayment, data: dict) -> None:
-    """Create client and invoices, assign processor and objective."""
+    """Create client and invoices and assign processor."""
     if data['registrar_handle']:
         # Payment is from registrar.
         # We need to create client and invoices.
         payment.state = PaymentState.PROCESSED
         payment.processor = 'fred'
-        payment.objective = 'Registrar payment'
-        payment.objective_en = 'Registrar payment'
-        payment.objective_cs = 'Platba registrátora'
         payment.save()
 
         Client.objects.create(
@@ -60,9 +57,6 @@ def process_payment(payment: BankPayment, data: dict) -> None:
         # Payment is academy-related.
         payment.state = PaymentState.PROCESSED
         payment.processor = 'payments'
-        payment.objective = 'Related to academy'
-        payment.objective_en = 'Related to academy'
-        payment.objective_cs = 'Platba akademie'
         payment.save()
 
 
