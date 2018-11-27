@@ -77,7 +77,8 @@ class BankPaymentForm(forms.ModelForm):
             # At last, Select2 is loaded, which needs jQuery global to run correctly.
             'admin/js/vendor/jquery/jquery.js',
             'django_pain/js/processor_client_field.js',
-            'admin/js/vendor/select2/select2.full.min.js'
+            'admin/js/vendor/select2/select2.full.min.js',
+            'django_pain/js/edit_confirmation.js',
         )
         css = {
            'all': ('admin/css/vendor/select2/select2.min.css',)
