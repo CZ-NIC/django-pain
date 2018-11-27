@@ -1,6 +1,8 @@
 """Admin interface for django_pain."""
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
+from django.templatetags.static import static
+from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
@@ -64,7 +66,7 @@ class BankPaymentAdmin(admin.ModelAdmin):
     form = BankPaymentForm
 
     list_display = (
-        'identifier', 'counter_account_number', 'variable_symbol', 'amount', 'transaction_date',
+        'detail_link', 'counter_account_number', 'variable_symbol', 'amount', 'transaction_date',
         'client_link', 'description', 'advance_invoice_link', 'counter_account_name', 'account', 'state_styled'
     )
 
@@ -131,6 +133,13 @@ class BankPaymentAdmin(admin.ModelAdmin):
         """
         return format_html('<div class="state_{}">{}</div>', PaymentState(obj.state).value, obj.get_state_display())
     state_styled.short_description = _('Payment state')  # type: ignore
+
+    def detail_link(self, obj):
+        """Object detail link."""
+        return format_html('<a href="{}"><img src="{}" class="open-detail-icon" /></a>',
+                           reverse('admin:django_pain_bankpayment_change', args=[obj.pk]),
+                           static('django_pain/images/folder-open.svg'))
+    detail_link.short_description = ''  # type: ignore
 
     def advance_invoice_link(self, obj):
         """
