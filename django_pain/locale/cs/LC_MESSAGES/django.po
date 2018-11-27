@@ -40,7 +40,7 @@ msgid "Bank payments"
 msgstr "Platby"
 
 msgid "Client ID"
-msgstr "Identifikátor klienta"
+msgstr "ID klienta"
 
 msgid "Constant symbol"
 msgstr "Konstantní symbol"

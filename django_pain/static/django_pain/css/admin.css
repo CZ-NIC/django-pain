@@ -22,3 +22,7 @@ form div.form-row {
 img.open-detail-icon {
     width: 16px;
 }
+
+.field-client_link {
+    word-break: keep-all;
+}
