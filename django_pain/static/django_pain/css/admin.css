@@ -18,3 +18,11 @@ form div.form-row {
 .payment_processed {
     background: LightGreen;
 }
+
+img.open-detail-icon {
+    width: 16px;
+}
+
+.field-client_link {
+    word-break: keep-all;
+}

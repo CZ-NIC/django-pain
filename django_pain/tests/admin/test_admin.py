@@ -66,11 +66,11 @@ class TestBankPaymentAdmin(CacheResetMixin, TestCase):
         self.account = get_account(account_name='My Account')
         self.account.save()
         self.imported_payment = get_payment(
-            identifier='My Payment 1', account=self.account, state=PaymentState.IMPORTED
+            identifier='My Payment 1', account=self.account, state=PaymentState.IMPORTED, variable_symbol='VAR1',
         )
         self.imported_payment.save()
         self.processed_payment = get_payment(
-            identifier='My Payment 2', account=self.account, state=PaymentState.PROCESSED,
+            identifier='My Payment 2', account=self.account, state=PaymentState.PROCESSED, variable_symbol='VAR2',
             processor='dummy'
         )
         self.processed_payment.save()
@@ -84,8 +84,8 @@ class TestBankPaymentAdmin(CacheResetMixin, TestCase):
         """Test GET request on model list."""
         self.client.force_login(self.admin)
         response = self.client.get(reverse('admin:django_pain_bankpayment_changelist'))
-        self.assertContains(response, 'My Payment 1')
-        self.assertContains(response, 'My Payment 2')
+        self.assertContains(response, 'VAR1')
+        self.assertContains(response, 'VAR2')
         self.assertContains(response, 'INV111222')
 
     def test_get_detail(self):

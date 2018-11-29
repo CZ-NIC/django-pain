@@ -1,7 +1,7 @@
 export function color_rows_by_state() {
     const rows = document.querySelectorAll('#result_list tr')
     rows.forEach(function(row) {
-        const stateField = row.querySelector('td.field-state_styled div')
+        const stateField = row.querySelector('th.field-detail_link div')
         if (stateField) {
             const state = stateField.className
             if (state === 'state_deferred') {

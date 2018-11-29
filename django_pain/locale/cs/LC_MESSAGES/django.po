@@ -40,7 +40,7 @@ msgid "Bank payments"
 msgstr "Platby"
 
 msgid "Client ID"
-msgstr "Identifikátor klienta"
+msgstr "ID klienta"
 
 msgid "Constant symbol"
 msgstr "Konstantní symbol"
@@ -53,6 +53,9 @@ msgstr "Číslo účtu protistrany"
 
 msgid "Create time"
 msgstr "Čas vytvoření"
+
+msgid "Date"
+msgstr "Datum"
 
 msgid "Description"
 msgstr "Poznámka"
