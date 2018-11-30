@@ -7,9 +7,9 @@ INSTALLED_APPS = [
     'django.contrib.auth',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.admin',
     'djmoney',
     'django_pain.apps.DjangoPainConfig',
+    'django_pain.apps.DjangoPainAdminConfig',
 ]
 
 MIDDLEWARE = [

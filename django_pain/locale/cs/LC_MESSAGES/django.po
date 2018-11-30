@@ -94,6 +94,9 @@ msgstr "Faktury související s platbou"
 msgid "Objective"
 msgstr "Účel"
 
+msgid "PAIN Administration"
+msgstr "Administrace PAIN"
+
 msgid "Password"
 msgstr "Heslo"
 
@@ -102,6 +105,9 @@ msgstr "Identifikátor platby"
 
 msgid "Payment state"
 msgstr "Stav platby"
+
+msgid "Payments and Invoices"
+msgstr "Platby a faktury"
 
 msgid "Processor"
 msgstr "Zpracovatel"
