@@ -4,15 +4,16 @@
 
 Django application for processing bank payments and invoices.
 
-Bank statements are passed through parser and imported to database.
+Bank statements are passed through a parser and imported to a database.
 So far, there is only one parser available, ``TransprocXMLParser``,
-used to process bank statements downloaded and processed by `fred-transproc`_.
+used to process bank statements collected and transformed by `fred-transproc`_.
 Parsers may also be implemented as ``django-pain`` plugins.
 
 Imported payments are regularly processed by payment processors.
-Processors are usually implemented as ``django-pain`` plugins, implementing payment processor API.
+The processors are usually implemented as ``django-pain`` plugins, implementing
+payment processor interface.
 
-Bank accounts and payments may be accessed through django admin site interface.
+Bank accounts and payments may be managed through a Django admin site.
 
 .. _fred-transproc: https://github.com/CZ-NIC/fred-transproc
 
@@ -22,8 +23,8 @@ Installation
 ------------
 
 You need to add ``django_pain.apps.DjangoPainConfig`` to your ``INSTALLED_APPS``.
-In order for user interface to work, you also need to add django admin site.
-See `django docs`__ for detailed description.
+In order for user interface to work, you also need to add the Django admin site.
+See `Django docs`__ for detailed description.
 
 __ https://docs.djangoproject.com/en/dev/ref/contrib/admin/
 
@@ -38,16 +39,18 @@ You also need to include ``django_pain`` and ``admin`` urls into your project ``
         ...
     ]
 
-After installing ``django-pain`` package and configuring your django project, you need to generate migrations.
+After installing the ``django-pain`` package and configuring your Django project, you need to generate migrations.
 Call ``django-admin makemigrations``.
-These migrations depend on ``LANGUAGES`` and ``CURRENCIES`` settings, so think carefully how you set them.
+These migrations depend on ``LANGUAGES`` and ``CURRENCIES`` settings_, so think carefully how you set them.
 If you decide to change these settings in the future, you need to generate the migrations again.
 
-Also, JavaScript files use new ECMAScript 2017 notation and needs to be transpiled to work in most of current browsers.
+Also, JavaScript files use the new ECMAScript 2017 notation and need to be transpiled
+in order to work in most of current browsers.
 Assuming you have ``Node.js`` and ``npm`` installed,
-you first need to install necessary packages by calling ``npm install`` from the command line.
-After that you can transpile the JavaScript code by calling ``npm run build``.
+you need to install necessary packages first by calling ``npm install`` from the command line.
+After that, you can transpile the JavaScript code by calling ``npm run build``.
 
+.. _settings: `Other related settings`_
 
 ------------
 Requirements
@@ -76,7 +79,7 @@ Provides payment processor for FRED.
 
 https://gitlab.office.nic.cz/ginger/payments-pain
 
-Provides payment processor for Payments (and therefore the Academy).
+Provides payment processor for Ginger Payments (and therefore the Academy).
 
 
 --------
@@ -88,8 +91,8 @@ In order for ``django-pain`` to work, you need to define some settings in your `
 ``PAIN_PROCESSORS``
 ===================
 
-Required setting containing dictionary of payment processor names and dotted paths to payment processors classes.
-The payments are offered to different payment processors in that order.
+A required setting containing a dictionary of payment processor names and dotted paths to payment processors classes.
+The payments are offered to the payment processors in that order.
 
 Example configuration:
 
@@ -102,27 +105,26 @@ Example configuration:
     }
 
 You should not change processor names unless you have a very good reason.
-In that case, you also need to take care of changing processor names saved in database.
+In that case, you also need to take care of changing processor names saved in the database.
 
 ``PAIN_PROCESS_PAYMENTS_LOCK_FILE``
 ===================================
 
-Path to lock file for ``process_payments`` command.
-Default value is ``/tmp/pain_process_payments.lock``.
-
+Path to the lock file for the ``process_payments`` command.
+The default value is ``/tmp/pain_process_payments.lock``.
 
 ----------------------
 Other related settings
 ----------------------
 
-Plugins usually have settings on their own – see the docs.
-Apart from that, there are several settings that doesn't have to be set, but it's really advisable to do so.
+Plugins usually have settings of their own, see the plugin docs.
+Apart from that, there are several settings that don't have to be set, but it's really advisable to do so.
 
 ``CURRENCIES``
 ==============
 
-List of currency codes used in the application.
-Default is list of all available currencies (which is pretty long).
+A list of currency codes used in the application.
+The default is the list of all available currencies (which is pretty long).
 
 Example configuration:
 
@@ -137,9 +139,9 @@ This setting comes from django-money_ app. Changing this setting requires genera
 ``DEFAULT_CURRENCY``
 ====================
 
-Currency code of default currency.
-It should be one of currencies defined in ``CURRENCIES`` setting.
-Default is ``XYZ``.
+The currency code of the default currency.
+It should be one of the currencies defined in the ``CURRENCIES`` setting.
+The default is ``XYZ``.
 
 Example configuration:
 
@@ -152,8 +154,8 @@ This setting comes from django-money_ app. Changing this setting requires genera
 ``LANGUAGES``
 =============
 
-See `django docs`__.
-It's advisable to set this only to languages you intend to support.
+See `Django docs`__.
+It is advisable to set this only to languages you intend to support.
 ``django-pain`` natively comes with English and Czech.
 
 __ https://docs.djangoproject.com/en/dev/ref/settings/#languages
@@ -171,9 +173,9 @@ Commands
     import_payments --parser PARSER [input file [input file ...]]
 
 Import payments from the bank.
-Bank statement should be provided on standard input or in a file as positional parameter.
+A bank statement should be provided on the standard input or in a file as a positional parameter.
 
-Mandatory argument ``PARSER`` must be dotted path to payment parser class such as
+The mandatory argument ``PARSER`` must be a dotted path to a payment-parser class such as
 ``django_pain.parsers.transproc.TransprocXMLParser``.
 
 ``list_payments``
@@ -187,13 +189,13 @@ Mandatory argument ``PARSER`` must be dotted path to payment parser class such a
 
 List bank payments.
 
-Options ``--exclude-accounts`` and ``--include-accounts`` are mutually exclusive
-and expect comma separated list of bank account numbers.
+The options ``--exclude-accounts`` and ``--include-accounts`` are mutually exclusive
+and expect a comma-separated list of bank account numbers.
 
 Option ``--state`` can be either ``imported``, ``processed``, ``deferred`` or ``exported``.
 
-If ``--limit LIMIT`` is set, command will list at most ``LIMIT`` payments.
-If there any not-listed payments, command will announce their count.
+If ``--limit LIMIT`` is set, the command will list at most ``LIMIT`` payments.
+If there are any non-listed payments, the command will announce their count.
 
 ``process_payments``
 ====================
@@ -202,21 +204,21 @@ If there any not-listed payments, command will announce their count.
 
     process_payments [--from TIME_FROM] [--to TIME_TO]
 
-Process unprocessed payments by predefined payment processors.
+Process unprocessed payments with predefined payment processors.
 
-Command ``process_payments`` takes all payments in state ``imported`` or ``deferred``
-and offers them to individual payment processors.
-If any processor accepts the payment, it's state is changed do ``processed``.
-Otherwise, it's state is changed to ``deferred``.
+The command takes all payments in the states ``imported`` or ``deferred``
+and offers them to the individual payment processors.
+If any processor accepts the payment, then payment's state is switched to ``processed``.
+Otherwise, its state is switched to ``deferred``.
 
-Options ``--from`` and ``--to`` limit payments to process by their creation date.
-They expect ISO formatted datetime value.
+The options ``--from`` and ``--to`` limit payments to be processed by their creation date.
+They expect an ISO-formatted datetime value.
 
 
 ---------
  Changes
 ---------
 
-See changelog_.
+See CHANGELOG_.
 
-.. _changelog: CHANGELOG.rst
+.. _CHANGELOG: CHANGELOG.rst
