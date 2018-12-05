@@ -67,10 +67,12 @@ class Command(BaseCommand):
                 if self.options['verbosity'] >= 1:
                     self.stderr.write(self.style.WARNING(message % payment.identifier))
 
-                for message in error.messages:
-                    LOGGER.warning(message)
-                    if self.options['verbosity'] >= 1:
-                        self.stderr.write(self.style.WARNING(message))
+                for field in error.message_dict:
+                    prefix = '{}: '.format(field) if field != '__all__' else ''
+                    for message in error.message_dict[field]:
+                        LOGGER.warning('%s%s', prefix, message)
+                        if self.options['verbosity'] >= 1:
+                            self.stderr.write(self.style.WARNING('%s%s' % (prefix, message)))
             else:
                 if self.options['verbosity'] >= 2:
                     self.stdout.write(self.style.SUCCESS('Payment ID {} has been imported.'.format(payment.identifier)))
