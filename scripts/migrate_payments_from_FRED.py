@@ -82,12 +82,14 @@ for line in sys.stdin:
     if data['code'] != 1 or data['status'] != 1:
         # Unfinished payments or any other wierd state payments.
         # We don't want these payments in the system.
+        logging.info('Payment %s has code=%s and status=%s. Skipping.', data['uuid'], data['code'], data['status'])
         stats['skipped'] += 1
         continue
 
-    if (data['type'] not in [1, 5]) and (not data['advance_invoice']):
+    if (data['type'] not in [1, 5]) and (not data['registrar_handle']):
         # Payment is of some other type, like transfer between our accounts.
         # We don't want these payments in the system.
+        logging.info('Payment %s has type=%s and no registrar_handle assigned. Skipping.', data['uuid'], data['type'])
         stats['skipped'] += 1
         continue
 
