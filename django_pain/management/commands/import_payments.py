@@ -6,6 +6,7 @@ from typing import Iterable
 from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand, CommandError, no_translations
 from django.db import transaction
+from django.db.utils import IntegrityError
 from django.utils import module_loading
 
 from django_pain.models import BankAccount, BankPayment
@@ -73,6 +74,11 @@ class Command(BaseCommand):
                         LOGGER.warning('%s%s', prefix, message)
                         if self.options['verbosity'] >= 1:
                             self.stderr.write(self.style.WARNING('%s%s' % (prefix, message)))
+            except IntegrityError as error:
+                message = 'Payment ID %s has not been saved due to the following error: %s'
+                LOGGER.warning(message, payment.identifier, str(error))
+                if self.options['verbosity'] >= 1:
+                    self.stderr.write(self.style.WARNING(message % (payment.identifier, str(error))))
             else:
                 if self.options['verbosity'] >= 2:
                     self.stdout.write(self.style.SUCCESS('Payment ID {} has been imported.'.format(payment.identifier)))
