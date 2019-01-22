@@ -2,7 +2,7 @@
 from datetime import datetime
 from io import BytesIO
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from djmoney.money import Money
 
 from django_pain.models import BankAccount
@@ -51,6 +51,31 @@ class TestTransprocXMLParser(TestCase):
             </statement>
         </statements>'''
 
+    ZERO_IN_VARSYM_XML = b'''<?xml version="1.0" encoding="UTF-8"?>
+        <statements>
+            <statement>
+                <account_number>123456789</account_number>
+                <account_bank_code>0123</account_bank_code>
+                <date>2012-12-31</date>
+                <items>
+                    <item>
+                        <ident>333</ident>
+                        <account_number>123456777</account_number>
+                        <account_bank_code>0123</account_bank_code>
+                        <var_symbol>00700</var_symbol>
+                        <const_symbol></const_symbol>
+                        <spec_symbol></spec_symbol>
+                        <price>1000.00</price>
+                        <date>2012-12-20</date>
+                        <name>Company Inc.</name>
+                        <memo></memo>
+                        <status>1</status>
+                        <code>1</code>
+                    </item>
+                </items>
+            </statement>
+        </statements>'''
+
     def test_parse(self):
         account = BankAccount(account_number='123456789/0123', currency='CZK')
         account.save()
@@ -74,6 +99,14 @@ class TestTransprocXMLParser(TestCase):
 
         for field in payment:
             self.assertEqual(getattr(payments[0], field), payment[field])
+
+    @override_settings(PAIN_TRIM_VARSYM=True)
+    def test_trim_varsym(self):
+        account = BankAccount(account_number='123456789/0123', currency='CZK')
+        account.save()
+        parser = TransprocXMLParser()
+        payments = list(parser.parse(BytesIO(self.ZERO_IN_VARSYM_XML)))
+        self.assertEqual(payments[0].variable_symbol, '700')
 
     def test_parse_account_not_exists(self):
         """Parser should raise an exception if bank account does not exist."""

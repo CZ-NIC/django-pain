@@ -14,6 +14,7 @@ from lxml import etree
 
 from django_pain.models import BankAccount, BankPayment
 from django_pain.parsers.czechslovak import CzechSlovakBankStatementParser
+from django_pain.settings import SETTINGS
 
 
 def none_to_str(value: str) -> str:
@@ -41,6 +42,11 @@ class TransprocXMLParser(CzechSlovakBankStatementParser):
 
             if attrs.get('status', '1') == '1' and attrs.get('code', '1') == '1' and attrs.get('type', '1') == '1':
                 # Only import payments with code==1 (normal transaction) and status==1 (realized transfer)
+                if SETTINGS.trim_varsym:
+                    variable_symbol = none_to_str(attrs['var_symbol']).lstrip('0')
+                else:
+                    variable_symbol = none_to_str(attrs['var_symbol'])
+
                 payment = BankPayment(
                     identifier=attrs['ident'],
                     account=account,
@@ -51,7 +57,7 @@ class TransprocXMLParser(CzechSlovakBankStatementParser):
                     amount=Money(attrs['price'], account.currency),
                     description=none_to_str(attrs['memo']),
                     constant_symbol=none_to_str(attrs['const_symbol']),
-                    variable_symbol=none_to_str(attrs['var_symbol']),
+                    variable_symbol=variable_symbol,
                     specific_symbol=none_to_str(attrs['spec_symbol']),
                 )
 

@@ -39,6 +39,7 @@ class PainSettings(appsettings.AppSettings):
 
     processors = ProcessorsSetting(required=True)
     process_payments_lock_file = appsettings.StringSetting(default='/tmp/pain_process_payments.lock')
+    trim_varsym = appsettings.BooleanSetting(default=False)
 
     class Meta:
         """Meta class."""
