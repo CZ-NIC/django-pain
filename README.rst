@@ -113,6 +113,13 @@ In that case, you also need to take care of changing processor names saved in th
 Path to the lock file for the ``process_payments`` command.
 The default value is ``/tmp/pain_process_payments.lock``.
 
+``PAIN_TRIM_VARSYM``
+====================
+
+Boolean setting.
+If ``True``, bank statement parser removes leading zeros from the variable symbol.
+Default is ``False``.
+
 ----------------------
 Other related settings
 ----------------------
