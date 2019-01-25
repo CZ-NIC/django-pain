@@ -125,7 +125,7 @@ msgid "Variable symbol"
 msgstr "Variabilní symbol"
 
 msgid "account"
-msgstr "standardní"
+msgstr "vyúčtovací"
 
 msgid "advance"
 msgstr "zálohová"
