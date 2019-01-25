@@ -5,8 +5,8 @@
 ------------------
 1.0.1 (2019-01-22)
 ------------------
-
 * Added ``PAIN_TRIM_VARSYM`` setting.
+* Fix czech translation of account invoice
 
 ------------------
 0.3.0 (2018-07-24)
