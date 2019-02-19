@@ -1,11 +1,30 @@
 """Base payment processor module."""
 from abc import ABC, abstractmethod
-from collections import namedtuple
 from typing import Iterable
 
+from django_pain.constants import PaymentProcessingError
 from django_pain.models import BankPayment
 
-ProcessPaymentResult = namedtuple('ProcessPaymentResult', ['result'])
+
+class ProcessPaymentResult(object):
+    """Result of payment processing."""
+
+    def __init__(self, result: bool, error: PaymentProcessingError = None) -> None:
+        """
+        Initialize the result.
+
+        Args:
+            result: True if payment was successfully processed. False otherwise.
+            error: Optional payment processing error code.
+        """
+        self.result = result
+        self.error = error
+
+    def __eq__(self, other) -> bool:
+        """Compare processing results by their value."""
+        if isinstance(other, ProcessPaymentResult):
+            return self.result == other.result and self.error == other.error
+        return False
 
 
 class AbstractPaymentProcessor(ABC):
