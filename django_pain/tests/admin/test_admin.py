@@ -6,7 +6,7 @@ from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 
 from django_pain.admin import BankPaymentAdmin
-from django_pain.constants import InvoiceType, PaymentState
+from django_pain.constants import InvoiceType, PaymentProcessingError, PaymentState
 from django_pain.models import BankPayment
 from django_pain.tests.mixins import CacheResetMixin
 from django_pain.tests.utils import DummyPaymentProcessor, get_account, get_client, get_invoice, get_payment
@@ -72,7 +72,7 @@ class TestBankPaymentAdmin(CacheResetMixin, TestCase):
         self.imported_payment.save()
         self.processed_payment = get_payment(
             identifier='My Payment 2', account=self.account, state=PaymentState.PROCESSED, variable_symbol='VAR2',
-            processor='dummy'
+            processor='dummy', processing_error=PaymentProcessingError.DUPLICITY,
         )
         self.processed_payment.save()
         self.invoice = get_invoice(number='INV111222')
@@ -96,6 +96,7 @@ class TestBankPaymentAdmin(CacheResetMixin, TestCase):
         self.assertContains(response, 'My Payment 2')
         self.assertContains(response, 'INV111222')
         self.assertContains(response, 'HANDLE')
+        self.assertContains(response, 'Duplicate payment')
 
     def test_get_fieldsets(self):
         """Test get_fieldsets method."""
@@ -104,14 +105,40 @@ class TestBankPaymentAdmin(CacheResetMixin, TestCase):
         request.user = self.admin
 
         fieldsets = modeladmin.get_fieldsets(request)
-        self.assertEqual(len(fieldsets), 1)
+        self.assertEqual(fieldsets, [
+            (None, {
+                'fields': (
+                    'counter_account_number', 'objective', 'client_link',
+                    'transaction_date', 'constant_symbol', 'variable_symbol', 'specific_symbol', 'amount',
+                    'description', 'counter_account_name', 'create_time', 'account', 'state'
+                )
+            }),
+        ])
 
         fieldsets = modeladmin.get_fieldsets(request, self.imported_payment)
-        self.assertEqual(len(fieldsets), 2)
-        self.assertEqual(fieldsets[1][1]['fields'], ('processor', 'client_id'))
+        self.assertEqual(fieldsets, [
+            (None, {
+                'fields': (
+                    'counter_account_number',
+                    'transaction_date', 'constant_symbol', 'variable_symbol', 'specific_symbol', 'amount',
+                    'description', 'counter_account_name', 'create_time', 'account', 'state',
+                )
+            }),
+            ('Assign payment', {
+                'fields': ('processor', 'client_id')
+            }),
+        ])
 
         fieldsets = modeladmin.get_fieldsets(request, self.processed_payment)
-        self.assertEqual(len(fieldsets), 1)
+        self.assertEqual(fieldsets, [
+            (None, {
+                'fields': (
+                    'counter_account_number', 'objective', 'client_link',
+                    'transaction_date', 'constant_symbol', 'variable_symbol', 'specific_symbol', 'amount',
+                    'description', 'counter_account_name', 'create_time', 'account', ('state', 'processing_error'),
+                )
+            }),
+        ])
 
 
 @override_settings(

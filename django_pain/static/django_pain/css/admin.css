@@ -9,6 +9,11 @@
 
 form div.form-row {
     padding: 5px 10px;
+    display: flex;
+}
+
+form div.form-row .fieldBox {
+    flex: 1;
 }
 
 .payment_deferred {
