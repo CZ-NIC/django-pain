@@ -68,7 +68,7 @@ css:
     stage: analysis
     before_script:
         - npm install
-        - npm list
+        - npm list || true
     script:
         - npx stylelint django_pain/**/*.css
 
@@ -78,7 +78,7 @@ eslint:
     stage: analysis
     before_script:
         - npm install -g eslint
-        - npm list
+        - npm list || true
     script:
         - npm run check
 
@@ -88,7 +88,7 @@ test-js:
     stage: test
     before_script:
         - npm install
-        - npm list
+        - npm list || true
     script:
         - npm run test-coverage
         - npx nyc report --reporter json-summary --report-dir coverage-js
