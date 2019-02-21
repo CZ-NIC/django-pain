@@ -2,6 +2,11 @@
  Changelog
 ===========
 
+----------
+Unreleased
+----------
+* Add separate permissions for manual assignment to individual payment processors
+
 ------------------
 1.0.1 (2019-01-22)
 ------------------

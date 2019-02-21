@@ -27,7 +27,7 @@ class BankAccountForm(forms.ModelForm):
 class BankPaymentForm(forms.ModelForm):
     """Admin form for BankPayment model."""
 
-    processor = forms.ChoiceField(choices=BankPayment.objective_choices, required=False)
+    processor = forms.ChoiceField(choices=(), required=False)
     client_id = forms.CharField(label=_('Client ID'), required=False)
 
     def __init__(self, *args, **kwargs):

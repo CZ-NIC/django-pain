@@ -3,6 +3,7 @@ from django.test import TestCase, override_settings
 
 from django_pain.admin.forms import BankPaymentForm, UserCreationForm
 from django_pain.constants import PaymentState
+from django_pain.models import BankPayment
 from django_pain.processors import ProcessPaymentResult
 from django_pain.tests.mixins import CacheResetMixin
 from django_pain.tests.utils import DummyPaymentProcessor, get_account, get_payment
@@ -36,9 +37,14 @@ class TestBankPaymentForm(CacheResetMixin, TestCase):
         self.payment = get_payment(account=self.account, state=PaymentState.IMPORTED)
         self.payment.save()
 
+    def _get_form(self, *args, **kwargs):
+        form = BankPaymentForm(*args, **kwargs)
+        form.fields['processor'].choices = BankPayment.objective_choices()
+        return form
+
     def test_disabled_fields(self):
         """Test disabled fields."""
-        form = BankPaymentForm()
+        form = self._get_form()
         for field in form.fields:
             if field in ('processor', 'client_id'):
                 self.assertFalse(form.fields[field].disabled)
@@ -47,7 +53,7 @@ class TestBankPaymentForm(CacheResetMixin, TestCase):
 
     def test_clean_success(self):
         """Test clean method success."""
-        form = BankPaymentForm(data={
+        form = self._get_form(data={
             'processor': 'success',
             'client_id': '',
         }, instance=self.payment)
@@ -55,7 +61,7 @@ class TestBankPaymentForm(CacheResetMixin, TestCase):
 
     def test_clean_failure(self):
         """Test clean method failure."""
-        form = BankPaymentForm(data={
+        form = self._get_form(data={
             'processor': 'failure',
             'client_id': '',
         }, instance=self.payment)
@@ -64,7 +70,7 @@ class TestBankPaymentForm(CacheResetMixin, TestCase):
 
     def test_save_processed(self):
         """Test manual assignment save method."""
-        form = BankPaymentForm(data={
+        form = self._get_form(data={
             'processor': 'success',
             'client_id': '',
         }, instance=self.payment)
@@ -75,7 +81,7 @@ class TestBankPaymentForm(CacheResetMixin, TestCase):
 
     def test_save_blank(self):
         """Test manual assignment of blank processor."""
-        form = BankPaymentForm(data={
+        form = self._get_form(data={
             'processor': '',
             'client_id': '',
         }, instance=self.payment)

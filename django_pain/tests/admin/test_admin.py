@@ -1,6 +1,7 @@
 """Test admin views."""
 from django.contrib import admin
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Permission, User
+from django.contrib.contenttypes.models import ContentType
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 
@@ -111,6 +112,44 @@ class TestBankPaymentAdmin(CacheResetMixin, TestCase):
 
         fieldsets = modeladmin.get_fieldsets(request, self.processed_payment)
         self.assertEqual(len(fieldsets), 1)
+
+
+@override_settings(
+    ROOT_URLCONF='django_pain.tests.urls',
+    PAIN_PROCESSORS={'dummy': 'django_pain.tests.utils.DummyPaymentProcessor'})
+class TestBankPaymentAdminNormalUser(CacheResetMixin, TestCase):
+    """Test BankAccountAdmin as normal user."""
+
+    def setUp(self):
+        super().setUp()
+        self.user = User.objects.create_user('admin', 'admin@example.com', 'password', is_staff=True)
+        self.request_factory = RequestFactory()
+
+    def test_get_form_no_perms(self):
+        """Test get_form method without any permissions."""
+        modeladmin = BankPaymentAdmin(BankPayment, admin.site)
+        request = self.request_factory.get('/', {})
+        request.user = self.user
+
+        form = modeladmin.get_form(request)
+        form_instance = form()
+        self.assertEqual(form_instance.fields['processor'].choices, [('', '---------')])
+
+    def test_get_form_some_perms(self):
+        """Test get_form method with some permissions."""
+        modeladmin = BankPaymentAdmin(BankPayment, admin.site)
+        request = self.request_factory.get('/', {})
+        request.user = self.user
+        content_type = ContentType.objects.get_for_model(BankPayment)
+        perm = Permission.objects.create(codename='can_manually_assign_to_dummy', content_type=content_type)
+        request.user.user_permissions.add(perm)
+
+        form = modeladmin.get_form(request)
+        form_instance = form()
+        self.assertEqual(
+            form_instance.fields['processor'].choices,
+            [('', '---------'), ('dummy', 'Dummy objective')]
+        )
 
 
 @override_settings(PAIN_PROCESSORS={
