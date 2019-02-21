@@ -1,4 +1,6 @@
 """Admin interface for django_pain."""
+from copy import deepcopy
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.templatetags.static import static
@@ -9,7 +11,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from django_pain.constants import PaymentState
-from django_pain.models import Invoice
+from django_pain.models import BankPayment, Invoice
 from django_pain.settings import get_processor_instance
 
 from .filters import PaymentStateListFilter
@@ -97,6 +99,19 @@ class BankPaymentAdmin(admin.ModelAdmin):
         css = {
             'all': ('django_pain/css/admin.css',),
         }
+
+    def get_form(self, request, obj=None, **kwargs):
+        """Filter allowed processors for manual assignment of payments."""
+        form = super().get_form(request, obj, **kwargs)
+        allowed_choices = []
+        for processor, label in BankPayment.objective_choices():
+            if not processor or request.user.has_perm('django_pain.can_manually_assign_to_{}'.format(processor)):
+                allowed_choices.append((processor, label))
+
+        processor_field = deepcopy(form.base_fields['processor'])
+        processor_field.choices = allowed_choices
+        form.base_fields['processor'] = processor_field
+        return form
 
     def get_fieldsets(self, request, obj=None):
         """
