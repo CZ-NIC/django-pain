@@ -107,6 +107,9 @@ Example configuration:
 You should not change processor names unless you have a very good reason.
 In that case, you also need to take care of changing processor names saved in the database.
 
+When you change this setting (including the initial setup), you have to run ``django-admin migrate``.
+Permissions for manual assignment to individual payment processors are created in this step.
+
 ``PAIN_PROCESS_PAYMENTS_LOCK_FILE``
 ===================================
 
