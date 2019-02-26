@@ -77,7 +77,7 @@ eslint:
     <<: *nodejs-xenial
     stage: analysis
     before_script:
-        - npm install -g eslint
+        - npm install -g eslint eslint-plugin-jest
         - npm list || true
     script:
         - npm run check
@@ -90,8 +90,7 @@ test-js:
         - npm install
         - npm list || true
     script:
-        - npm run test-coverage
-        - npx nyc report --reporter json-summary --report-dir coverage-js
+        - npm run test
     artifacts:
         expire_in: 1d
         paths:
@@ -104,5 +103,4 @@ coverage-report-js:
         - git clone git@gitlab.office.nic.cz:jmusilek/report-json-coverage.git .rjc
     stage: coverage
     script:
-        - python3 .rjc/report_coverage.py coverage-js/coverage-summary.json --regex '^django_pain/tests-js/' --fail 100
-        - python3 .rjc/report_coverage.py coverage-js/coverage-summary.json --regex '^django_pain/static/django_pain/js/'
+        - python3 .rjc/report_coverage.py coverage-js/coverage-summary.json

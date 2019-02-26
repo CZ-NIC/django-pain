@@ -1,4 +1,3 @@
-import test from 'ava'
 import { color_rows_by_state } from '../static/django_pain/js/es6/state_colors'
 
 const TEST_PAGE = `
@@ -20,19 +19,21 @@ const TEST_PAGE = `
         </tbody>
     </table>`
 
-test('Color rows by state', t => {
-    document.body.innerHTML = TEST_PAGE
-    color_rows_by_state()
+describe('state_colors', () => {
+    it('Color rows by state', () => {
+        document.body.innerHTML = TEST_PAGE
+        color_rows_by_state()
 
-    let row = document.querySelector('tr.row1')
-    t.true(row.classList.contains('payment_deferred'))
-    t.false(row.classList.contains('payment_processed'))
+        let row = document.querySelector('tr.row1')
+        expect(row.classList.contains('payment_deferred')).toBe(true)
+        expect(row.classList.contains('payment_processed')).toBe(false)
 
-    row = document.querySelector('tr.row2')
-    t.false(row.classList.contains('payment_deferred'))
-    t.true(row.classList.contains('payment_processed'))
+        row = document.querySelector('tr.row2')
+        expect(row.classList.contains('payment_deferred')).toBe(false)
+        expect(row.classList.contains('payment_processed')).toBe(true)
 
-    row = document.querySelector('tr.row3')
-    t.false(row.classList.contains('payment_deferred'))
-    t.false(row.classList.contains('payment_processed'))
+        row = document.querySelector('tr.row3')
+        expect(row.classList.contains('payment_deferred')).toBe(false)
+        expect(row.classList.contains('payment_processed')).toBe(false)
+    })
 })
