@@ -8,25 +8,27 @@
     "check": "eslint django_pain/tests-js django_pain/static/django_pain/js/es6",
     "build": "webpack",
     "watch": "webpack-dev-server --watch",
-    "test": "ava",
-    "test-coverage": "nyc ava"
+    "test": "jest"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.3.4",
     "ajv": "^5.0.0",
-    "ava": "^0.23.0",
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.0",
+    "babel-jest": "^24",
     "babel-loader": "^7.1.2",
     "babel-plugin-transform-regenerator": "^6.26.0",
     "babel-polyfill": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
     "babel-register": "^6.26.0",
-    "browser-env": "^3.2.4",
     "eslint": ">=4.12.0",
-    "fetch-mock": "^6.5.2",
+    "eslint-plugin-jest": "^22.3.0",
+    "fetch-mock": "^7",
+    "flush-promises": "^1.0.2",
+    "isomorphic-fetch": "^2.2.1",
+    "jest": "^24",
+    "jest-environment-jsdom-global": "^1.1.0",
     "mock-location": "^0.2.0",
     "node-fetch": "^2.2.0",
-    "nyc": "^12.0.2",
     "postcss-sass": "^0.3.2",
     "postcss-syntax": ">=0.28.0",
     "stylelint": "^9.2.1",
@@ -38,31 +40,26 @@
   },
   "babel": {
     "presets": [
-      "env"
-    ],
-    "ignore": "django_pain/tests-js/**/*.js"
-  },
-  "ava": {
-    "files": [
-      "django_pain/tests-js/*.js"
-    ],
-    "source": [
-      "django_pain/static/django_pain/js/es6/*.js"
-    ],
-    "concurrency": 8,
-    "require": [
-      "babel-register",
-      "babel-polyfill",
-      "./django_pain/tests-js/helpers/setup-browser-env.js"
+      "@babel/preset-env"
     ]
   },
-  "nyc": {
-    "include": [
-      "django_pain/static/django_pain/js/es6/**/*.js",
-      "django_pain/tests-js/**/*.js"
+  "jest": {
+    "testEnvironment": "jest-environment-jsdom-global",
+    "moduleFileExtensions": [
+      "js"
     ],
-    "require": [
-      "babel-register"
+    "transform": {
+      "^.+\\.js$": "<rootDir>/node_modules/babel-jest"
+    },
+    "collectCoverage": true,
+    "collectCoverageFrom": [
+      "django_pain/static/django_pain/js/es6/**/*.js"
+    ],
+    "coverageDirectory": "coverage-js",
+    "coverageReporters": [
+      "text",
+      "text-summary",
+      "json-summary"
     ]
   }
 }
