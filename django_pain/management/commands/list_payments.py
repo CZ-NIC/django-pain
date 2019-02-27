@@ -8,7 +8,7 @@ from django_pain.models import BankPayment
 
 def format_payment(payment: BankPayment) -> str:
     """Return formatted payment row."""
-    return '{ident:10}   {create:32}   amount: {amount:>13}   acount_memo: {memo:40}   account_name: {account}'.format(
+    return '{ident:10}   {create:32}   amount: {amount:>13}   account_memo: {memo:40}   account_name: {account}'.format(
         ident=payment.identifier, create=payment.create_time.isoformat(), amount=str(payment.amount),
         memo=payment.description.strip(), account=payment.counter_account_name,
     )
