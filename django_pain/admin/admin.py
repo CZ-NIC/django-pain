@@ -82,6 +82,7 @@ class BankPaymentAdmin(admin.ModelAdmin):
         'identifier', 'account', 'create_time', 'transaction_date',
         'counter_account_number', 'counter_account_name', 'amount', 'description', 'state',
         'constant_symbol', 'variable_symbol', 'specific_symbol', 'objective', 'client_link',
+        'processing_error',
     )
 
     search_fields = ('variable_symbol', 'counter_account_name', 'description',)
@@ -120,13 +121,19 @@ class BankPaymentAdmin(admin.ModelAdmin):
         For imported or deferred payment, display form fields to manually assign
         payment. Otherwise, display payment objective.
         """
+        if obj is not None and obj.processing_error:
+            state = ('state', 'processing_error')  # type: ignore
+        else:
+            state = 'state'  # type: ignore
+
         if obj is not None and obj.state in (PaymentState.IMPORTED, PaymentState.DEFERRED):
             return [
                 (None, {
                     'fields': (
                         'counter_account_number',
                         'transaction_date', 'constant_symbol', 'variable_symbol', 'specific_symbol', 'amount',
-                        'description', 'counter_account_name', 'create_time', 'account', 'state')
+                        'description', 'counter_account_name', 'create_time', 'account', state,
+                    )
                 }),
                 (_('Assign payment'), {
                     'fields': ('processor', 'client_id')
@@ -138,7 +145,8 @@ class BankPaymentAdmin(admin.ModelAdmin):
                     'fields': (
                         'counter_account_number', 'objective', 'client_link',
                         'transaction_date', 'constant_symbol', 'variable_symbol', 'specific_symbol', 'amount',
-                        'description', 'counter_account_name', 'create_time', 'account', 'state')
+                        'description', 'counter_account_name', 'create_time', 'account', state,
+                    )
                 }),
             ]
 

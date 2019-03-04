@@ -66,6 +66,13 @@ class Command(BaseCommand):
                     if processed.result:
                         payment.state = PaymentState.PROCESSED
                         payment.processor = processor_name
+                        payment.processing_error = processed.error
+                        payment.save()
+                    elif processed.error is not None:
+                        LOGGER.info('Saving payment %s as DEFERRED with error %s.', payment.uuid, processed.error)
+                        payment.state = PaymentState.DEFERRED
+                        payment.processor = processor_name
+                        payment.processing_error = processed.error
                         payment.save()
                     else:
                         unprocessed_payments.append(payment)

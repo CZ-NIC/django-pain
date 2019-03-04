@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django_pain 0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-11-16 03:27-0600\n"
+"POT-Creation-Date: 2019-02-18 09:55-0600\n"
 "PO-Revision-Date: 2018-04-19 06:31-0500\n"
 "Last-Translator: Jan Musílek <jan.musilek@nic.cz>\n"
 "Language-Team: Czech <jan.musilek@nic.cz>\n"
@@ -63,6 +63,9 @@ msgstr "Poznámka"
 msgid "Destination account"
 msgstr "Cílový účet"
 
+msgid "Duplicate payment"
+msgstr "Duplicitní platba"
+
 msgid "Fill out both fields"
 msgstr "Vyplňte obě pole"
 
@@ -103,14 +106,29 @@ msgstr "Heslo"
 msgid "Payment ID"
 msgstr "Identifikátor platby"
 
+msgid "Payment is overdue"
+msgstr "Platba je po datu splatnosti"
+
 msgid "Payment state"
 msgstr "Stav platby"
+
+msgid "Payment was manually broken"
+msgstr "Platba byla ručně upravena"
 
 msgid "Payments and Invoices"
 msgstr "Platby a faktury"
 
+msgid "Processing error"
+msgstr "Chyba zpracování"
+
 msgid "Processor"
 msgstr "Zpracovatel"
+
+msgid "Received amount is greater than expected"
+msgstr "Přijatá částka je vyšší, než očekávaná"
+
+msgid "Received amount is lower than expected"
+msgstr "Přijatá částka je nižší, než očekávaná"
 
 msgid "Specific symbol"
 msgstr "Specifický symbol"

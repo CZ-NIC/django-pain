@@ -8,7 +8,7 @@ from django.test import TestCase, override_settings
 from freezegun import freeze_time
 from testfixtures import LogCapture, tempdir
 
-from django_pain.constants import PaymentState
+from django_pain.constants import PaymentProcessingError, PaymentState
 from django_pain.models import BankAccount, BankPayment
 from django_pain.processors import ProcessPaymentResult
 from django_pain.settings import SETTINGS
@@ -30,6 +30,20 @@ class DummyFalsePaymentProcessor(DummyPaymentProcessor):
 
     def process_payments(self, payments):
         return [ProcessPaymentResult(result=False)]
+
+
+class DummyTrueErrorPaymentProcessor(DummyPaymentProcessor):
+    """Simple processor that returns success with processing error."""
+
+    def process_payments(self, payments):
+        return [ProcessPaymentResult(result=True, error=PaymentProcessingError.DUPLICITY)]
+
+
+class DummyFalseErrorPaymentProcessor(DummyPaymentProcessor):
+    """Simple processor that returns failure with processing error."""
+
+    def process_payments(self, payments):
+        return [ProcessPaymentResult(result=False, error=PaymentProcessingError.DUPLICITY)]
 
 
 @freeze_time('2018-01-01')
@@ -84,6 +98,49 @@ class TestProcessPayments(CacheResetMixin, TestCase):
             ('django_pain.management.commands.process_payments', 'INFO', 'Processing 1 unprocessed payments.'),
             ('django_pain.management.commands.process_payments', 'INFO', 'Processing payments with processor dummy.'),
             ('django_pain.management.commands.process_payments', 'INFO', 'Marking 1 unprocessed payments as DEFERRED.'),
+            ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments finished.'),
+        )
+
+    @override_settings(PAIN_PROCESSORS={
+        'dummy': 'django_pain.tests.commands.test_process_payments.DummyTrueErrorPaymentProcessor'})
+    def test_payments_processed_with_error(self):
+        """Test processed payments with processing error."""
+        call_command('process_payments')
+
+        self.assertQuerysetEqual(
+            BankPayment.objects.values_list('identifier', 'account', 'state', 'processor', 'processing_error'),
+            [('PAYMENT_1', self.account.pk, PaymentState.PROCESSED, 'dummy', PaymentProcessingError.DUPLICITY)],
+            transform=tuple, ordered=False)
+        self.assertEqual(BankPayment.objects.first().objective, 'Dummy objective')
+        self.log_handler.check(
+            ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments started.'),
+            ('django_pain.management.commands.process_payments', 'INFO', 'Lock acquired.'),
+            ('django_pain.management.commands.process_payments', 'INFO', 'Processing 1 unprocessed payments.'),
+            ('django_pain.management.commands.process_payments', 'INFO', 'Processing payments with processor dummy.'),
+            ('django_pain.management.commands.process_payments', 'INFO', 'Marking 0 unprocessed payments as DEFERRED.'),
+            ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments finished.'),
+        )
+
+    @override_settings(PAIN_PROCESSORS={
+        'dummy': 'django_pain.tests.commands.test_process_payments.DummyFalseErrorPaymentProcessor'})
+    def test_payments_deferred_with_error(self):
+        """Test deferred payments with processing error."""
+        call_command('process_payments')
+
+        self.assertQuerysetEqual(
+            BankPayment.objects.values_list('identifier', 'account', 'state', 'processor', 'processing_error'),
+            [('PAYMENT_1', self.account.pk, PaymentState.DEFERRED, 'dummy', PaymentProcessingError.DUPLICITY)],
+            transform=tuple, ordered=False)
+        self.assertEqual(BankPayment.objects.first().objective, 'Dummy objective')
+        self.log_handler.check(
+            ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments started.'),
+            ('django_pain.management.commands.process_payments', 'INFO', 'Lock acquired.'),
+            ('django_pain.management.commands.process_payments', 'INFO', 'Processing 1 unprocessed payments.'),
+            ('django_pain.management.commands.process_payments', 'INFO', 'Processing payments with processor dummy.'),
+            ('django_pain.management.commands.process_payments', 'INFO',
+                'Saving payment %s as DEFERRED with error PaymentProcessingError.DUPLICITY.'
+                % BankPayment.objects.first().uuid),
+            ('django_pain.management.commands.process_payments', 'INFO', 'Marking 0 unprocessed payments as DEFERRED.'),
             ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments finished.'),
         )
 

@@ -22,3 +22,14 @@ class InvoiceType(str, Enum):
 
     ADVANCE = 'advance'
     ACCOUNT = 'account'
+
+
+@unique
+class PaymentProcessingError(str, Enum):
+    """Payment processing error constants."""
+
+    DUPLICITY = 'duplicity'
+    INSUFFICIENT_AMOUNT = 'insufficient_amount'
+    EXCESSIVE_AMOUNT = 'excessive_amount'
+    OVERDUE = 'overdue'
+    MANUALLY_BROKEN = 'manually_broken'

@@ -7,7 +7,7 @@ from django.db.models import BLANK_CHOICE_DASH
 from django.utils.translation import gettext_lazy as _
 from djmoney.models.fields import CurrencyField, MoneyField
 
-from django_pain.constants import CURRENCY_PRECISION, InvoiceType, PaymentState
+from django_pain.constants import CURRENCY_PRECISION, InvoiceType, PaymentProcessingError, PaymentState
 from django_pain.settings import SETTINGS, get_processor_instance, get_processor_objective
 
 PAYMENT_STATE_CHOICES = (
@@ -15,6 +15,14 @@ PAYMENT_STATE_CHOICES = (
     (PaymentState.PROCESSED, _('processed')),
     (PaymentState.DEFERRED, _('not identified')),
     (PaymentState.EXPORTED, _('exported')),
+)
+
+PROCESSING_ERROR_CHOICES = (
+    (PaymentProcessingError.DUPLICITY, _('Duplicate payment')),
+    (PaymentProcessingError.INSUFFICIENT_AMOUNT, _('Received amount is lower than expected')),
+    (PaymentProcessingError.EXCESSIVE_AMOUNT, _('Received amount is greater than expected')),
+    (PaymentProcessingError.OVERDUE, _('Payment is overdue')),
+    (PaymentProcessingError.MANUALLY_BROKEN, _('Payment was manually broken')),
 )
 
 
@@ -52,6 +60,8 @@ class BankPayment(models.Model):
     description = models.TextField(blank=True, verbose_name=_('Description'))
     state = models.TextField(choices=PAYMENT_STATE_CHOICES, default=PaymentState.IMPORTED, db_index=True,
                              verbose_name=_('Payment state'))
+    processing_error = models.TextField(choices=PROCESSING_ERROR_CHOICES, null=True, blank=True,
+                                        verbose_name=_('Processing error'))
 
     # Payment symbols (specific for Czech Republic and Slovak Republic).
     constant_symbol = models.CharField(max_length=10, blank=True, verbose_name=_('Constant symbol'))
