@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "JavaScript for django-pain",
   "author": "Jan Musílek <jan.musilek@nic.cz>",
-  "license": "GPL-3.0",
+  "license": "GPL-3.0-or-later",
   "scripts": {
     "check": "eslint django_pain/tests-js django_pain/static/django_pain/js/es6",
     "build": "webpack",

@@ -52,6 +52,13 @@ depcheck:
         - check-constraints.py constraints.txt
     allow_failure: true
 
+licensing:
+    <<: *python3-xenial
+    before_script:
+        - git clone git@gitlab.office.nic.cz:internal-tools/license-check.git --single-branch --depth 1
+    script:
+        - ./license-check/license-check.sh -v
+
 test:
     <<: *test
 
