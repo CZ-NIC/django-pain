@@ -25,7 +25,7 @@ from django.core.management import call_command
 from django.test import SimpleTestCase, TestCase
 from djmoney.money import Money
 
-from django_pain.constants import PaymentState
+from django_pain.constants import PaymentProcessingError, PaymentState
 from django_pain.management.commands.list_payments import format_payment, non_negative_integer
 from django_pain.tests.utils import get_account, get_payment
 
@@ -47,7 +47,18 @@ class TestHelperFunctions(SimpleTestCase):
                               counter_account_name='Acc')
         self.assertRegex(
             format_payment(payment),
-            r'ID\s+2018-01-01T12:00:00\s+amount:\s+42.00 Kč\s+account_memo: Memo...\s+account_name: Acc'
+            r'^ID\s+2018-01-01T12:00:00\s+amount:\s+42.00 Kč\s+account_memo: Memo...\s+account_name: Acc$'
+        )
+
+    def test_format_payment_with_processing_error(self):
+        """Test format_payment with processing_error."""
+        payment = get_payment(identifier='ID', create_time=datetime(2018, 1, 1, 12, 0, 0),
+                              amount=Money('42.00', 'CZK'), description='Memo...',
+                              counter_account_name='Acc', processing_error=PaymentProcessingError.DUPLICITY)
+        self.assertRegex(
+            format_payment(payment),
+            r'^ID\s+2018-01-01T12:00:00\s+amount:\s+42.00 Kč\s+'
+            r'account_memo: Memo...\s+account_name: Acc\s+processing_error: Duplicate payment$'
         )
 
 
