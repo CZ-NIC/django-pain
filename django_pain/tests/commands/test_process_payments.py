@@ -208,3 +208,29 @@ class TestProcessPayments(CacheResetMixin, TestCase):
                 ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments started.'),
                 ('django_pain.management.commands.process_payments', 'INFO', 'Command already running. Terminating.'),
             )
+
+    def test_invalid_lock(self):
+        """Test process payments with invalid lock file."""
+        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
+            os.mkdir(SETTINGS.process_payments_lock_file, mode=0o0)
+            out = StringIO()
+            err = StringIO()
+            call_command('process_payments', '--no-color', stdout=out, stderr=err)
+            self.assertEqual(out.getvalue(), '')
+            self.assertRegex(err.getvalue(),
+                             r'^Error occured while opening lockfile .*/test.lock:.*Is a directory.*'
+                             '\nTerminating.\n$')
+            self.assertEqual(len(self.log_handler.actual()), 2)
+            self.assertEqual(
+                self.log_handler.actual()[0],
+                ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments started.'),
+            )
+            self.assertEqual(
+                self.log_handler.actual()[1][:2],
+                ('django_pain.management.commands.process_payments', 'INFO')
+            )
+            self.assertRegex(
+                self.log_handler.actual()[1][2],
+                r'^Error occured while opening lockfile .*/test.lock:.*Is a directory.*Terminating\.$'
+            )
+            os.chmod(SETTINGS.process_payments_lock_file, 0o755)
