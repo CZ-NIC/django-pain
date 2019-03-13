@@ -18,6 +18,7 @@
 
 """Command for listing bank payments."""
 import argparse
+import sys
 
 from django.core.management.base import BaseCommand, no_translations
 
@@ -36,11 +37,17 @@ def format_payment(payment: BankPayment) -> str:
     return row.strip()
 
 
-def non_negative_integer(x: str) -> int:
-    """Transform string to integer and check that it's non-negative."""
+def non_negative_bigint(x: str) -> int:
+    """
+    Transform string to integer and check that it's non-negative.
+
+    Limit is sent to the database, so we limit it to sys.maxsize.
+    """
     value = int(x)
     if value < 0:
         raise argparse.ArgumentTypeError('limit must be non-negative integer')
+    if value > sys.maxsize:
+        raise argparse.ArgumentTypeError('limit is too big')
     return value
 
 
@@ -54,7 +61,7 @@ class Command(BaseCommand):
         """Command takes optional arguments restricting processed time interval."""
         parser.add_argument('--state', type=str, choices=['imported', 'processed', 'deferred', 'exported'],
                             help='Payments state')
-        parser.add_argument('--limit', type=non_negative_integer, help='Limit number of payments on output')
+        parser.add_argument('--limit', type=non_negative_bigint, help='Limit number of payments on output')
         group = parser.add_mutually_exclusive_group()
         group.add_argument('--include-accounts', type=(lambda x: x.split(',')),
                            help='Comma separated list of account numbers that should be included')

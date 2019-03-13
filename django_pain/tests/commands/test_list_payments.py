@@ -26,19 +26,21 @@ from django.test import SimpleTestCase, TestCase
 from djmoney.money import Money
 
 from django_pain.constants import PaymentProcessingError, PaymentState
-from django_pain.management.commands.list_payments import format_payment, non_negative_integer
+from django_pain.management.commands.list_payments import format_payment, non_negative_bigint
 from django_pain.tests.utils import get_account, get_payment
 
 
 class TestHelperFunctions(SimpleTestCase):
     """Test list_payments helper functions."""
 
-    def test_non_negative_integer(self):
-        """Test non_negative_integer."""
-        self.assertEqual(non_negative_integer("42"), 42)
-        self.assertEqual(non_negative_integer("0"), 0)
-        with self.assertRaises(argparse.ArgumentTypeError):
-            non_negative_integer("-3")
+    def test_non_negative_bigint(self):
+        """Test non_negative_bigint."""
+        self.assertEqual(non_negative_bigint("42"), 42)
+        self.assertEqual(non_negative_bigint("0"), 0)
+        with self.assertRaisesRegex(argparse.ArgumentTypeError, r'^limit must be non-negative integer$'):
+            non_negative_bigint("-3")
+        with self.assertRaisesRegex(argparse.ArgumentTypeError, r'^limit is too big$'):
+            non_negative_bigint("100000000000000000000000000000")
 
     def test_format_payment(self):
         """Test format_payment."""
