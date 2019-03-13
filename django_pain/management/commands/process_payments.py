@@ -51,14 +51,26 @@ class Command(BaseCommand):
         If can't acquire lock, display warning and terminate.
         """
         LOGGER.info('Command process_payments started.')
+        LOCK = None
         try:
             LOCK = open(SETTINGS.process_payments_lock_file, 'a')
             fcntl.flock(LOCK, fcntl.LOCK_EX | fcntl.LOCK_NB)
             LOGGER.info('Lock acquired.')
-        except OSError:
-            self.stderr.write(self.style.WARNING('Command process_payments is already running. Terminating.'))
-            LOCK.close()
-            LOGGER.info('Command already running. Terminating.')
+        except OSError as error:
+            if LOCK is not None:
+                self.stderr.write(self.style.WARNING('Command process_payments is already running. Terminating.'))
+                LOCK.close()
+                LOGGER.info('Command already running. Terminating.')
+            else:
+                self.stderr.write(self.style.WARNING('Error occured while opening lockfile {}: {}.'.format(
+                    SETTINGS.process_payments_lock_file,
+                    str(error),
+                )))
+                self.stderr.write(self.style.WARNING('Terminating.'))
+                LOGGER.info(
+                    'Error occured while opening lockfile %s: %s. Terminating.',
+                    SETTINGS.process_payments_lock_file, str(error)
+                )
             return
 
         try:
