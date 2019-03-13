@@ -26,10 +26,14 @@ from django_pain.models import BankPayment
 
 def format_payment(payment: BankPayment) -> str:
     """Return formatted payment row."""
-    return '{ident:10}   {create:32}   amount: {amount:>13}   account_memo: {memo:40}   account_name: {account}'.format(
-        ident=payment.identifier, create=payment.create_time.isoformat(), amount=str(payment.amount),
-        memo=payment.description.strip(), account=payment.counter_account_name,
-    )
+    row = ('{ident:10}   {create:32}   amount: {amount:>13}   '
+           'account_memo: {memo:40}   account_name: {account:26}').format(
+                ident=payment.identifier, create=payment.create_time.isoformat(), amount=str(payment.amount),
+                memo=payment.description.strip(), account=payment.counter_account_name,
+           )
+    if payment.processing_error:
+        row += '   processing_error: {}'.format(payment.get_processing_error_display())
+    return row.strip()
 
 
 def non_negative_integer(x: str) -> int:
