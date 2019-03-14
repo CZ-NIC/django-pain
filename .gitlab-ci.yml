@@ -54,6 +54,7 @@ depcheck:
 
 licensing:
     <<: *python3-xenial
+    stage: analysis
     before_script:
         - git clone git@gitlab.office.nic.cz:internal-tools/license-check.git --single-branch --depth 1
     script:
