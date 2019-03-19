@@ -19,7 +19,7 @@
 """AJAX helper views."""
 from django.http import Http404, JsonResponse
 
-from django_pain.settings import get_processor_instance
+from django_pain.settings import SETTINGS, get_processor_instance
 
 
 def load_processor_client_choices(request):
@@ -33,3 +33,17 @@ def load_processor_client_choices(request):
         return JsonResponse(processor.get_client_choices())
     else:
         raise Http404
+
+
+def get_processors_options(request):
+    """
+    Get following processors options.
+
+      * manual_tax_date
+    """
+    options = {}  # type: dict
+    for proc_name in SETTINGS.processors:
+        options[proc_name] = {}
+        proc = get_processor_instance(proc_name)
+        options[proc_name]['manual_tax_date'] = proc.manual_tax_date
+    return JsonResponse(options)

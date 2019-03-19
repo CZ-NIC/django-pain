@@ -29,6 +29,8 @@ from django_pain.tests.utils import DummyPaymentProcessor
 class PaymentProcessor(DummyPaymentProcessor):
     """Payment processor with client_choices."""
 
+    manual_tax_date = True
+
     @staticmethod
     def get_client_choices():
         """Dummy client choices."""
@@ -61,3 +63,19 @@ class TestLoadProcessorClientChoices(CacheResetMixin, SimpleTestCase):
         """Test processor that doesn't implement get_client_choices method."""
         response = self.client.get(reverse('pain:processor_client_choices') + '?processor=dummy')
         self.assertEqual(response.status_code, 404)
+
+
+@override_settings(
+    ROOT_URLCONF='django_pain.tests.urls',
+    PAIN_PROCESSORS={
+        'dummy': 'django_pain.tests.utils.DummyPaymentProcessor',
+        'not_so_dummy': 'django_pain.tests.views.test_ajax.PaymentProcessor'})
+class TestGetProcessorsOptions(CacheResetMixin, SimpleTestCase):
+    """Test get_processors_options."""
+
+    def test_get(self):
+        response = self.client.get(reverse('pain:processor_options'))
+        self.assertJSONEqual(response.content.decode('utf-8'), {
+            'dummy': {'manual_tax_date': False},
+            'not_so_dummy': {'manual_tax_date': True},
+        })

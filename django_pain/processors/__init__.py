@@ -17,8 +17,12 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Processors module."""
-from .common import AbstractPaymentProcessor, ProcessPaymentResult
+from .common import AbstractPaymentProcessor, InvalidTaxDateError, ProcessPaymentResult
 from .ignore import IgnorePaymentProcessor
 
-__all__ = ['AbstractPaymentProcessor', 'ProcessPaymentResult',
-           'IgnorePaymentProcessor']
+__all__ = [
+    'AbstractPaymentProcessor',
+    'InvalidTaxDateError',
+    'ProcessPaymentResult',
+    'IgnorePaymentProcessor',
+]

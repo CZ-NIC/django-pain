@@ -12,6 +12,10 @@ form div.form-row {
     display: flex;
 }
 
+form div.form-row.errors {
+    display: block;
+}
+
 form div.form-row .fieldBox {
     flex: 1;
 }
