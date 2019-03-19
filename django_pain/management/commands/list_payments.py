@@ -18,11 +18,14 @@
 
 """Command for listing bank payments."""
 import argparse
+import logging
 import sys
 
 from django.core.management.base import BaseCommand, no_translations
 
 from django_pain.models import BankPayment
+
+LOGGER = logging.getLogger(__name__)
 
 
 def format_payment(payment: BankPayment) -> str:
@@ -72,6 +75,8 @@ class Command(BaseCommand):
         """Run command."""
         VERBOSITY = options['verbosity']
 
+        LOGGER.info('Command list_payments started with options %s.' % sys.argv[2:])
+
         payments = BankPayment.objects.all()
         if options['state']:
             payments = payments.filter(state=options['state'])
@@ -97,3 +102,5 @@ class Command(BaseCommand):
         not_displayed = payments_total - payments.count()
         if not_displayed > 0:
             self.stdout.write('... and %s more payments' % not_displayed)
+
+        LOGGER.info('Command list_payments finished.')
