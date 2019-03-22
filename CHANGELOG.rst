@@ -9,6 +9,8 @@ Unreleased
 * Expand payment processors API to allow sending processing error codes.
   * Admissible processing error codes are defined in ``django_pain.constants.PaymentProcessingError`` enum.
   * This change is backward compatible.
+* Add tax date to manual assignment of payment processor
+  * If processor accepts a tax date, it has to have ``manual_tax_date`` set to ``True``.
 
 ------------------
 1.0.1 (2019-01-22)
