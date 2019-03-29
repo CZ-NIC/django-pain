@@ -17,11 +17,14 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Test admin views."""
+from datetime import date
+
 from django.contrib import admin
 from django.contrib.auth.models import Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
+from freezegun import freeze_time
 
 from django_pain.admin import BankPaymentAdmin
 from django_pain.constants import InvoiceType, PaymentProcessingError, PaymentState
@@ -86,6 +89,7 @@ class TestBankPaymentAdmin(CacheResetMixin, TestCase):
         self.account.save()
         self.imported_payment = get_payment(
             identifier='My Payment 1', account=self.account, state=PaymentState.IMPORTED, variable_symbol='VAR1',
+            transaction_date=date(2019, 1, 1),
         )
         self.imported_payment.save()
         self.processed_payment = get_payment(
@@ -143,7 +147,7 @@ class TestBankPaymentAdmin(CacheResetMixin, TestCase):
                 )
             }),
             ('Assign payment', {
-                'fields': ('processor', 'client_id')
+                'fields': ('processor', 'client_id', 'tax_date')
             }),
         ])
 
@@ -157,6 +161,61 @@ class TestBankPaymentAdmin(CacheResetMixin, TestCase):
                 )
             }),
         ])
+
+    @freeze_time('2019-01-01')
+    def test_get_form_payment(self):
+        """Test get_form method with payment provided."""
+        modeladmin = BankPaymentAdmin(BankPayment, admin.site)
+        request = self.request_factory.get('/', {})
+        request.user = self.admin
+
+        form = modeladmin.get_form(request, obj=self.imported_payment)
+        form_instance = form()
+        self.assertEqual(form_instance.fields['tax_date'].initial, date(2019, 1, 1))
+
+    def test_get_initial_tax_date(self):
+        """Test method _get_initial_tax_date."""
+        modeladmin = BankPaymentAdmin(BankPayment, admin.site)
+        with freeze_time('2019-06-20'):
+            self.assertEqual(
+                modeladmin._get_initial_tax_date(date(2019, 6, 14)),
+                date(2019, 6, 14)
+            )
+        with freeze_time('2019-06-20'):
+            self.assertEqual(
+                modeladmin._get_initial_tax_date(date(2019, 6, 1)),
+                date(2019, 6, 20)
+            )
+        with freeze_time('2019-07-02'):
+            self.assertEqual(
+                modeladmin._get_initial_tax_date(date(2019, 6, 14)),
+                date(2019, 6, 30)
+            )
+        with freeze_time('2019-07-10'):
+            self.assertEqual(
+                modeladmin._get_initial_tax_date(date(2019, 6, 20)),
+                date(2019, 6, 30)
+            )
+        with freeze_time('2019-07-04'):
+            self.assertEqual(
+                modeladmin._get_initial_tax_date(date(2019, 6, 20)),
+                date(2019, 6, 20)
+            )
+        with freeze_time('2019-06-20'):
+            self.assertEqual(
+                modeladmin._get_initial_tax_date(date(2019, 6, 21)),
+                None
+            )
+        with freeze_time('2019-06-20'):
+            self.assertEqual(
+                modeladmin._get_initial_tax_date(date(2019, 4, 25)),
+                None
+            )
+        with freeze_time('2019-06-16'):
+            self.assertEqual(
+                modeladmin._get_initial_tax_date(date(2019, 5, 30)),
+                None
+            )
 
 
 @override_settings(

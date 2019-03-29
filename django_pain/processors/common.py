@@ -24,6 +24,10 @@ from django_pain.constants import PaymentProcessingError
 from django_pain.models import BankPayment
 
 
+class InvalidTaxDateError(Exception):
+    """Invalid tax date exception."""
+
+
 class ProcessPaymentResult(object):
     """Result of payment processing."""
 
@@ -70,6 +74,15 @@ class AbstractPaymentProcessor(ABC):
         This property should contain human readable objective.
         """
 
+    @property
+    def manual_tax_date(self):
+        """
+        Return whether payment processor allows to specify tax date for manual assignment.
+
+        Default is False.
+        """
+        return False
+
     @abstractmethod
     def process_payments(self, payments: Iterable[BankPayment]) -> Iterable[ProcessPaymentResult]:
         """
@@ -90,4 +103,7 @@ class AbstractPaymentProcessor(ABC):
         Each processor class has to implement this method. This method
         implements forced assignment of payment to particular payment
         processor. As a hint, ``client_id`` may be provided.
+
+        For processors where manual_tax_date=True, optional attr tax_date is
+        also provided. In that case, this method may raise InvalidTaxDateError.
         """

@@ -51,3 +51,4 @@ class PaymentProcessingError(str, Enum):
     EXCESSIVE_AMOUNT = 'excessive_amount'
     OVERDUE = 'overdue'
     MANUALLY_BROKEN = 'manually_broken'
+    TOO_OLD = 'too_old'

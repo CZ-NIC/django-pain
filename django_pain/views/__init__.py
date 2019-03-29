@@ -17,6 +17,9 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Views module."""
-from .ajax import load_processor_client_choices
+from .ajax import get_processors_options, load_processor_client_choices
 
-__all__ = ['load_processor_client_choices']
+__all__ = [
+    'get_processors_options',
+    'load_processor_client_choices',
+]

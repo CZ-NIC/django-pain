@@ -41,6 +41,7 @@ PROCESSING_ERROR_CHOICES = (
     (PaymentProcessingError.EXCESSIVE_AMOUNT, _('Received amount is greater than expected')),
     (PaymentProcessingError.OVERDUE, _('Payment is overdue')),
     (PaymentProcessingError.MANUALLY_BROKEN, _('Payment was manually broken')),
+    (PaymentProcessingError.TOO_OLD, _("Payment is older than 15 days, it can't be processed automatically")),
 )
 
 

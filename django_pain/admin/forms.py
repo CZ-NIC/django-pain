@@ -18,12 +18,14 @@
 
 """Django admin forms."""
 from django import forms
+from django.contrib.admin.widgets import AdminDateWidget
 from django.contrib.auth.forms import UserCreationForm as DjangoUserCreationForm
 from django.utils.translation import gettext_lazy as _
 from djmoney.settings import CURRENCY_CHOICES
 
 from django_pain.constants import PaymentState
 from django_pain.models import BankAccount, BankPayment
+from django_pain.processors import InvalidTaxDateError
 from django_pain.settings import get_processor_instance
 
 
@@ -47,12 +49,13 @@ class BankPaymentForm(forms.ModelForm):
 
     processor = forms.ChoiceField(choices=(), required=False)
     client_id = forms.CharField(label=_('Client ID'), required=False)
+    tax_date = forms.DateField(label=_('Tax date'), required=False, widget=AdminDateWidget())
 
     def __init__(self, *args, **kwargs):
         """Initialize form and disable most of the fields."""
         super().__init__(*args, **kwargs)
         for key, value in self.fields.items():
-            if key not in ('processor', 'client_id'):
+            if key not in ('processor', 'client_id', 'tax_date'):
                 value.disabled = True
 
     def clean(self):
@@ -62,16 +65,28 @@ class BankPaymentForm(forms.ModelForm):
         If so, assign payment to chosen payment processor and note the result.
         """
         cleaned_data = super().clean()
-        if cleaned_data.get('processor', None):
+        if cleaned_data.get('processor'):
             # The only valid choices are those from PAIN_PROCESSORS settings.
             # Those are already validated during startup.
             processor = get_processor_instance(cleaned_data['processor'])
-            result = processor.assign_payment(self.instance, cleaned_data['client_id'])
-            if result.result:
-                cleaned_data['state'] = PaymentState.PROCESSED
-                return cleaned_data
+            kwargs = {}
+            if processor.manual_tax_date:
+                tax_date = cleaned_data.get('tax_date')
+                if tax_date is None:
+                    if 'tax_date' not in self.errors:
+                        self.add_error('tax_date', _('This field is required'))
+                    return
+                kwargs['tax_date'] = tax_date
+            try:
+                result = processor.assign_payment(self.instance, cleaned_data['client_id'], **kwargs)
+            except InvalidTaxDateError as error:
+                self.add_error('tax_date', str(error))
             else:
-                raise forms.ValidationError(_('Unable to assign payment'), code='unable_to_assign')
+                if result.result:
+                    cleaned_data['state'] = PaymentState.PROCESSED
+                    return cleaned_data
+                else:
+                    raise forms.ValidationError(_('Unable to assign payment'), code='unable_to_assign')
 
     def save(self, commit=True):
         """Manually assign payment objective and save payment."""
@@ -97,6 +112,7 @@ class BankPaymentForm(forms.ModelForm):
             'django_pain/js/processor_client_field.js',
             'admin/js/vendor/select2/select2.full.min.js',
             'django_pain/js/edit_confirmation.js',
+            'django_pain/js/customize_form.js',
         )
         css = {
            'all': ('admin/css/vendor/select2/select2.min.css',)

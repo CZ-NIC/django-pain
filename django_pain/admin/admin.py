@@ -17,7 +17,9 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Admin interface for django_pain."""
+from calendar import monthrange
 from copy import deepcopy
+from datetime import date
 
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
@@ -130,7 +132,48 @@ class BankPaymentAdmin(admin.ModelAdmin):
         processor_field = deepcopy(form.base_fields['processor'])
         processor_field.choices = allowed_choices
         form.base_fields['processor'] = processor_field
+
+        if obj is not None:
+            initial_tax_date = self._get_initial_tax_date(obj.transaction_date)
+            if initial_tax_date is not None:
+                tax_date_field = deepcopy(form.base_fields['tax_date'])
+                tax_date_field.initial = initial_tax_date
+                form.base_fields['tax_date'] = tax_date_field
+
         return form
+
+    @staticmethod
+    def _get_initial_tax_date(payment_date):
+        """
+        Get initial tax date.
+
+        Tax date needs to be in the same month as payment date.
+        Tax date can set at most 15 days into the past.
+        """
+        today = date.today()
+        if payment_date > today:
+            # payment_date is from the future
+            # manual correction needed
+            return None
+        elif (today - payment_date).days <= 15:
+            # payment_date is recent, use it as a tax date
+            return payment_date
+        elif (today.year*12 + today.month) - (payment_date.year*12 + payment_date.month) > 1:
+            # payment_date is too old (not from the current or previous month)
+            # manual correction needed
+            return None
+        elif today.month == payment_date.month:
+            # payment_date is from the current month (but not within last 15 days)
+            # use current date
+            return today
+        elif today.day > 15:
+            # payment_date is from the last month and has been identified after 15th day of the current month
+            # manual correction needed
+            return None
+        else:
+            # payment_date is from the last month (and has been identified before 15th day of the current month)
+            # return the last day of the last month
+            return date(payment_date.year, payment_date.month, monthrange(payment_date.year, payment_date.month)[1])
 
     def get_fieldsets(self, request, obj=None):
         """
@@ -154,7 +197,7 @@ class BankPaymentAdmin(admin.ModelAdmin):
                     )
                 }),
                 (_('Assign payment'), {
-                    'fields': ('processor', 'client_id')
+                    'fields': ('processor', 'client_id', 'tax_date')
                 }),
             ]
         else:

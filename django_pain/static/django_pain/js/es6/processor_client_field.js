@@ -17,12 +17,17 @@ export async function load_processor_client_field() {
 
     const response = await fetch('/ajax/processor_client_choices/?processor=' + processor)
     const client_id_field = document.querySelector('div.field-client_id div')
+    const client_id_input = client_id_field.querySelector('input[type=text]')
+    const initial_client_id_value = client_id_input ? client_id_input.value : ''
     if (response.status === 200) {
         // Construct select box from received choices
         response.json().then(data => {
             let selectbox = '<select name="client_id" id="select_client_id">'
             Object.keys(data).sort((a, b) => data[a].localeCompare(data[b])).forEach(key => {
-                selectbox += `<option value="${key}">${data[key]}</option>`
+                if (key === initial_client_id_value)
+                    selectbox += `<option value="${key}" selected>${data[key]}</option>`
+                else
+                    selectbox += `<option value="${key}">${data[key]}</option>`
             })
             selectbox += '</select>'
             client_id_field.innerHTML = client_id_field.innerHTML.replace(
