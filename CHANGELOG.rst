@@ -2,9 +2,9 @@
  Changelog
 ===========
 
-----------
-Unreleased
-----------
+------------------
+1.1.0 (2019-04-29)
+------------------
 * Add separate permissions for manual assignment to individual payment processors
 * Expand payment processors API to allow sending processing error codes.
   * Admissible processing error codes are defined in ``django_pain.constants.PaymentProcessingError`` enum.
