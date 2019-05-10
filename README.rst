@@ -123,6 +123,16 @@ Boolean setting.
 If ``True``, bank statement parser removes leading zeros from the variable symbol.
 Default is ``False``.
 
+``PAIN_IMPORT_CALLBACK``
+========================
+
+Callable setting.
+
+Value should be callable that takes BankPayment object as its argument and returns (possibly) changed BankPayment.
+This callable is called right before the payment is saved during the import.
+Especially, this callable can throw ValidationError in order to avoid saving payment to the database.
+Default value is identity function.
+
 ----------------------
 Other related settings
 ----------------------

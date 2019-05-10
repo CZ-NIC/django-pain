@@ -29,6 +29,7 @@ from django.utils import module_loading
 
 from django_pain.models import BankAccount, BankPayment
 from django_pain.parsers.common import AbstractBankStatementParser
+from django_pain.settings import SETTINGS
 
 LOGGER = logging.getLogger(__name__)
 
@@ -79,6 +80,7 @@ class Command(BaseCommand):
             try:
                 with transaction.atomic():
                     payment.full_clean()
+                    payment = SETTINGS.import_callback(payment)
                     payment.save()
             except ValidationError as error:
                 message = 'Payment ID %s has not been saved due to the following errors:'
