@@ -80,7 +80,7 @@ class BankPayment(models.Model):
     state = models.TextField(choices=PAYMENT_STATE_CHOICES, default=PaymentState.IMPORTED, db_index=True,
                              verbose_name=_('Payment state'))
     processing_error = models.TextField(choices=PROCESSING_ERROR_CHOICES, null=True, blank=True,
-                                        verbose_name=_('Processing error'))
+                                        verbose_name=_('Automatic processing error'))
 
     # Payment symbols (specific for Czech Republic and Slovak Republic).
     constant_symbol = models.CharField(max_length=10, blank=True, verbose_name=_('Constant symbol'))

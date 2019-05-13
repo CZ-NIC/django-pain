@@ -27,6 +27,9 @@ msgstr "Částka"
 msgid "Assign payment"
 msgstr "Spárovat platbu"
 
+msgid "Automatic processing error"
+msgstr "Chyba automatického zpracování"
+
 msgid "Bank account"
 msgstr "Bankovní účet"
 
@@ -120,9 +123,6 @@ msgstr "Platba byla ručně upravena"
 
 msgid "Payments and Invoices"
 msgstr "Platby a faktury"
-
-msgid "Processing error"
-msgstr "Chyba zpracování"
 
 msgid "Processor"
 msgstr "Zpracovatel"

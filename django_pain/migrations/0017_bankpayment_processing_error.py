@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='bankpayment',
             name='processing_error',
-            field=models.TextField(blank=True, choices=[(django_pain.constants.PaymentProcessingError('duplicity'), 'Duplicate payment'), (django_pain.constants.PaymentProcessingError('insufficient_amount'), 'Received amount is lower than expected'), (django_pain.constants.PaymentProcessingError('excessive_amount'), 'Received amount is greater than expected'), (django_pain.constants.PaymentProcessingError('overdue'), 'Payment is overdue'), (django_pain.constants.PaymentProcessingError('manually_broken'), 'Payment was manually broken')], null=True, verbose_name='Processing error'),
+            field=models.TextField(blank=True, choices=[(django_pain.constants.PaymentProcessingError('duplicity'), 'Duplicate payment'), (django_pain.constants.PaymentProcessingError('insufficient_amount'), 'Received amount is lower than expected'), (django_pain.constants.PaymentProcessingError('excessive_amount'), 'Received amount is greater than expected'), (django_pain.constants.PaymentProcessingError('overdue'), 'Payment is overdue'), (django_pain.constants.PaymentProcessingError('manually_broken'), 'Payment was manually broken')], null=True, verbose_name='Automatic processing error'),
         ),
     ]
