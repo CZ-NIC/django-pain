@@ -17,11 +17,15 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Ignore payment processor."""
+from functools import lru_cache
 from typing import Iterable
 
+from django.conf import ImproperlyConfigured
 from django.utils.translation import gettext_lazy as _
 
+from django_pain.constants import PaymentState
 from django_pain.models import BankPayment
+from django_pain.settings import SETTINGS
 
 from .common import AbstractPaymentProcessor, ProcessPaymentResult
 
@@ -48,3 +52,26 @@ class IgnorePaymentProcessor(AbstractPaymentProcessor):
     def assign_payment(self, payment: BankPayment, client_id: str) -> ProcessPaymentResult:
         """Accept any payment."""
         return ProcessPaymentResult(result=True)
+
+
+@lru_cache()
+def _get_ignore_processor_name() -> str:
+    """Get ignore processor name."""
+    for proc_name, proc_class in SETTINGS.processors.items():
+        if issubclass(proc_class, IgnorePaymentProcessor):
+            return proc_name
+    else:
+        raise ImproperlyConfigured("IgnorePaymentProcessor is not present in PAIN_PROCESSORS setting.")
+
+
+def ignore_negative_payments(payment: BankPayment) -> BankPayment:
+    """
+    Process negative bank payments by IgnorePaymentProcessor.
+
+    This function can be used as pain import callback.
+    It expects that there is the IgnorePaymentProcessor among PAIN_PROCESSORS.
+    """
+    if (payment.amount.amount < 0):
+        payment.state = PaymentState.PROCESSED
+        payment.processor = _get_ignore_processor_name()
+    return payment

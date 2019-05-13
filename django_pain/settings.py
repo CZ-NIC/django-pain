@@ -18,6 +18,7 @@
 
 """django_pain settings."""
 from functools import lru_cache
+from typing import Callable
 
 import appsettings
 from django.utils import module_loading
@@ -52,12 +53,32 @@ class ProcessorsSetting(appsettings.Setting):
                 raise ValueError('{} is not subclass of AbstractPaymentProcessor'.format(full_class_name(cls)))
 
 
+class CallableSetting(appsettings.Setting):
+    """Callable setting."""
+
+    default_validators = (appsettings.TypeValidator(Callable),)
+
+
 class PainSettings(appsettings.AppSettings):
-    """Application specific settings."""
+    """
+    Application specific settings.
+
+    Attributes:
+        processors: Dictionary of names and dotted paths to processor classes setting.
+        process_payments_lock_file: Location of process_payments command lock file.
+        trim_varsym: Whether variable symbol should be trimmed of leading zeros.
+        import_callback: Callable that takes BankPayment object as its argument
+            and returns (possibly) changed BankPayment.
+
+            This callable is called right before the payment is saved during the import.
+            Especially, this callable can throw ValidationError in order to avoid
+            saving payment to the database.
+    """
 
     processors = ProcessorsSetting(required=True)
     process_payments_lock_file = appsettings.StringSetting(default='/tmp/pain_process_payments.lock')
     trim_varsym = appsettings.BooleanSetting(default=False)
+    import_callback = CallableSetting(default=(lambda x: x), call_default=False)
 
     class Meta:
         """Meta class."""
