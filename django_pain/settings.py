@@ -18,7 +18,6 @@
 
 """django_pain settings."""
 from functools import lru_cache
-from typing import Callable
 
 import appsettings
 from django.utils import module_loading
@@ -53,10 +52,22 @@ class ProcessorsSetting(appsettings.Setting):
                 raise ValueError('{} is not subclass of AbstractPaymentProcessor'.format(full_class_name(cls)))
 
 
-class CallableSetting(appsettings.Setting):
-    """Callable setting."""
+class CallableSetting(appsettings.StringSetting):
+    """
+    Callable setting.
 
-    default_validators = (appsettings.TypeValidator(Callable),)
+    Contains dotted path refering to callable.
+    """
+
+    def transform(self, value):
+        """Translate dotted path to callable."""
+        return module_loading.import_string(value)
+
+    def checker(self, name, value):
+        """Check whether dotted path refers to callable."""
+        transformed_value = self.transform(value)
+        if not callable(transformed_value):
+            raise ValueError('{} must be a dotted path to callable'.format(name))
 
 
 class PainSettings(appsettings.AppSettings):
@@ -67,8 +78,8 @@ class PainSettings(appsettings.AppSettings):
         processors: Dictionary of names and dotted paths to processor classes setting.
         process_payments_lock_file: Location of process_payments command lock file.
         trim_varsym: Whether variable symbol should be trimmed of leading zeros.
-        import_callback: Callable that takes BankPayment object as its argument
-            and returns (possibly) changed BankPayment.
+        import_callback: Dotted path to a callable that takes BankPayment object as
+            its argument and returns (possibly) changed BankPayment.
 
             This callable is called right before the payment is saved during the import.
             Especially, this callable can throw ValidationError in order to avoid

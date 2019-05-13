@@ -126,9 +126,9 @@ Default is ``False``.
 ``PAIN_IMPORT_CALLBACK``
 ========================
 
-Callable setting.
+String setting containing dotted path to callable.
 
-Value should be callable that takes BankPayment object as its argument and returns (possibly) changed BankPayment.
+Value should be dotted path refering to callable that takes BankPayment object as its argument and returns (possibly) changed BankPayment.
 This callable is called right before the payment is saved during the import.
 Especially, this callable can throw ValidationError in order to avoid saving payment to the database.
 Default value is identity function.
