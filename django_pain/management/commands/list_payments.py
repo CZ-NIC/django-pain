@@ -54,7 +54,6 @@ def non_negative_bigint(x: str) -> int:
     return value
 
 
-@no_translations
 class Command(BaseCommand):
     """List bank payments."""
 
@@ -71,6 +70,7 @@ class Command(BaseCommand):
         group.add_argument('--exclude-accounts', type=(lambda x: x.split(',')),
                            help='Comma separated list of account numbers that should be excluded')
 
+    @no_translations
     def handle(self, *args, **options):
         """Run command."""
         VERBOSITY = options['verbosity']
