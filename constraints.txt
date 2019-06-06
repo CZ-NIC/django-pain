@@ -1,4 +1,4 @@
-django-money==0.14.3
+django-money==0.15
 django-app-settings==0.3.0
 django-modeltranslation==0.13-beta1
 lxml==4.2.1
