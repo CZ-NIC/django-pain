@@ -42,6 +42,11 @@ class Command(BaseCommand):
                             help="ISO datetime after which payments should be processed")
         parser.add_argument('-t', '--to', dest='time_to', type=parse_datetime,
                             help="ISO datetime before which payments should be processed")
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument('--include-accounts', type=(lambda x: x.split(',')),
+                           help='Comma separated list of account numbers that should be included')
+        group.add_argument('--exclude-accounts', type=(lambda x: x.split(',')),
+                           help='Comma separated list of account numbers that should be excluded')
 
     @no_translations
     def handle(self, *args, **options):
@@ -79,6 +84,10 @@ class Command(BaseCommand):
                 payments = payments.filter(create_time__gte=options['time_from'])
             if options['time_to'] is not None:
                 payments = payments.filter(create_time__lte=options['time_to'])
+            if options['include_accounts']:
+                payments = payments.filter(account__account_number__in=options['include_accounts'])
+            if options['exclude_accounts']:
+                payments = payments.exclude(account__account_number__in=options['exclude_accounts'])
             payments = payments.order_by('transaction_date')
 
             LOGGER.info('Processing %s unprocessed payments.', payments.count())
