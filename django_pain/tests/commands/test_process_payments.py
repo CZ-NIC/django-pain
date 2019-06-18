@@ -234,3 +234,55 @@ class TestProcessPayments(CacheResetMixin, TestCase):
                 r'^Error occured while opening lockfile .*/test.lock:.*Is a directory.*Terminating\.$'
             )
             os.chmod(SETTINGS.process_payments_lock_file, 0o755)
+
+    @override_settings(PAIN_PROCESSORS={
+        'dummy': 'django_pain.tests.commands.test_process_payments.DummyTruePaymentProcessor'})
+    def test_exclusion_in_payment_processing(self):
+        """Test excluding accounts from payment processing"""
+        account2 = BankAccount(account_number='987654/3210', currency='CZK')
+        account2.save()
+        get_payment(identifier='PAYMENT_2', account=self.account, state=PaymentState.IMPORTED).save()
+        get_payment(identifier='PAYMENT_3', account=account2, state=PaymentState.IMPORTED).save()
+        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
+            out = StringIO()
+            err = StringIO()
+            call_command('process_payments', '--exclude-accounts', '987654/3210', stdout=out, stderr=err)
+
+            self.assertEqual(out.getvalue(), '')
+            self.assertEqual(err.getvalue(), '')
+            self.log_handler.check(
+                ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments started.'),
+                ('django_pain.management.commands.process_payments', 'INFO', 'Lock acquired.'),
+                ('django_pain.management.commands.process_payments', 'INFO', 'Processing 2 unprocessed payments.'),
+                ('django_pain.management.commands.process_payments', 'INFO',
+                    'Processing payments with processor dummy.'),
+                ('django_pain.management.commands.process_payments', 'INFO',
+                    'Marking 0 unprocessed payments as DEFERRED.'),
+                ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments finished.'),
+            )
+
+    @override_settings(PAIN_PROCESSORS={
+        'dummy': 'django_pain.tests.commands.test_process_payments.DummyTruePaymentProcessor'})
+    def test_inclusion_in_payment_processing(self):
+        """Test including accounts from payment processing"""
+        account2 = BankAccount(account_number='987654/3210', currency='CZK')
+        account2.save()
+        get_payment(identifier='PAYMENT_2', account=self.account, state=PaymentState.IMPORTED).save()
+        get_payment(identifier='PAYMENT_3', account=account2, state=PaymentState.IMPORTED).save()
+        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
+            out = StringIO()
+            err = StringIO()
+            call_command('process_payments', '--include-accounts', '123456/7890', stdout=out, stderr=err)
+
+            self.assertEqual(out.getvalue(), '')
+            self.assertEqual(err.getvalue(), '')
+            self.log_handler.check(
+                ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments started.'),
+                ('django_pain.management.commands.process_payments', 'INFO', 'Lock acquired.'),
+                ('django_pain.management.commands.process_payments', 'INFO', 'Processing 2 unprocessed payments.'),
+                ('django_pain.management.commands.process_payments', 'INFO',
+                    'Processing payments with processor dummy.'),
+                ('django_pain.management.commands.process_payments', 'INFO',
+                    'Marking 0 unprocessed payments as DEFERRED.'),
+                ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments finished.'),
+            )
