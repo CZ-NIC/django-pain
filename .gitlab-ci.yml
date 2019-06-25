@@ -1,3 +1,6 @@
+variables:
+    NODE_PATH: "/usr/lib/node_modules"
+
 stages:
     - analysis
     - test
