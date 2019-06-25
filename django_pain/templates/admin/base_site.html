@@ -1,0 +1,15 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a></h1>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+{% block extrahead %}
+    <link rel="shortcut icon" sizes="32x32" href="{% static "django_pain/images/favicon.png" %}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static "django_pain/images/apple-icon-180x180.png" %}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{% static "django_pain/images/android-icon-192x192.png" %}">
+{% endblock %}
