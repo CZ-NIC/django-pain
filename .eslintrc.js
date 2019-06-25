@@ -4,13 +4,16 @@ module.exports = {
         "es6": true,
         "node": true,
         "jquery": true,
-        "jest/globals": true,
+        "jest": true,
     },
     "plugins": ["jest"],
     "extends": "eslint:recommended",
     "parserOptions": {
         "sourceType": "module",
         "ecmaVersion": 2018,
+    },
+    "globals": {
+        "jQuery": "off",
     },
     "rules": {
         // Basic settings
