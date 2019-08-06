@@ -17,7 +17,7 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Test mixins."""
-from django_pain.processors.ignore import _get_ignore_processor_name
+from django_pain.import_callbacks import _get_ignore_processor_name
 from django_pain.settings import get_processor_class, get_processor_instance, get_processor_objective
 
 

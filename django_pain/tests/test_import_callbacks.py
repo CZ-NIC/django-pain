@@ -17,12 +17,44 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Test import callbacks."""
+from django.conf import ImproperlyConfigured
 from django.core.exceptions import ValidationError
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, override_settings
 
 from django_pain.constants import PaymentState
-from django_pain.import_callbacks import skip_credit_card_transaction_summary
+from django_pain.import_callbacks import ignore_negative_payments, skip_credit_card_transaction_summary
+from django_pain.tests.mixins import CacheResetMixin
 from django_pain.tests.utils import get_payment
+
+
+class TestIgnoreNegativePayments(CacheResetMixin, SimpleTestCase):
+    """Test ignore_negative_payments callback."""
+
+    def setUp(self):
+        super().setUp()
+        self.payment = get_payment()
+
+    def test_positive_payment(self):
+        self.payment.amount.amount = 42
+        payment = ignore_negative_payments(self.payment)
+        self.assertEqual(payment.state, PaymentState.IMPORTED)
+        self.assertEqual(payment.processor, '')
+
+    @override_settings(PAIN_PROCESSORS={
+        'dummy': 'django_pain.tests.utils.DummyPaymentProcessor',
+        'ignore': 'django_pain.processors.IgnorePaymentProcessor',
+    })
+    def test_negative_payment(self):
+        self.payment.amount.amount = -42
+        payment = ignore_negative_payments(self.payment)
+        self.assertEqual(payment.state, PaymentState.PROCESSED)
+        self.assertEqual(payment.processor, 'ignore')
+
+    @override_settings(PAIN_PROCESSORS={})
+    def test_negative_wrong_setting(self):
+        self.payment.amount.amount = -42
+        with self.assertRaises(ImproperlyConfigured):
+            ignore_negative_payments(self.payment)
 
 
 class TestSkipCreditCardTransactionSummary(SimpleTestCase):

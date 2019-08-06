@@ -17,14 +17,46 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Import callbacks."""
+from functools import lru_cache
 
+from django.conf import ImproperlyConfigured
 from django.core.exceptions import ValidationError
 
+from django_pain.constants import PaymentState
 from django_pain.models import BankPayment
+from django_pain.processors.ignore import IgnorePaymentProcessor
+from django_pain.settings import SETTINGS
+
+
+@lru_cache()
+def _get_ignore_processor_name() -> str:
+    """Get ignore processor name."""
+    for proc_name, proc_class in SETTINGS.processors.items():
+        if issubclass(proc_class, IgnorePaymentProcessor):
+            return proc_name
+
+    raise ImproperlyConfigured("IgnorePaymentProcessor is not present in PAIN_PROCESSORS setting.")
+
+
+def ignore_negative_payments(payment: BankPayment) -> BankPayment:
+    """
+    Process negative bank payments by IgnorePaymentProcessor.
+
+    This function can be used as pain import callback.
+    It expects that there is the IgnorePaymentProcessor among PAIN_PROCESSORS.
+    """
+    if (payment.amount.amount < 0):
+        payment.state = PaymentState.PROCESSED
+        payment.processor = _get_ignore_processor_name()
+    return payment
 
 
 def skip_credit_card_transaction_summary(payment: BankPayment) -> BankPayment:
-    """Import callback for ignoring payments with credit card transactions summary."""
+    """
+    Import callback for ignoring payments with credit card transactions summary.
+
+    This function is intended to be used as pain import callback.
+    """
     if payment.counter_account_number == 'None/None' and payment.constant_symbol in ('1176', '1178'):
         raise ValidationError('Payment is credit card transaction summary.')
     return payment
