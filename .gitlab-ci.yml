@@ -39,7 +39,7 @@ stages:
     <<: *python3-xenial
     <<: *install-dependencies
     script:
-        - tox
+        - tox -e quality,clear-coverage,py35-django21,py35-django22,compute-coverage
 
 ########################################################################################################################
 # Individual jobs
