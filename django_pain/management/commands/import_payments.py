@@ -80,7 +80,8 @@ class Command(BaseCommand):
             try:
                 with transaction.atomic():
                     payment.full_clean()
-                    payment = SETTINGS.import_callback(payment)
+                    for callback in SETTINGS.import_callbacks:
+                        payment = callback(payment)
                     payment.save()
             except ValidationError as error:
                 message = 'Payment ID %s has not been saved due to the following errors:'

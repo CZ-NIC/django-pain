@@ -52,22 +52,28 @@ class ProcessorsSetting(appsettings.Setting):
                 raise ValueError('{} is not subclass of AbstractPaymentProcessor'.format(full_class_name(cls)))
 
 
-class CallableSetting(appsettings.StringSetting):
+class CallableListSetting(appsettings.ListSetting):
     """
-    Callable setting.
+    Callable list setting.
 
-    Contains dotted path refering to callable.
+    Contains list of dotted paths refering to callables.
     """
+
+    def __init__(self, *args, **kwargs):
+        """Ensure that list items are strings."""
+        kwargs['item_type'] = str
+        super().__init__(*args, **kwargs)
 
     def transform(self, value):
         """Translate dotted path to callable."""
-        return module_loading.import_string(value)
+        return [module_loading.import_string(call) for call in value]
 
     def checker(self, name, value):
         """Check whether dotted path refers to callable."""
         transformed_value = self.transform(value)
-        if not callable(transformed_value):
-            raise ValueError('{} must be a dotted path to callable'.format(name))
+        for call in transformed_value:
+            if not callable(call):
+                raise ValueError('{} must be a list of dotted paths to callables'.format(name))
 
 
 class PainSettings(appsettings.AppSettings):
@@ -78,18 +84,18 @@ class PainSettings(appsettings.AppSettings):
         processors: Dictionary of names and dotted paths to processor classes setting.
         process_payments_lock_file: Location of process_payments command lock file.
         trim_varsym: Whether variable symbol should be trimmed of leading zeros.
-        import_callback: Dotted path to a callable that takes BankPayment object as
-            its argument and returns (possibly) changed BankPayment.
+        import_callbacks: List of dotted paths to callables that takes BankPayment object as
+            their argument and return (possibly) changed BankPayment.
 
-            This callable is called right before the payment is saved during the import.
-            Especially, this callable can throw ValidationError in order to avoid
+            These callables are called right before the payment is saved during the import.
+            Especially, these callable can raise ValidationError in order to avoid
             saving payment to the database.
     """
 
     processors = ProcessorsSetting(required=True)
     process_payments_lock_file = appsettings.StringSetting(default='/tmp/pain_process_payments.lock')
     trim_varsym = appsettings.BooleanSetting(default=False)
-    import_callback = CallableSetting(default=(lambda x: x), call_default=False)
+    import_callbacks = CallableListSetting()
 
     class Meta:
         """Meta class."""
