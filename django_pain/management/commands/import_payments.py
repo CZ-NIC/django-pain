@@ -89,12 +89,17 @@ class Command(BaseCommand):
                 if self.options['verbosity'] >= 1:
                     self.stderr.write(self.style.WARNING(message % payment.identifier))
 
-                for field in error.message_dict:
-                    prefix = '{}: '.format(field) if field != '__all__' else ''
-                    for message in error.message_dict[field]:
-                        LOGGER.warning('%s%s', prefix, message)
-                        if self.options['verbosity'] >= 1:
-                            self.stderr.write(self.style.WARNING('%s%s' % (prefix, message)))
+                if hasattr(error, 'message_dict'):
+                    for field in error.message_dict:
+                        prefix = '{}: '.format(field) if field != '__all__' else ''
+                        for message in error.message_dict[field]:
+                            LOGGER.warning('%s%s', prefix, message)
+                            if self.options['verbosity'] >= 1:
+                                self.stderr.write(self.style.WARNING('%s%s' % (prefix, message)))
+                else:
+                    LOGGER.warning('\n'.join(error.messages))
+                    if self.options['verbosity'] >= 1:
+                        self.stderr.write(self.style.WARNING('\n'.join(error.messages)))
             except IntegrityError as error:
                 message = 'Payment ID %s has not been saved due to the following error: %s'
                 LOGGER.warning(message, payment.identifier, str(error))

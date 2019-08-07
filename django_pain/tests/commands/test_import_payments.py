@@ -24,7 +24,7 @@ from typing import List
 
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from djmoney.money import Money
 from testfixtures import LogCapture, TempDirectory
 
@@ -41,6 +41,17 @@ class DummyPaymentsParser(AbstractBankStatementParser):
         return [
             get_payment(identifier='PAYMENT_1', account=account, variable_symbol='1234'),
             get_payment(identifier='PAYMENT_2', account=account, amount=Money('370.00', 'CZK')),
+        ]
+
+
+class DummyCreditCardSummaryParser(AbstractBankStatementParser):
+    """Simple parser that just returns one credit card summary payment."""
+
+    def parse(self, bank_statement) -> List[BankPayment]:
+        account = BankAccount.objects.get(account_number='123456/7890')
+        return [
+            get_payment(identifier='PAYMENT_3', account=account, counter_account_number='None/None',
+                        constant_symbol='1176'),
         ]
 
 
@@ -174,3 +185,30 @@ class TestImportPayments(TestCase):
                          '--no-color')
 
         self.assertEqual(str(cm.exception), 'Parser argument has to be subclass of AbstractBankStatementParser.')
+
+    @override_settings(PAIN_IMPORT_CALLBACKS=['django_pain.import_callbacks.skip_credit_card_transaction_summary'])
+    def test_import_callback_exception(self):
+        """Test import callback raising exception."""
+        out = StringIO()
+        err = StringIO()
+        call_command('import_payments',
+                     '--parser=django_pain.tests.commands.test_import_payments.DummyCreditCardSummaryParser',
+                     '--no-color', '--verbosity=3', stdout=out, stderr=err)
+
+        self.assertEqual(out.getvalue().strip(), '')
+        self.assertEqual(err.getvalue().strip().split('\n'), [
+            'Payment ID PAYMENT_3 has not been saved due to the following errors:',
+            'Payment is credit card transaction summary.',
+        ])
+        self.assertEqual(BankPayment.objects.count(), 0)
+        self.log_handler.check(
+            ('django_pain.management.commands.import_payments', 'INFO', 'Command import_payments started.'),
+            ('django_pain.management.commands.import_payments', 'DEBUG', 'Importing payments from -.'),
+            ('django_pain.management.commands.import_payments', 'DEBUG', 'Parsing payments from -.'),
+            ('django_pain.management.commands.import_payments', 'DEBUG', 'Saving 1 payments from - to database.'),
+            ('django_pain.management.commands.import_payments', 'WARNING',
+                'Payment ID PAYMENT_3 has not been saved due to the following errors:'),
+            ('django_pain.management.commands.import_payments', 'WARNING',
+                'Payment is credit card transaction summary.'),
+            ('django_pain.management.commands.import_payments', 'INFO', 'Command import_payments finished.'),
+        )
