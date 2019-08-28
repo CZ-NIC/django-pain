@@ -2,72 +2,84 @@ variables:
     NODE_PATH: "/usr/lib/node_modules"
 
 stages:
+    - image
     - analysis
     - test
     - coverage
 
 ########################################################################################################################
-# Basic declarations
-.requires-python: &requires-python
+# Docker
+.image: &image
+    stage: image
+    before_script:
+        - docker info
+    script:
+        # Login to GitLab container registry https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#using-the-gitlab-container-registry
+        - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
+        # Build image using Docker caching, see https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#making-docker-in-docker-builds-faster-with-docker-layer-caching
+        - docker pull "$IMAGE_TAG" || true
+        - docker build --cache-from "$IMAGE_TAG" -t "$IMAGE_TAG" "docker/$IMAGE_NAME"
+        - docker push "$IMAGE_TAG"
     tags:
-        - python
+        - dind
 
-.requires-database: &requires-database
-    tags:
-        - python
-        - postgres
+image:ubuntu:bionic:
+    <<: *image
+    variables:
+        IMAGE_NAME: ubuntu:bionic
+        IMAGE_TAG: $CI_REGISTRY_IMAGE/$IMAGE_NAME
+
+########################################################################################################################
+# Basic declarations
+.ubuntu-bionic: &ubuntu-bionic
+    image: "$CI_REGISTRY/$CI_PROJECT_PATH/ubuntu:bionic"
 
 .requires-nodejs: &requires-nodejs
     tags:
         - nodejs
 
-.python3-xenial: &python3-xenial
-    image: $CI_REGISTRY/ginger/base/ubuntu_xenial_python3:latest
-
 .nodejs-xenial: &nodejs-xenial
     image: $CI_REGISTRY/ginger/base/ubuntu_xenial_nodejs:latest
 
-.install-dependencies: &install-dependencies
-    before_script:
-        - pip3 list
-        # Install dependencies
-        - pip3 install tox
-        - pip3 install git+https://gitlab.office.nic.cz/tomas.pazderka/tox-version-plugin.git@python3
-
 .test: &test
-    <<: *requires-database
-    <<: *python3-xenial
-    <<: *install-dependencies
     script:
-        - tox -e quality,clear-coverage,py35-django21,py35-django22,compute-coverage
+        - tox
 
 ########################################################################################################################
 # Individual jobs
-depcheck:
-    <<: *requires-python
-    <<: *python3-xenial
-    only:
-        - schedules
-    before_script:
-        # Install package with testing dependencies to verify versions
-        - pip3 install --process-dependency-links .[testing]
-    script:
-        - check-constraints.py constraints.txt
-    allow_failure: true
-
 licensing:
-    <<: *python3-xenial
+    <<: *ubuntu-bionic
     stage: analysis
     before_script:
+        # Set up SSH key for access to gitlab repositories
+        - install -m 700 -d $HOME/.ssh
+        - install -m 600 $SRC_DIR/{id_rsa,id_rsa.pub,known_hosts} $HOME/.ssh/
+        # Clone the licence check
         - git clone git@gitlab.office.nic.cz:internal-tools/license-check.git --single-branch --depth 1
     script:
         - ./license-check/license-check.sh -v
+    variables:
+        SRC_DIR: /usr/local/env
 
-test:
+depcheck:
+    <<: *ubuntu-bionic
+    stage: analysis
+    only:
+        - schedules
+    script:
+        - git clone https://gitlab.office.nic.cz/vzima/ci-tools.git --depth=1
+        # Install package with testing dependencies to verify versions
+        - pip3 install .[testing]
+        - python3 ./ci-tools/check-constraints.py constraints.txt
+    allow_failure: true
+
+test:bionic:
     <<: *test
+    <<: *ubuntu-bionic
 
 test-thawed:
     <<: *test
+    <<: *ubuntu-bionic
     only:
         - schedules
     script:
@@ -108,10 +120,7 @@ test-js:
             - coverage-js/
 
 coverage-report-js:
-    <<: *requires-nodejs
-    <<: *nodejs-xenial
-    before_script:
-        - git clone git@gitlab.office.nic.cz:jmusilek/report-json-coverage.git .rjc
+    <<: *ubuntu-bionic
     stage: coverage
     script:
-        - python3 .rjc/report_coverage.py coverage-js/coverage-summary.json
+        - report-json-coverage coverage-js/coverage-summary.json
