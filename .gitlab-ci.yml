@@ -1,6 +1,3 @@
-variables:
-    NODE_PATH: "/usr/lib/node_modules"
-
 stages:
     - image
     - analysis
@@ -29,17 +26,19 @@ image:ubuntu:bionic:
         IMAGE_NAME: ubuntu:bionic
         IMAGE_TAG: $CI_REGISTRY_IMAGE/$IMAGE_NAME
 
+image:ubuntu:npm:
+    <<: *image
+    variables:
+        IMAGE_NAME: ubuntu:npm
+        IMAGE_TAG: $CI_REGISTRY_IMAGE/$IMAGE_NAME
+
 ########################################################################################################################
 # Basic declarations
 .ubuntu-bionic: &ubuntu-bionic
     image: "$CI_REGISTRY/$CI_PROJECT_PATH/ubuntu:bionic"
 
-.requires-nodejs: &requires-nodejs
-    tags:
-        - nodejs
-
-.nodejs-xenial: &nodejs-xenial
-    image: $CI_REGISTRY/ginger/base/ubuntu_xenial_nodejs:latest
+.ubuntu-npm: &ubuntu-npm
+    image: "$CI_REGISTRY/$CI_PROJECT_PATH/ubuntu:npm"
 
 .test: &test
     script:
@@ -86,28 +85,25 @@ test-thawed:
         - tox -e thaw
 
 css:
-    <<: *requires-nodejs
-    <<: *nodejs-xenial
+    <<: *ubuntu-npm
     stage: analysis
     before_script:
         - npm install
         - npm list || true
     script:
-        - npx stylelint django_pain/**/*.css
+        - npm run check-css
 
 eslint:
-    <<: *requires-nodejs
-    <<: *nodejs-xenial
+    <<: *ubuntu-npm
     stage: analysis
     before_script:
-        - npm install -g eslint eslint-plugin-jest
+        - npm install eslint eslint-plugin-jest
         - npm list || true
     script:
         - npm run check
 
 test-js:
-    <<: *requires-nodejs
-    <<: *nodejs-xenial
+    <<: *ubuntu-npm
     stage: test
     before_script:
         - npm install
