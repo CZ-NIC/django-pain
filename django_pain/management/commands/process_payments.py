@@ -21,14 +21,18 @@ import fcntl
 import logging
 from copy import deepcopy
 
-from django.core.management.base import BaseCommand, no_translations
+from django.core.management.base import BaseCommand, CommandError, no_translations
 from django.utils.dateparse import parse_datetime
 
 from django_pain.constants import PaymentState
-from django_pain.models import BankPayment
+from django_pain.models import BankAccount, BankPayment
 from django_pain.settings import SETTINGS, get_processor_instance
 
 LOGGER = logging.getLogger(__name__)
+
+
+class AccountDoesNotExist(Exception):
+    """Account number does not exist."""
 
 
 class Command(BaseCommand):
@@ -43,10 +47,54 @@ class Command(BaseCommand):
         parser.add_argument('-t', '--to', dest='time_to', type=parse_datetime,
                             help="ISO datetime before which payments should be processed")
         group = parser.add_mutually_exclusive_group()
-        group.add_argument('--include-accounts', type=(lambda x: x.split(',')),
+        group.add_argument('--include-accounts', type=(lambda x: set(x.split(','))),
                            help='Comma separated list of account numbers that should be included')
-        group.add_argument('--exclude-accounts', type=(lambda x: x.split(',')),
+        group.add_argument('--exclude-accounts', type=(lambda x: set(x.split(','))),
                            help='Comma separated list of account numbers that should be excluded')
+
+    @staticmethod
+    def _check_accounts_existence(account_numbers):
+        """Raise AccountDoesNotExist when an account does not exist."""
+        db_account_numbers = set(BankAccount.objects.filter(account_number__in=account_numbers).values_list(
+            'account_number', flat=True))
+        if len(db_account_numbers) != len(account_numbers):
+            non_existing_accounts = sorted(account_numbers.difference(db_account_numbers))
+            raise AccountDoesNotExist('Following accounts do not exist: %s. Terminating.'
+                                      % ', '.join(non_existing_accounts))
+
+    @staticmethod
+    def _process_payments(payments):
+        """Process the payments."""
+        for processor_name in SETTINGS.processors:
+            processor = get_processor_instance(processor_name)
+            if not payments:
+                break
+
+            LOGGER.info('Processing payments with processor %s.', processor_name)
+            results = processor.process_payments(deepcopy(payment) for payment in payments)  # pragma: no cover
+            unprocessed_payments = []
+
+            for payment, processed in zip(payments, results):
+                if processed.result:
+                    payment.state = PaymentState.PROCESSED
+                    payment.processor = processor_name
+                    payment.processing_error = processed.error
+                    payment.save()
+                elif processed.error is not None:
+                    LOGGER.info('Saving payment %s as DEFERRED with error %s.', payment.uuid, processed.error)
+                    payment.state = PaymentState.DEFERRED
+                    payment.processor = processor_name
+                    payment.processing_error = processed.error
+                    payment.save()
+                else:
+                    unprocessed_payments.append(payment)
+
+            payments = unprocessed_payments
+
+        LOGGER.info('Marking %s unprocessed payments as DEFERRED.', len(payments))
+        for unprocessed_payment in payments:
+            unprocessed_payment.state = PaymentState.DEFERRED
+            unprocessed_payment.save()
 
     @no_translations
     def handle(self, *args, **options):
@@ -85,43 +133,20 @@ class Command(BaseCommand):
             if options['time_to'] is not None:
                 payments = payments.filter(create_time__lte=options['time_to'])
             if options['include_accounts']:
+                self._check_accounts_existence(options['include_accounts'])
                 payments = payments.filter(account__account_number__in=options['include_accounts'])
             if options['exclude_accounts']:
+                self._check_accounts_existence(options['exclude_accounts'])
                 payments = payments.exclude(account__account_number__in=options['exclude_accounts'])
             payments = payments.order_by('transaction_date')
 
             LOGGER.info('Processing %s unprocessed payments.', payments.count())
 
-            for processor_name in SETTINGS.processors:
-                processor = get_processor_instance(processor_name)
-                if not payments:
-                    break
+            self._process_payments(payments)
 
-                LOGGER.info('Processing payments with processor %s.', processor_name)
-                results = processor.process_payments(deepcopy(payment) for payment in payments)  # pragma: no cover
-                unprocessed_payments = []
-
-                for payment, processed in zip(payments, results):
-                    if processed.result:
-                        payment.state = PaymentState.PROCESSED
-                        payment.processor = processor_name
-                        payment.processing_error = processed.error
-                        payment.save()
-                    elif processed.error is not None:
-                        LOGGER.info('Saving payment %s as DEFERRED with error %s.', payment.uuid, processed.error)
-                        payment.state = PaymentState.DEFERRED
-                        payment.processor = processor_name
-                        payment.processing_error = processed.error
-                        payment.save()
-                    else:
-                        unprocessed_payments.append(payment)
-
-                payments = unprocessed_payments
-
-            LOGGER.info('Marking %s unprocessed payments as DEFERRED.', len(payments))
-            for unprocessed_payment in payments:
-                unprocessed_payment.state = PaymentState.DEFERRED
-                unprocessed_payment.save()
+        except AccountDoesNotExist as e:
+            LOGGER.error(str(e))
+            raise CommandError(str(e))
         finally:
             fcntl.flock(LOCK, fcntl.LOCK_UN)
             LOCK.close()

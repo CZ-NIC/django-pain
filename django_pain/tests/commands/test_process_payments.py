@@ -22,6 +22,7 @@ import os
 from io import StringIO
 
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import TestCase, override_settings
 from freezegun import freeze_time
 from testfixtures import LogCapture, TempDirectory
@@ -80,6 +81,29 @@ class TestProcessPayments(CacheResetMixin, TestCase):
     def tearDown(self):
         self.log_handler.uninstall()
         self.tempdir.cleanup()
+
+    def _test_non_existing_account(self, param_name):
+        """
+        Test non existing account.
+
+        param_name should contain either '--include-accounts' or '--exclude-accounts'
+        """
+        BankAccount.objects.create(account_number='987654/3210', currency='CZK')
+        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
+            out = StringIO()
+            err = StringIO()
+            with self.assertRaises(CommandError):
+                call_command('process_payments', param_name, 'xxxxxx/xxxx,yyyyyy/yyyy,987654/3210', stdout=out,
+                             stderr=err)
+
+            self.assertEqual(out.getvalue(), '')
+            self.assertEqual(err.getvalue(), '')
+            self.log_handler.check(
+                ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments started.'),
+                ('django_pain.management.commands.process_payments', 'INFO', 'Lock acquired.'),
+                ('django_pain.management.commands.process_payments', 'ERROR',
+                 'Following accounts do not exist: xxxxxx/xxxx, yyyyyy/yyyy. Terminating.'),
+            )
 
     @override_settings(PAIN_PROCESSORS={
         'dummy': 'django_pain.tests.commands.test_process_payments.DummyTruePaymentProcessor'})
@@ -263,6 +287,12 @@ class TestProcessPayments(CacheResetMixin, TestCase):
 
     @override_settings(PAIN_PROCESSORS={
         'dummy': 'django_pain.tests.commands.test_process_payments.DummyTruePaymentProcessor'})
+    def test_exclusion_of_non_existing_account_in_payment_processing(self):
+        """Test excluding non-existing accounts from payment processing"""
+        self._test_non_existing_account('--exclude-accounts')
+
+    @override_settings(PAIN_PROCESSORS={
+        'dummy': 'django_pain.tests.commands.test_process_payments.DummyTruePaymentProcessor'})
     def test_inclusion_in_payment_processing(self):
         """Test including accounts from payment processing"""
         account2 = BankAccount(account_number='987654/3210', currency='CZK')
@@ -286,3 +316,9 @@ class TestProcessPayments(CacheResetMixin, TestCase):
                     'Marking 0 unprocessed payments as DEFERRED.'),
                 ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments finished.'),
             )
+
+    @override_settings(PAIN_PROCESSORS={
+        'dummy': 'django_pain.tests.commands.test_process_payments.DummyTruePaymentProcessor'})
+    def test_inclusion_of_non_existing_account_in_payment_processing(self):
+        """Test including non-existing accounts from payment processing"""
+        self._test_non_existing_account('--include-accounts')
