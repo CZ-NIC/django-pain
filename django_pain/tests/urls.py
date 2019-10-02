@@ -22,5 +22,6 @@ from django.urls import include, path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('django_lang_switch/', include('django_lang_switch.urls')),
     path('', include('django_pain.urls', namespace='pain')),
 ]

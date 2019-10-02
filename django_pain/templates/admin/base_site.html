@@ -1,5 +1,6 @@
 {% extends "admin/base.html" %}
 {% load static %}
+{% load lang_switch %}
 
 {% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
 
@@ -12,4 +13,13 @@
     <link rel="shortcut icon" sizes="32x32" href="{% static "django_pain/images/favicon.png" %}">
     <link rel="apple-touch-icon" sizes="180x180" href="{% static "django_pain/images/apple-icon-180x180.png" %}">
     <link rel="icon" type="image/png" sizes="192x192" href="{% static "django_pain/images/android-icon-192x192.png" %}">
+{% endblock %}
+
+{% block usertools %}
+    {{ block.super }}
+    {% lang_switch_dropdown %}
+{% endblock %}
+
+{% block extrastyle %}
+    <link rel="stylesheet" type="text/css" href="{% static "django_lang_switch/css/lang_switch.css" %}">
 {% endblock %}
