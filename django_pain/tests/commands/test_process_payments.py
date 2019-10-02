@@ -239,11 +239,11 @@ class TestProcessPayments(CacheResetMixin, TestCase):
             os.mkdir(SETTINGS.process_payments_lock_file, mode=0o0)
             out = StringIO()
             err = StringIO()
-            call_command('process_payments', '--no-color', stdout=out, stderr=err)
+            with self.assertRaisesRegexp(CommandError, r'^Error occured while opening lockfile .*/test.lock:.*Is a '
+                                                       r'directory: .*\. Terminating\.$'):
+                call_command('process_payments', '--no-color', stdout=out, stderr=err)
             self.assertEqual(out.getvalue(), '')
-            self.assertRegex(err.getvalue(),
-                             r'^Error occured while opening lockfile .*/test.lock:.*Is a directory.*'
-                             '\nTerminating.\n$')
+            self.assertEqual(err.getvalue(), '')
             self.assertEqual(len(self.log_handler.actual()), 2)
             self.assertEqual(
                 self.log_handler.actual()[0],
@@ -251,7 +251,7 @@ class TestProcessPayments(CacheResetMixin, TestCase):
             )
             self.assertEqual(
                 self.log_handler.actual()[1][:2],
-                ('django_pain.management.commands.process_payments', 'INFO')
+                ('django_pain.management.commands.process_payments', 'ERROR')
             )
             self.assertRegex(
                 self.log_handler.actual()[1][2],

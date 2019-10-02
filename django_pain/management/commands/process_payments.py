@@ -114,17 +114,14 @@ class Command(BaseCommand):
                 self.stderr.write(self.style.WARNING('Command process_payments is already running. Terminating.'))
                 LOCK.close()
                 LOGGER.info('Command already running. Terminating.')
+                return
             else:
-                self.stderr.write(self.style.WARNING('Error occured while opening lockfile {}: {}.'.format(
-                    SETTINGS.process_payments_lock_file,
-                    str(error),
-                )))
-                self.stderr.write(self.style.WARNING('Terminating.'))
-                LOGGER.info(
+                LOGGER.error(
                     'Error occured while opening lockfile %s: %s. Terminating.',
                     SETTINGS.process_payments_lock_file, str(error)
                 )
-            return
+                raise CommandError('Error occured while opening lockfile {}: {}. Terminating.'.format(
+                    SETTINGS.process_payments_lock_file, str(error)))
 
         try:
             payments = BankPayment.objects.filter(state__in=[PaymentState.IMPORTED, PaymentState.DEFERRED])
