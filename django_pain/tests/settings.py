@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'djmoney',
     'django_pain.apps.DjangoPainConfig',
+    'django_lang_switch.apps.DjangoLangSwitchConfig',
     'django_pain.apps.DjangoPainAdminConfig',
 ]
 

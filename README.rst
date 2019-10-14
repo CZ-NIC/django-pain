@@ -22,13 +22,13 @@ Bank accounts and payments may be managed through a Django admin site.
 Installation
 ------------
 
-You need to add ``django_pain.apps.DjangoPainConfig`` to your ``INSTALLED_APPS``.
+You need to add ``django_pain.apps.DjangoPainConfig`` and ``django_lang_switch.apps.DjangoLangSwitchConfig`` to your ``INSTALLED_APPS``.
 In order for user interface to work, you also need to add the Django admin site.
 See `Django docs`__ for detailed description.
 
 __ https://docs.djangoproject.com/en/dev/ref/contrib/admin/
 
-You also need to include ``django_pain`` and ``admin`` urls into your project ``urls.py``:
+You also need to include ``django_pain``, ``admin`` and ``django_lang_switch`` urls into your project ``urls.py``:
 
 .. code-block:: python
 
@@ -36,6 +36,7 @@ You also need to include ``django_pain`` and ``admin`` urls into your project ``
         ...
         path('pain/', include('django_pain.urls')),
         path('admin/', admin.site.urls),
+        path('django_lang_switch/', include('django_lang_switch.urls')),
         ...
     ]
 
