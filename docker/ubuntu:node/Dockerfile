@@ -9,5 +9,6 @@ RUN apt-get --yes update \
     ca-certificates \
     git \
     npm \
+    build-essential \
  && rm -rf /var/lib/apt/lists/*
 RUN npm install -g @cz-nic/json-python-coverage
