@@ -1,8 +1,14 @@
+########################################################################################################################
+# This file was generated using python_env, please do not edit directly.
+########################################################################################################################
+
 stages:
     - image
     - analysis
     - test
-    - coverage
+
+variables:
+    TOX_PARALLEL_NO_SPINNER: 1
 
 ########################################################################################################################
 # Docker
@@ -32,10 +38,10 @@ image:ubuntu:bionic:
         IMAGE_NAME: ubuntu:bionic
         IMAGE_TAG: $CI_REGISTRY_IMAGE/$IMAGE_NAME
 
-image:ubuntu:npm:
+image:ubuntu:node:
     <<: *image
     variables:
-        IMAGE_NAME: ubuntu:npm
+        IMAGE_NAME: ubuntu:node
         IMAGE_TAG: $CI_REGISTRY_IMAGE/$IMAGE_NAME
 
 ########################################################################################################################
@@ -46,39 +52,41 @@ image:ubuntu:npm:
 .ubuntu-bionic: &ubuntu-bionic
     image: "$CI_REGISTRY/$CI_PROJECT_PATH/ubuntu:bionic"
 
-.ubuntu-npm: &ubuntu-npm
-    image: "$CI_REGISTRY/$CI_PROJECT_PATH/ubuntu:npm"
+.ubuntu-node: &ubuntu-node
+    image: "$CI_REGISTRY/$CI_PROJECT_PATH/ubuntu:node"
+
+.install-dependencies: &install-dependencies
+    before_script:
+        # Set up SSH key for access to gitlab repositories
+        - install -m 700 -d $HOME/.ssh
+        - install -m 600 $SRC_DIR/{id_rsa,id_rsa.pub,known_hosts} $HOME/.ssh/
+    variables:
+        SRC_DIR: /usr/local/env
 
 .test: &test
     script:
+        # First, build all virtualenvs in parallel without actually executing any tests.
+        - tox --parallel all --notest
         - tox
 
 ########################################################################################################################
 # Individual jobs
 licensing:
     <<: *ubuntu-bionic
+    <<: *install-dependencies
     stage: analysis
-    before_script:
-        # Set up SSH key for access to gitlab repositories
-        - install -m 700 -d $HOME/.ssh
-        - install -m 600 $SRC_DIR/{id_rsa,id_rsa.pub,known_hosts} $HOME/.ssh/
-        # Clone the licence check
-        - git clone git@gitlab.office.nic.cz:internal-tools/license-check.git --single-branch --depth 1
     script:
+        - git clone git@gitlab.office.nic.cz:internal-tools/license-check.git --single-branch --depth 1
         - ./license-check/license-check.sh -v
-    variables:
-        SRC_DIR: /usr/local/env
 
-depcheck:
+piprot:
     <<: *ubuntu-bionic
     stage: analysis
     only:
         - schedules
     script:
-        - git clone https://gitlab.office.nic.cz/vzima/ci-tools.git --depth=1
-        # Install package with testing dependencies to verify versions
-        - pip3 install .[testing]
-        - python3 ./ci-tools/check-constraints.py constraints.txt
+        - pip install piprot
+        - piprot requirements.txt constraints.txt
     allow_failure: true
 
 test:xenial:
@@ -95,41 +103,17 @@ test-thawed:
     only:
         - schedules
     script:
-        - tox -e thaw
+        - tox -e py35-thaw,py36-thaw,py37-thaw
 
-css:
-    <<: *ubuntu-npm
-    stage: analysis
+test:node:
+    <<: *ubuntu-node
     before_script:
+        - node --version
+        - npm --version
         - npm install
         - npm list || true
     script:
         - npm run check-css
-
-eslint:
-    <<: *ubuntu-npm
-    stage: analysis
-    before_script:
-        - npm install eslint eslint-plugin-jest
-        - npm list || true
-    script:
-        - npm run check
-
-test-js:
-    <<: *ubuntu-npm
-    stage: test
-    before_script:
-        - npm install
-        - npm list || true
-    script:
+        - npm run check-js -- --max-warnings=0
         - npm run test
-    artifacts:
-        expire_in: 1d
-        paths:
-            - coverage-js/
-
-coverage-report-js:
-    <<: *ubuntu-bionic
-    stage: coverage
-    script:
-        - report-json-coverage coverage-js/coverage-summary.json
+        - json-python-coverage coverage-js/coverage-summary.json
