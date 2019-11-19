@@ -1,8 +1,8 @@
 const path = require('path')
 const webpack = require('webpack')
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin')
 
 module.exports = {
+    mode: 'production',
     entry: {
         state_colors: path.resolve(__dirname, 'django_pain/static/django_pain/js/es6/state_colors.js'),
         processor_client_field: [
@@ -21,17 +21,11 @@ module.exports = {
         contentBase: path.resolve(__dirname, 'django_pain/static/django_pain/js'),
     },
     module: {
-        loaders: [{
+        rules: [{
             test: /\.js$/,
             include: path.join(__dirname, 'django_pain/static/django_pain/js/es6'),
             exclude: /node_modules/,
-            loaders: ['babel-loader'],
+            use: ['babel-loader'],
         }],
     },
-    plugins: [
-        new UglifyJsPlugin({
-            sourceMap: true,
-            uglifyOptions: { compress: { warnings: false } },
-        }),
-    ],
 }
