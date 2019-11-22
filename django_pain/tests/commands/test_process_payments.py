@@ -230,7 +230,7 @@ class TestProcessPayments(CacheResetMixin, TestCase):
                 transform=tuple, ordered=False)
             self.log_handler.check(
                 ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments started.'),
-                ('django_pain.management.commands.process_payments', 'INFO', 'Command already running. Terminating.'),
+                ('django_pain.management.commands.process_payments', 'WARNING', 'Command already running. Terminating.')
             )
 
     def test_invalid_lock(self):

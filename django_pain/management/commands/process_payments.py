@@ -113,7 +113,7 @@ class Command(BaseCommand):
             if LOCK is not None:
                 self.stderr.write(self.style.WARNING('Command process_payments is already running. Terminating.'))
                 LOCK.close()
-                LOGGER.info('Command already running. Terminating.')
+                LOGGER.warning('Command already running. Terminating.')
                 return
             else:
                 LOGGER.error(
