@@ -6,9 +6,9 @@ FROM ubuntu:bionic
 # Requirements for the stylelint
 RUN apt-get --yes update \
  && apt-get install --yes --no-install-recommends \
+    build-essential \
     ca-certificates \
     git \
     npm \
-    build-essential \
  && rm -rf /var/lib/apt/lists/*
 RUN npm install -g @cz-nic/json-python-coverage
