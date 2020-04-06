@@ -103,7 +103,7 @@ test-thawed:
     only:
         - schedules
     script:
-        - tox -e py35-thaw,py36-thaw,py37-thaw
+        - tox -e py35-thaw,py36-thaw,py37-thaw,py38-thaw
 
 test:node:
     <<: *ubuntu-node
