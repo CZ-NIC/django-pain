@@ -51,7 +51,7 @@ describe('processor_client_field', () => {
                 '<select name="client_id"[^>]*>' +
                 '<option value="DS9">Deep space 9</option>' +
                 '<option value="TNG">The Next Generation</option>' +
-                '</select>')
+                '</select>'),
             )
     })
 })
