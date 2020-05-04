@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django_pain 0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-06-20 06:41-0500\n"
+"POT-Creation-Date: 2020-05-14 14:04+0000\n"
 "PO-Revision-Date: 2018-04-19 06:31-0500\n"
 "Last-Translator: Jan Musílek <jan.musilek@nic.cz>\n"
 "Language-Team: Czech <jan.musilek@nic.cz>\n"
@@ -41,6 +41,12 @@ msgstr "Platba"
 
 msgid "Bank payments"
 msgstr "Platby"
+
+msgid "Card handler"
+msgstr "Obsluhovač plateb kartou"
+
+msgid "Card payment state"
+msgstr "Stav platby kartou"
 
 msgid "Client ID"
 msgstr "ID klienta"
@@ -124,6 +130,9 @@ msgstr "Platba je po datu splatnosti"
 msgid "Payment state"
 msgstr "Stav platby"
 
+msgid "Payment type"
+msgstr "Typ platby"
+
 msgid "Payment was manually broken"
 msgstr "Platba byla ručně upravena"
 
@@ -163,14 +172,23 @@ msgstr "vyúčtovací"
 msgid "advance"
 msgstr "zálohová"
 
+msgid "canceled"
+msgstr "zrušena"
+
+msgid "card payment"
+msgstr "platba kartou"
+
 msgid "exported"
 msgstr "exportovaná"
-
-msgid "imported"
-msgstr "importovaná"
 
 msgid "not identified"
 msgstr "neidentifikovaná"
 
 msgid "processed"
 msgstr "zpracovaná"
+
+msgid "ready to process"
+msgstr "k zpracování"
+
+msgid "transfer"
+msgstr "platba převodem"

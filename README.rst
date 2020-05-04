@@ -213,7 +213,7 @@ List bank payments.
 The options ``--exclude-accounts`` and ``--include-accounts`` are mutually exclusive
 and expect a comma-separated list of bank account numbers.
 
-Option ``--state`` can be either ``imported``, ``processed``, ``deferred`` or ``exported``.
+Option ``--state`` can be either ``ready_to_process``, ``processed``, ``deferred`` or ``exported``.
 
 If ``--limit LIMIT`` is set, the command will list at most ``LIMIT`` payments.
 If there are any non-listed payments, the command will announce their count.
@@ -227,7 +227,7 @@ If there are any non-listed payments, the command will announce their count.
 
 Process unprocessed payments with predefined payment processors.
 
-The command takes all payments in the states ``imported`` or ``deferred``
+The command takes all payments in the states ``ready_to_process`` or ``deferred``
 and offers them to the individual payment processors.
 If any processor accepts the payment, then payment's state is switched to ``processed``.
 Otherwise, its state is switched to ``deferred``.

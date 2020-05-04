@@ -18,11 +18,12 @@
 
 """Test models."""
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 from django.db.models import BLANK_CHOICE_DASH
 from django.test import SimpleTestCase, TestCase, override_settings
 from djmoney.money import Money
 
-from django_pain.constants import InvoiceType
+from django_pain.constants import InvoiceType, PaymentType
 from django_pain.models import BankPayment
 
 from .mixins import CacheResetMixin
@@ -89,3 +90,17 @@ class TestBankPayment(CacheResetMixin, TestCase):
 
         payment = get_payment(processor='dummy')
         self.assertEqual(payment.objective, 'Dummy objective')
+
+    def test_transfer_must_have_counter_account(self):
+        account = get_account()
+        account.save()
+
+        payment = get_payment(account=account, payment_type=PaymentType.TRANSFER, counter_account_number='')
+        self.assertRaises(IntegrityError, payment.save)
+
+    def test_card_payment_must_not_have_counter_account(self):
+        account = get_account()
+        account.save()
+
+        payment = get_payment(account=account, payment_type=PaymentType.CARD_PAYMENT, counter_account_number='123')
+        self.assertRaises(IntegrityError, payment.save)

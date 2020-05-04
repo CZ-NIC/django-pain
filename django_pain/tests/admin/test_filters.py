@@ -41,8 +41,9 @@ class TestChoicesFieldListFilter(TestCase):
         choices = list(filterspec.choices(changelist))
         self.assertEqual(choices, ([
             {'selected': True, 'query_string': '?', 'display': 'All'},
-            {'selected': False, 'query_string': '?state__exact=imported', 'display': 'imported'},
+            {'selected': False, 'query_string': '?state__exact=ready_to_process', 'display': 'ready to process'},
             {'selected': False, 'query_string': '?state__exact=processed', 'display': 'processed'},
             {'selected': False, 'query_string': '?state__exact=deferred', 'display': 'not identified'},
             {'selected': False, 'query_string': '?state__exact=exported', 'display': 'exported'},
+            {'selected': False, 'query_string': '?state__exact=canceled', 'display': 'canceled'},
         ]))

@@ -187,7 +187,7 @@ class BankPaymentAdmin(admin.ModelAdmin):
         else:
             state = 'state'  # type: ignore
 
-        if obj is not None and obj.state in (PaymentState.IMPORTED, PaymentState.DEFERRED):
+        if obj is not None and obj.state in (PaymentState.READY_TO_PROCESS, PaymentState.DEFERRED):
             return [
                 (None, {
                     'fields': (

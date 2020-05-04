@@ -62,7 +62,7 @@ class TestBankPaymentForm(CacheResetMixin, TestCase):
         super().setUp()
         self.account = get_account()
         self.account.save()
-        self.payment = get_payment(account=self.account, state=PaymentState.IMPORTED)
+        self.payment = get_payment(account=self.account, state=PaymentState.READY_TO_PROCESS)
         self.payment.save()
 
     def _get_form(self, *args, **kwargs):

@@ -61,7 +61,8 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         """Command takes optional arguments restricting processed time interval."""
-        parser.add_argument('--state', type=str, choices=['imported', 'processed', 'deferred', 'exported'],
+        parser.add_argument('--state', type=str,
+                            choices=['ready_to_process', 'processed', 'deferred', 'exported', 'canceled'],
                             help='Payments state')
         parser.add_argument('--limit', type=non_negative_bigint, help='Limit number of payments on output')
         group = parser.add_mutually_exclusive_group()
