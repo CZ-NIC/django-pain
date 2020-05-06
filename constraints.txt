@@ -2,10 +2,3 @@ django-money==0.15
 django-app-settings==0.3.0
 django-modeltranslation==0.13-beta1
 lxml==4.2.1
-isort==4.3.4
-flake8==3.5.0
-pydocstyle==5.0.1
-polint==0.2
-mypy==0.620
-testfixtures==6.0.2
-freezegun==0.3.10
