@@ -3,6 +3,7 @@ FROM ubuntu:xenial
 RUN apt-get --yes update \
  && apt-get install --yes --no-install-recommends \
     gettext \
+    git \
     python3-setuptools \
  && rm -rf /var/lib/apt/lists/*
 # Install newest pip, tox and its plugins

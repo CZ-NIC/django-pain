@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2019  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -25,8 +25,12 @@ from django.utils import module_loading
 from .utils import full_class_name
 
 
-class ProcessorsSetting(appsettings.Setting):
-    """Dictionary of names and dotted paths to classes setting."""
+class NamedClassSetting(appsettings.Setting):
+    """Dictionary of names and dotted paths to classes setting. Class is checked to be specified type."""
+
+    def __init__(self, checked_class_str, *args, **kwargs):
+        self.checked_class_str = checked_class_str
+        super().__init__(*args, **kwargs)
 
     def transform(self, value):
         """Import all classes from setting."""
@@ -38,7 +42,7 @@ class ProcessorsSetting(appsettings.Setting):
 
         Value has to be dictionary with following properties:
           * all keys must be strings
-          * all values must be subclasses of AbstractPaymentProcessor
+          * all values must be subclasses of class specified in checked_class_str
         """
         if not isinstance(value, dict):
             raise ValueError('{} must be {}, not {}'.format(name, dict, value.__class__))
@@ -46,10 +50,10 @@ class ProcessorsSetting(appsettings.Setting):
             raise ValueError('All keys of {} must be {}'.format(name, str))
         value = self.transform(value)
 
-        from django_pain.processors import AbstractPaymentProcessor
+        checked_class = module_loading.import_string(self.checked_class_str)
         for name, cls in value.items():
-            if not issubclass(cls, AbstractPaymentProcessor):
-                raise ValueError('{} is not subclass of AbstractPaymentProcessor'.format(full_class_name(cls)))
+            if not issubclass(cls, checked_class):
+                raise ValueError('{} is not subclass of {}'.format(full_class_name(cls), checked_class.__name__))
 
 
 class CallableListSetting(appsettings.ListSetting):
@@ -92,10 +96,17 @@ class PainSettings(appsettings.AppSettings):
             saving payment to the database.
     """
 
-    processors = ProcessorsSetting(required=True)
+    processors = NamedClassSetting('django_pain.processors.AbstractPaymentProcessor', required=True)
+    card_payment_handlers = NamedClassSetting('django_pain.card_payment_handlers.AbstractCardPaymentHandler')
     process_payments_lock_file = appsettings.StringSetting(default='/tmp/pain_process_payments.lock')
     trim_varsym = appsettings.BooleanSetting(default=False)
     import_callbacks = CallableListSetting()
+
+    csob_card_api_url = appsettings.StringSetting()
+    csob_card_api_public_key = appsettings.StringSetting()
+    csob_card_merchant_id = appsettings.StringSetting()
+    csob_card_merchant_private_key = appsettings.StringSetting()
+    csob_card_account_name = appsettings.StringSetting()
 
     class Meta:
         """Meta class."""
@@ -128,3 +139,20 @@ def get_processor_objective(processor: str):
     """Get processor objective."""
     proc = get_processor_instance(processor)
     return proc.default_objective
+
+
+@lru_cache()
+def get_card_payment_handler_class(card_payment_handler: str):
+    """Get CardPayemntHandler class."""
+    cls = SETTINGS.card_payment_handlers.get(card_payment_handler)
+    if cls is None:
+        raise ValueError("{} is not present in PAIN_CARD_PAYMENT_HANDLERS setting".format(card_payment_handler))
+    else:
+        return cls
+
+
+@lru_cache()
+def get_card_payment_handler_instance(card_payment_handler: str):
+    """Get card_payment_handler class instance."""
+    card_payment_handler_class = get_card_payment_handler_class(card_payment_handler)
+    return card_payment_handler_class(name=card_payment_handler)

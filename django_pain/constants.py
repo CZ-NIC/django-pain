@@ -36,6 +36,7 @@ class PaymentType(str, Enum):
 class PaymentState(str, Enum):
     """Payment states constants."""
 
+    INITIALIZED = 'initialized'
     READY_TO_PROCESS = 'ready_to_process'
     PROCESSED = 'processed'
     DEFERRED = 'deferred'

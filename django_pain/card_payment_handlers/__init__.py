@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
+# Copyright (C) 2020  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -16,14 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
-"""django_pain url dispatcher."""
-from django.urls import include, path
+"""CardPayemntHandler module."""
+from .common import AbstractCardPaymentHandler, CartItem
+from .csob import CSOBCardPaymentHandler
 
-from django_pain.views import get_processors_options, load_processor_client_choices, rest
-
-app_name = 'pain'
-urlpatterns = [
-    path('ajax/processor_client_choices/', load_processor_client_choices, name='processor_client_choices'),
-    path('ajax/get_processors_options/', get_processors_options, name='processor_options'),
-    path('api/private/', include(rest.ROUTER.urls)),
+__all__ = [
+    'AbstractCardPaymentHandler',
+    'CSOBCardPaymentHandler',
+    'CartItem',
 ]
