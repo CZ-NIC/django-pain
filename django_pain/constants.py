@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2019  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -25,13 +25,22 @@ CURRENCY_PRECISION = 10
 
 
 @unique
+class PaymentType(str, Enum):
+    """Payment types constants."""
+
+    TRANSFER = 'transfer'
+    CARD_PAYMENT = 'card_payment'
+
+
+@unique
 class PaymentState(str, Enum):
     """Payment states constants."""
 
-    IMPORTED = 'imported'
+    READY_TO_PROCESS = 'ready_to_process'
     PROCESSED = 'processed'
     DEFERRED = 'deferred'
     EXPORTED = 'exported'
+    CANCELED = 'canceled'
 
 
 @unique

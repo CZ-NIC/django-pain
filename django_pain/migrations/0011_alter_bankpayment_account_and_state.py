@@ -21,6 +21,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='bankpayment',
             name='state',
-            field=models.TextField(choices=[(django_pain.constants.PaymentState('imported'), 'imported'), (django_pain.constants.PaymentState('processed'), 'processed'), (django_pain.constants.PaymentState('deferred'), 'not identified'), (django_pain.constants.PaymentState('exported'), 'exported')], default=django_pain.constants.PaymentState('imported'), verbose_name='Payment state'),
+            field=models.TextField(choices=[('imported', 'imported'), (django_pain.constants.PaymentState('processed'), 'processed'), (django_pain.constants.PaymentState('deferred'), 'not identified'), (django_pain.constants.PaymentState('exported'), 'exported')], default='imported', verbose_name='Payment state'),
         ),
     ]

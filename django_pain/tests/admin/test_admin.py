@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2019  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -88,8 +88,8 @@ class TestBankPaymentAdmin(CacheResetMixin, TestCase):
         self.account = get_account(account_name='My Account')
         self.account.save()
         self.imported_payment = get_payment(
-            identifier='My Payment 1', account=self.account, state=PaymentState.IMPORTED, variable_symbol='VAR1',
-            transaction_date=date(2019, 1, 1),
+            identifier='My Payment 1', account=self.account, state=PaymentState.READY_TO_PROCESS,
+            variable_symbol='VAR1', transaction_date=date(2019, 1, 1),
         )
         self.imported_payment.save()
         self.processed_payment = get_payment(

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2019  CZ.NIC, z. s. p. o.
+# Copyright (C) 2019-2020  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -37,7 +37,7 @@ class TestIgnoreNegativePayments(CacheResetMixin, SimpleTestCase):
     def test_positive_payment(self):
         self.payment.amount.amount = 42
         payment = ignore_negative_payments(self.payment)
-        self.assertEqual(payment.state, PaymentState.IMPORTED)
+        self.assertEqual(payment.state, PaymentState.READY_TO_PROCESS)
         self.assertEqual(payment.processor, '')
 
     @override_settings(PAIN_PROCESSORS={
@@ -74,4 +74,4 @@ class TestSkipCreditCardTransactionSummary(SimpleTestCase):
     def test_normal_payment(self):
         payment = get_payment()
         payment = skip_credit_card_transaction_summary(payment)
-        self.assertEqual(payment.state, PaymentState.IMPORTED)
+        self.assertEqual(payment.state, PaymentState.READY_TO_PROCESS)

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2019  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -74,7 +74,7 @@ class TestProcessPayments(CacheResetMixin, TestCase):
         self.tempdir = TempDirectory()
         self.account = BankAccount(account_number='123456/7890', currency='CZK')
         self.account.save()
-        payment = get_payment(identifier='PAYMENT_1', account=self.account, state=PaymentState.IMPORTED)
+        payment = get_payment(identifier='PAYMENT_1', account=self.account, state=PaymentState.READY_TO_PROCESS)
         payment.save()
         self.log_handler = LogCapture('django_pain.management.commands.process_payments', propagate=False)
 
@@ -210,7 +210,7 @@ class TestProcessPayments(CacheResetMixin, TestCase):
 
             self.assertQuerysetEqual(
                 BankPayment.objects.values_list('identifier', 'account', 'state', 'processor'),
-                [('PAYMENT_1', self.account.pk, PaymentState.IMPORTED, '')],
+                [('PAYMENT_1', self.account.pk, PaymentState.READY_TO_PROCESS, '')],
                 transform=tuple, ordered=False)
             self.assertEqual(BankPayment.objects.first().objective, '')
 
@@ -226,7 +226,7 @@ class TestProcessPayments(CacheResetMixin, TestCase):
             self.assertEqual(err.getvalue(), 'Command process_payments is already running. Terminating.\n')
             self.assertQuerysetEqual(
                 BankPayment.objects.values_list('identifier', 'account', 'state', 'processor'),
-                [('PAYMENT_1', self.account.pk, PaymentState.IMPORTED, '')],
+                [('PAYMENT_1', self.account.pk, PaymentState.READY_TO_PROCESS, '')],
                 transform=tuple, ordered=False)
             self.log_handler.check(
                 ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments started.'),
@@ -265,8 +265,8 @@ class TestProcessPayments(CacheResetMixin, TestCase):
         """Test excluding accounts from payment processing"""
         account2 = BankAccount(account_number='987654/3210', currency='CZK')
         account2.save()
-        get_payment(identifier='PAYMENT_2', account=self.account, state=PaymentState.IMPORTED).save()
-        get_payment(identifier='PAYMENT_3', account=account2, state=PaymentState.IMPORTED).save()
+        get_payment(identifier='PAYMENT_2', account=self.account, state=PaymentState.READY_TO_PROCESS).save()
+        get_payment(identifier='PAYMENT_3', account=account2, state=PaymentState.READY_TO_PROCESS).save()
         with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
             out = StringIO()
             err = StringIO()
@@ -297,8 +297,8 @@ class TestProcessPayments(CacheResetMixin, TestCase):
         """Test including accounts from payment processing"""
         account2 = BankAccount(account_number='987654/3210', currency='CZK')
         account2.save()
-        get_payment(identifier='PAYMENT_2', account=self.account, state=PaymentState.IMPORTED).save()
-        get_payment(identifier='PAYMENT_3', account=account2, state=PaymentState.IMPORTED).save()
+        get_payment(identifier='PAYMENT_2', account=self.account, state=PaymentState.READY_TO_PROCESS).save()
+        get_payment(identifier='PAYMENT_3', account=account2, state=PaymentState.READY_TO_PROCESS).save()
         with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
             out = StringIO()
             err = StringIO()

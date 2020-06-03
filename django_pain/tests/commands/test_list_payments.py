@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2019  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -74,9 +74,9 @@ class TestListPayments(TestCase):
         account2 = get_account(account_number='654321', currency='CZK')
         account2.save()
         get_payment(identifier='1', account=account1, counter_account_name='Account one',
-                    state=PaymentState.IMPORTED).save()
+                    state=PaymentState.READY_TO_PROCESS).save()
         get_payment(identifier='2', account=account2, counter_account_name='Account two',
-                    state=PaymentState.IMPORTED).save()
+                    state=PaymentState.READY_TO_PROCESS).save()
         get_payment(identifier='3', account=account1, counter_account_name='Account three',
                     state=PaymentState.PROCESSED).save()
         get_payment(identifier='4', account=account2, counter_account_name='Account four',

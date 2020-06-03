@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2019  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -21,18 +21,24 @@ import uuid
 
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import BLANK_CHOICE_DASH
+from django.db.models import BLANK_CHOICE_DASH, CheckConstraint, Q
 from django.utils.translation import gettext_lazy as _
 from djmoney.models.fields import CurrencyField, MoneyField
 
-from django_pain.constants import CURRENCY_PRECISION, InvoiceType, PaymentProcessingError, PaymentState
+from django_pain.constants import CURRENCY_PRECISION, InvoiceType, PaymentProcessingError, PaymentState, PaymentType
 from django_pain.settings import SETTINGS, get_processor_instance, get_processor_objective
 
+PAYMENT_TYPE_CHOICES = (
+    (PaymentType.TRANSFER, _('transfer')),
+    (PaymentType.CARD_PAYMENT, _('card payment')),
+)
+
 PAYMENT_STATE_CHOICES = (
-    (PaymentState.IMPORTED, _('imported')),
+    (PaymentState.READY_TO_PROCESS, _('ready to process')),
     (PaymentState.PROCESSED, _('processed')),
     (PaymentState.DEFERRED, _('not identified')),
     (PaymentState.EXPORTED, _('exported')),
+    (PaymentState.CANCELED, _('canceled')),
 )
 
 PROCESSING_ERROR_CHOICES = (
@@ -68,17 +74,21 @@ class BankPayment(models.Model):
 
     identifier = models.TextField(verbose_name=_('Payment ID'))
     uuid = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
+    payment_type = models.TextField(choices=PAYMENT_TYPE_CHOICES, default=PaymentType.TRANSFER,
+                                    verbose_name=_('Payment type'))
     account = models.ForeignKey(BankAccount, on_delete=models.CASCADE, verbose_name=_('Destination account'))
     create_time = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name=_('Create time'))
     transaction_date = models.DateField(db_index=True, verbose_name=_('Transaction date'))
 
-    counter_account_number = models.TextField(verbose_name=_('Counter account number'))
+    counter_account_number = models.TextField(blank=True, verbose_name=_('Counter account number'))
     counter_account_name = models.TextField(blank=True, verbose_name=_('Counter account name'))
 
     amount = MoneyField(max_digits=64, decimal_places=CURRENCY_PRECISION, verbose_name=_('Amount'))
     description = models.TextField(blank=True, verbose_name=_('Description'))
-    state = models.TextField(choices=PAYMENT_STATE_CHOICES, default=PaymentState.IMPORTED, db_index=True,
+    state = models.TextField(choices=PAYMENT_STATE_CHOICES, default=PaymentState.READY_TO_PROCESS, db_index=True,
                              verbose_name=_('Payment state'))
+    card_payment_state = models.TextField(blank=True, verbose_name=_('Card payment state'))
+
     processing_error = models.TextField(choices=PROCESSING_ERROR_CHOICES, null=True, blank=True,
                                         verbose_name=_('Automatic processing error'))
 
@@ -88,6 +98,7 @@ class BankPayment(models.Model):
     specific_symbol = models.CharField(max_length=10, blank=True, verbose_name=_('Specific symbol'))
 
     processor = models.TextField(verbose_name=_('Processor'), blank=True)
+    card_handler = models.TextField(verbose_name=_('Card handler'), blank=True)
 
     class Meta:
         """Model Meta class."""
@@ -95,6 +106,12 @@ class BankPayment(models.Model):
         unique_together = ('identifier', 'account')
         verbose_name = _('Bank payment')
         verbose_name_plural = _('Bank payments')
+
+        constraints = [
+            CheckConstraint(check=Q(payment_type=PaymentType.TRANSFER) & ~Q(counter_account_number__exact='')
+                            | Q(payment_type=PaymentType.CARD_PAYMENT, counter_account_number__exact=''),
+                            name='payment_counter_account_only_for_transfer')
+        ]
 
     def __str__(self):
         """Return string representation of bank payment."""

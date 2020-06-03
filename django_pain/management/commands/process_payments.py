@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2019  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -124,7 +124,7 @@ class Command(BaseCommand):
                     SETTINGS.process_payments_lock_file, str(error)))
 
         try:
-            payments = BankPayment.objects.filter(state__in=[PaymentState.IMPORTED, PaymentState.DEFERRED])
+            payments = BankPayment.objects.filter(state__in=[PaymentState.READY_TO_PROCESS, PaymentState.DEFERRED])
             if options['time_from'] is not None:
                 payments = payments.filter(create_time__gte=options['time_from'])
             if options['time_to'] is not None:
