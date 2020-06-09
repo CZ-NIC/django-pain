@@ -28,7 +28,7 @@ from django_pain.settings import get_card_payment_handler_instance
 
 
 @unique
-class CardPaymentState(str, Enum):
+class ExternalPaymentState(str, Enum):
     """Card Payment state used by REST API."""
 
     INITIALIZED = 'initialized'
@@ -37,12 +37,12 @@ class CardPaymentState(str, Enum):
 
 
 CARD_PAYMENT_STATE_MAPPING = {
-    PaymentState.INITIALIZED: CardPaymentState.INITIALIZED,
-    PaymentState.READY_TO_PROCESS: CardPaymentState.PAID,
-    PaymentState.PROCESSED: CardPaymentState.PAID,
-    PaymentState.DEFERRED: CardPaymentState.PAID,
-    PaymentState.EXPORTED: CardPaymentState.PAID,
-    PaymentState.CANCELED: CardPaymentState.CANCELED,
+    PaymentState.INITIALIZED: ExternalPaymentState.INITIALIZED,
+    PaymentState.READY_TO_PROCESS: ExternalPaymentState.PAID,
+    PaymentState.PROCESSED: ExternalPaymentState.PAID,
+    PaymentState.DEFERRED: ExternalPaymentState.PAID,
+    PaymentState.EXPORTED: ExternalPaymentState.PAID,
+    PaymentState.CANCELED: ExternalPaymentState.CANCELED,
 }
 
 
@@ -81,13 +81,15 @@ class BankPaymentSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('`cart` must have one or two item(s)!')
         cart_items = []
         for item in value:
+            if len(item['name']) > 20:
+                raise serializers.ValidationError('`cartitem/name` must not exceede 20 characters!')
             cart_item = CartItem(**item)
             cart_items.append(cart_item)
         return cart_items
 
     def validate(self, data):
         """Overall checks thoughout the fields."""
-        cart_total_amount = sum((item.amount for item in data['cart']))
+        cart_total_amount = sum((item.amount * item.quantity for item in data['cart']))
         if cart_total_amount != data['amount']:
             raise serializers.ValidationError('Sum of `cart` items amounts must be equal to payments `amount`')
         return data

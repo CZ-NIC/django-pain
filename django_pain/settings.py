@@ -143,7 +143,7 @@ def get_processor_objective(processor: str):
 
 @lru_cache()
 def get_card_payment_handler_class(card_payment_handler: str):
-    """Get CardPayemntHandler class."""
+    """Get CardPaymentHandler class."""
     cls = SETTINGS.card_payment_handlers.get(card_payment_handler)
     if cls is None:
         raise ValueError("{} is not present in PAIN_CARD_PAYMENT_HANDLERS setting".format(card_payment_handler))

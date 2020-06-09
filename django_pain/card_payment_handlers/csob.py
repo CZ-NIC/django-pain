@@ -19,13 +19,14 @@
 """Card handler for CSOB Gateway."""
 from typing import Dict, List, Tuple
 
+import requests
 from django.utils import timezone
 from djmoney.money import Money
 from pycsob import conf as CSOB
 from pycsob.client import CsobClient
 from pycsob.utils import CsobVerifyError
 
-from django_pain.card_payment_handlers.common import AbstractCardPaymentHandler, CartItem
+from django_pain.card_payment_handlers.common import AbstractCardPaymentHandler, CartItem, PaymentHandlerConnectionError
 from django_pain.constants import PaymentState, PaymentType
 from django_pain.models import BankAccount, BankPayment
 from django_pain.settings import SETTINGS
@@ -79,12 +80,16 @@ class CSOBCardPaymentHandler(AbstractCardPaymentHandler):
             dict_cart.append(dict_item)
 
         # Init payment on CSOB Gateway
-        response = self.client.payment_init(
-            variable_symbol, int(amount * 100), return_url, description='Dummy value',
-            cart=dict_cart, return_method=return_method, language=language,
-            # logo_version=PAYMENTS_SETTINGS.PAYMENTS_CSOB_LOGO_VERSION,
-            # color_scheme_version=PAYMENTS_SETTINGS.PAYMENTS_CSOB_COLOR_SCHEME_VERSION, merchant_data=merchant_data
-        )
+        try:
+            response = self.client.payment_init(
+                variable_symbol, int(amount * 100), return_url, description='Dummy value',
+                cart=dict_cart, return_method=return_method, language=language,
+                # logo_version=PAYMENTS_SETTINGS.PAYMENTS_CSOB_LOGO_VERSION,
+                # color_scheme_version=PAYMENTS_SETTINGS.PAYMENTS_CSOB_COLOR_SCHEME_VERSION, merchant_data=merchant_data
+            )
+        except requests.ConnectionError:
+            raise PaymentHandlerConnectionError('Gateway connection error')
+
         data = self.client.gateway_return(response.json())
         if data['resultCode'] != CSOB.RETURN_CODE_OK:
             raise CsobGateError('init resultCode != OK', data)
@@ -111,7 +116,10 @@ class CSOBCardPaymentHandler(AbstractCardPaymentHandler):
 
     def update_payments_state(self, payment: BankPayment) -> None:
         """Update status of the payment form CSOB Gateway and if newly paid, process the payment."""
-        gateway_result = self.client.payment_status(payment.identifier).payload
+        try:
+            gateway_result = self.client.payment_status(payment.identifier).payload
+        except requests.ConnectionError:
+            raise PaymentHandlerConnectionError('Gateway connection error')
         payment.card_payment_state = CSOB.PAYMENT_STATUSES[gateway_result['paymentStatus']]
         payment.state = CSOB_GATEWAY_TO_PAYMENT_STATE_MAPPING[gateway_result['paymentStatus']]
         payment.save()

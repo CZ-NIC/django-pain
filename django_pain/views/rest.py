@@ -17,10 +17,11 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """REST API module."""
-from rest_framework import mixins, routers, viewsets
+from rest_framework import mixins, routers, status, viewsets
 from rest_framework.response import Response
 
-from django_pain.constants import PaymentType
+from django_pain.card_payment_handlers import PaymentHandlerConnectionError
+from django_pain.constants import PaymentState, PaymentType
 from django_pain.models import BankPayment
 from django_pain.serializers import BankPaymentSerializer
 from django_pain.settings import get_card_payment_handler_instance
@@ -39,7 +40,10 @@ class BankPaymentViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet)
         old_payment_state = payment.state
 
         card_payment_handler = get_card_payment_handler_instance(payment.card_handler)
-        card_payment_handler.update_payments_state(payment)
+        try:
+            card_payment_handler.update_payments_state(payment)
+        except PaymentHandlerConnectionError:
+            return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         if old_payment_state == PaymentState.INITIALIZED and payment.state == PaymentState.READY_TO_PROCESS:
             pass  # TODO: Process payment with processor

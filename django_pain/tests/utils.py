@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2019  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -22,6 +22,7 @@ from typing import Any
 
 from djmoney.money import Money
 
+from django_pain.card_payment_handlers import AbstractCardPaymentHandler
 from django_pain.constants import InvoiceType
 from django_pain.models import BankAccount, BankPayment, Client, Invoice
 from django_pain.processors import AbstractPaymentProcessor
@@ -36,6 +37,16 @@ class DummyPaymentProcessor(AbstractPaymentProcessor):
         """Dummy function."""
 
     def assign_payment(self, payment, client_id):
+        """Dummy function."""
+
+
+class DummyCardPaymentHandler(AbstractCardPaymentHandler):
+    """Dummy card payment handler."""
+
+    def init_payment(self, **kwargs):
+        """Dummy function."""
+
+    def update_payments_state(self, **kwargs):
         """Dummy function."""
 
 

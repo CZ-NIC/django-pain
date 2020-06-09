@@ -16,12 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
-"""CardPayemntHandler module."""
-from .common import AbstractCardPaymentHandler, CartItem
+"""CardPaymentHandler module."""
+from .common import AbstractCardPaymentHandler, CartItem, PaymentHandlerConnectionError, PaymentHandlerError
 from .csob import CSOBCardPaymentHandler
 
 __all__ = [
     'AbstractCardPaymentHandler',
-    'CSOBCardPaymentHandler',
     'CartItem',
+    'CSOBCardPaymentHandler',
+    'PaymentHandlerError',
+    'PaymentHandlerConnectionError',
 ]

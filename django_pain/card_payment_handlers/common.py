@@ -32,6 +32,18 @@ CartItem = NamedTuple('CartItem', [
 ])
 
 
+class PaymentHandlerError(Exception):
+    """Generic payment handler error."""
+
+    pass
+
+
+class PaymentHandlerConnectionError(PaymentHandlerError):
+    """Peyment handler connection error."""
+
+    pass
+
+
 class AbstractCardPaymentHandler(ABC):
     """Card payment handler."""
 
