@@ -75,7 +75,6 @@ class TestBankPaymentRestAPI(TestCase):
 
         self.assertEqual(response.status_code, 503)
 
-    @override_settings(PAIN_CSOB_CARD_ACCOUNT_NAME='Account')
     def test_create(self):
         account = get_account(account_number='123456', currency='CZK')
         account.save()
