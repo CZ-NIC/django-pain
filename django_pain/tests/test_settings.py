@@ -56,6 +56,29 @@ class TestProcessorsSetting(SimpleTestCase):
             SETTINGS.check()
 
 
+class TestCallableListSetting(SimpleTestCase):
+    """Test CallableListSetting."""
+
+    @override_settings(PAIN_IMPORT_CALLBACKS=['django_pain.settings.PainSettings'])
+    def test_ok(self):
+        SETTINGS.check()
+
+    @override_settings(PAIN_IMPORT_CALLBACKS=['django_pain.tests.test_settings'])
+    def test_not_callable(self):
+        with self.assertRaisesMessage(ImproperlyConfigured, 'CALLBACKS must be a list of dotted paths to callables'):
+            SETTINGS.check()
+
+    @override_settings(PAIN_IMPORT_CALLBACKS=[1, 2, 3])
+    def test_not_a_string(self):
+        with self.assertRaisesMessage(ImproperlyConfigured, 'CALLBACKS must be a list of dotted paths to callables'):
+            SETTINGS.check()
+
+    @override_settings(PAIN_IMPORT_CALLBACKS=['django_pain._non._existing._module'])
+    def test_non_existing_import(self):
+        with self.assertRaises(ImportError):
+            SETTINGS.check()
+
+
 @override_settings(PAIN_PROCESSORS={'dummy': 'django_pain.tests.utils.DummyPaymentProcessor'})
 class TestGetProcessorClass(CacheResetMixin, SimpleTestCase):
     """Test get_processor_class."""

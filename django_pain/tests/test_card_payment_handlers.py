@@ -22,7 +22,7 @@ from collections import OrderedDict
 from unittest.mock import Mock, patch, sentinel
 
 import requests
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from djmoney.money import Money
 from pycsob import conf as CSOB
 
