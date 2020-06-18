@@ -17,6 +17,7 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Card handler for CSOB Gateway."""
+import logging
 from typing import Dict, List, Tuple
 
 import requests
@@ -24,16 +25,14 @@ from django.utils import timezone
 from djmoney.money import Money
 from pycsob import conf as CSOB
 from pycsob.client import CsobClient
-from pycsob.utils import CsobVerifyError
 
-from django_pain.card_payment_handlers.common import AbstractCardPaymentHandler, CartItem, PaymentHandlerConnectionError
+from django_pain.card_payment_handlers.common import (AbstractCardPaymentHandler, CartItem,
+                                                      PaymentHandlerConnectionError, PaymentHandlerError)
 from django_pain.constants import PaymentState, PaymentType
 from django_pain.models import BankAccount, BankPayment
 from django_pain.settings import SETTINGS
 
-
-class CsobGateError(CsobVerifyError):
-    """CSOB payment gate exception."""
+LOGGER = logging.getLogger(__name__)
 
 
 CSOB_GATEWAY_TO_PAYMENT_STATE_MAPPING = {
@@ -92,9 +91,9 @@ class CSOBCardPaymentHandler(AbstractCardPaymentHandler):
 
         data = self.client.gateway_return(response.json())
         if data['resultCode'] != CSOB.RETURN_CODE_OK:
-            raise CsobGateError('init resultCode != OK', data)
+            raise PaymentHandlerError('init resultCode != OK', data)
         if data['paymentStatus'] != CSOB.PAYMENT_STATUS_INIT:
-            raise CsobGateError('paymentStatus != PAYMENT_STATUS_INIT', data)
+            raise PaymentHandlerError('Init paymentStatus != PAYMENT_STATUS_INIT', data)
 
         redirect_url = self.client.get_payment_process_url(data['payId'])
 
@@ -120,6 +119,10 @@ class CSOBCardPaymentHandler(AbstractCardPaymentHandler):
             gateway_result = self.client.payment_status(payment.identifier).payload
         except requests.ConnectionError:
             raise PaymentHandlerConnectionError('Gateway connection error')
-        payment.card_payment_state = CSOB.PAYMENT_STATUSES[gateway_result['paymentStatus']]
-        payment.state = CSOB_GATEWAY_TO_PAYMENT_STATE_MAPPING[gateway_result['paymentStatus']]
-        payment.save()
+        if gateway_result['resultCode'] == CSOB.RETURN_CODE_OK:
+            payment.card_payment_state = CSOB.PAYMENT_STATUSES[gateway_result['paymentStatus']]
+            payment.state = CSOB_GATEWAY_TO_PAYMENT_STATE_MAPPING[gateway_result['paymentStatus']]
+            payment.save()
+        else:
+            LOGGER.error('payment_status resultCode != OK: %s', gateway_result)
+            raise PaymentHandlerError('payment_status resultCode != OK', gateway_result)

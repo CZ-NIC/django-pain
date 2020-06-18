@@ -49,7 +49,7 @@ class TestBankPaymentRestAPI(TestCase):
         payment.save()
 
         result_mock = Mock()
-        result_mock.payload = {'paymentStatus': CSOB.PAYMENT_STATUS_CANCELLED}
+        result_mock.payload = {'paymentStatus': CSOB.PAYMENT_STATUS_CANCELLED, 'resultCode': CSOB.RETURN_CODE_OK}
 
         card_payment_hadler = get_card_payment_handler_instance(payment.card_handler)
         with patch.object(card_payment_hadler, '_client') as gateway_client_mock:
