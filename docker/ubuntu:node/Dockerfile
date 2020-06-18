@@ -11,4 +11,4 @@ RUN apt-get --yes update \
     git \
     npm \
  && rm -rf /var/lib/apt/lists/*
-RUN npm install -g @cz-nic/json-python-coverage
+RUN npm install -g npm @cz-nic/json-python-coverage

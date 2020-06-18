@@ -1,19 +1,19 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// This file was generated using python_env, please do not edit directly.
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 module.exports = {
     "env": {
         "browser": true,
         "es6": true,
         "node": true,
-        "jquery": true,
-        "jest": true,
     },
-    "plugins": ["jest"],
-    "extends": "eslint:recommended",
+    "extends": [
+        "eslint:recommended",
+    ],
     "parserOptions": {
         "sourceType": "module",
         "ecmaVersion": 2018,
-    },
-    "globals": {
-        "jQuery": "off",
     },
     "rules": {
         // Basic settings
@@ -24,6 +24,7 @@ module.exports = {
         "max-len":              ["warn", { "code": 120 }],  // Line length is limited by 120 characters
         "semi":                 ["error", "never"],         // Don't use semicolons if not necessary
         "semi-style":           ["error", "first"],         // If necessary, write semicolon at the beginning of the line
+        "eol-last":             ["error", "always"],        // enforces at least one newline (or absence thereof) at the end of non-empty files
 
         // Code settings
         "no-use-before-define": ["error"],                  // Define functions, classes and variables before you use them
@@ -34,6 +35,7 @@ module.exports = {
         "complexity":           ["warn", 10],               // Maximum cyclomatic complexity
 
         // Spacing settings
+        "space-before-blocks":  ["warn"],                   // Require at least one preceding space before blocks
         "keyword-spacing":      ["warn"],                   // Reqiure spacing around keywords
         "func-call-spacing":    ["error", "never"],         // Don't allow spaces between function call and arguments
         "space-before-function-paren": ["error", "never"],  // Don't allow spaces before function definition parenthesis
@@ -41,5 +43,7 @@ module.exports = {
         "space-in-parens":      ["warn", "never"],          // Don't allow spaces in parenthesis
         "comma-spacing":        ["warn"],                   // Reqire space after comma, don't allow space before
         "space-infix-ops":      ["warn"],                   // Require spaces around infix operators (including =)
+        "quotes":               ["warn", "single", { "avoidEscape": true, "allowTemplateLiterals": true }], // Requires the use of single quotes, allows strings to use single-quotes or double-quotes so long as the string contains a quote that would have to be escaped otherwise, allows strings to use backticks
+        "comma-dangle":         ["warn", "always-multiline"],  // Require for the last item in multiline object to be followed by comma
     }
 };
