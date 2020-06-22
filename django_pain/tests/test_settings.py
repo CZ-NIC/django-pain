@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2019  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -20,10 +20,11 @@
 from django.core.exceptions import ImproperlyConfigured
 from django.test import SimpleTestCase, override_settings
 
-from django_pain.settings import SETTINGS, get_processor_class, get_processor_instance, get_processor_objective
+from django_pain.settings import (SETTINGS, get_card_payment_handler_class, get_card_payment_handler_instance,
+                                  get_processor_class, get_processor_instance, get_processor_objective)
 
 from .mixins import CacheResetMixin
-from .utils import DummyPaymentProcessor
+from .utils import DummyCardPaymentHandler, DummyPaymentProcessor
 
 
 class TestProcessorsSetting(SimpleTestCase):
@@ -95,4 +96,35 @@ class TestGetProcessorObjective(CacheResetMixin, SimpleTestCase):
         self.assertEqual(
             get_processor_objective('dummy'),
             'Dummy objective'
+        )
+
+
+@override_settings(PAIN_CARD_PAYMENT_HANDLERS={'dummy': 'django_pain.tests.utils.DummyCardPaymentHandler'})
+class TestGetCardPaymentHandlerClass(CacheResetMixin, SimpleTestCase):
+    """Test get_payment_handler_class."""
+
+    def test_success(self):
+        """Test successful import."""
+        self.assertEqual(
+            get_card_payment_handler_class('dummy'),
+            DummyCardPaymentHandler
+        )
+
+    def test_invalid(self):
+        """Test not defined card payment handler."""
+        handler = 'invalid.package.name'
+        with self.assertRaisesRegex(ValueError,
+                                    '{} is not present in PAIN_CARD_PAYMENT_HANDLERS setting'.format(handler)):
+            get_card_payment_handler_class(handler)
+
+
+@override_settings(PAIN_CARD_PAYMENT_HANDLERS={'dummy': 'django_pain.tests.utils.DummyCardPaymentHandler'})
+class TestGetCardPaymentHandlerInstance(CacheResetMixin, SimpleTestCase):
+    """Test get_processor_instance."""
+
+    def test_success(self):
+        """Test success."""
+        self.assertIsInstance(
+            get_card_payment_handler_instance('dummy'),
+            DummyCardPaymentHandler
         )

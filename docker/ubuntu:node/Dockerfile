@@ -2,10 +2,10 @@
 # This file was generated using python_env, please do not edit directly.
 ########################################################################################################################
 
-FROM ubuntu:bionic
+FROM ubuntu:focal
 # Requirements for the stylelint
 RUN apt-get --yes update \
- && apt-get install --yes --no-install-recommends \
+ && DEBIAN_FRONTEND="noninteractive" TZ="UTC" apt-get install --yes --no-install-recommends \
     build-essential \
     ca-certificates \
     git \

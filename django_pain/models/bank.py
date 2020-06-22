@@ -34,6 +34,7 @@ PAYMENT_TYPE_CHOICES = (
 )
 
 PAYMENT_STATE_CHOICES = (
+    (PaymentState.INITIALIZED, _('initialized')),
     (PaymentState.READY_TO_PROCESS, _('ready to process')),
     (PaymentState.PROCESSED, _('processed')),
     (PaymentState.DEFERRED, _('not identified')),
@@ -78,7 +79,7 @@ class BankPayment(models.Model):
                                     verbose_name=_('Payment type'))
     account = models.ForeignKey(BankAccount, on_delete=models.CASCADE, verbose_name=_('Destination account'))
     create_time = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name=_('Create time'))
-    transaction_date = models.DateField(db_index=True, verbose_name=_('Transaction date'))
+    transaction_date = models.DateField(null=True, db_index=True, verbose_name=_('Transaction date'))
 
     counter_account_number = models.TextField(blank=True, verbose_name=_('Counter account number'))
     counter_account_name = models.TextField(blank=True, verbose_name=_('Counter account name'))
