@@ -62,10 +62,10 @@ class CSOBCardPaymentHandler(AbstractCardPaymentHandler):
         """Get CSOB Gateway Client."""
         if self._client is None:
             self._client = CsobClient(
-                SETTINGS.csob_card_merchant_id,
-                SETTINGS.csob_card_api_url,
-                SETTINGS.csob_card_merchant_private_key,
-                SETTINGS.csob_card_api_public_key
+                SETTINGS.csob_card['merchant_id'],
+                SETTINGS.csob_card['api_url'],
+                SETTINGS.csob_card['merchant_private_key'],
+                SETTINGS.csob_card['api_public_key']
             )
         return self._client
 
@@ -98,7 +98,7 @@ class CSOBCardPaymentHandler(AbstractCardPaymentHandler):
 
         redirect_url = self.client.get_payment_process_url(data['payId'])
 
-        account = BankAccount.objects.get(account_name=SETTINGS.csob_card_account_name)
+        account = BankAccount.objects.get(account_name=SETTINGS.csob_card['account_name'])
         payment = BankPayment.objects.create(
             identifier=data['payId'],
             payment_type=PaymentType.CARD_PAYMENT,

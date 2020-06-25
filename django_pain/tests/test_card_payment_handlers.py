@@ -22,7 +22,7 @@ from collections import OrderedDict
 from unittest.mock import Mock, patch, sentinel
 
 import requests
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from djmoney.money import Money
 from pycsob import conf as CSOB
 
@@ -87,7 +87,6 @@ class TestCSOBCardPaymentHandlerInit(TestCase):
             self.assertRaises(PaymentHandlerConnectionError, handler.init_payment, 100, '123', 'csob',
                               'https://example.com', 'POST', [], 'CZ')
 
-    @override_settings(PAIN_CSOB_CARD_ACCOUNT_NAME='Account')
     def test_init_payment_ok(self):
         account = get_account(account_number='123456', currency='CZK')
         account.save()
@@ -114,7 +113,6 @@ class TestCSOBCardPaymentHandlerInit(TestCase):
         self.assertEqual(payment.processor, 'donations')
         self.assertEqual(payment.card_handler, 'csob')
 
-    @override_settings(PAIN_CSOB_CARD_ACCOUNT_NAME='Account')
     def test_init_payment_not_ok(self):
         account = get_account(account_number='123456', currency='CZK')
         account.save()
@@ -134,7 +132,6 @@ class TestCSOBCardPaymentHandlerInit(TestCase):
                                              'Gift for the best FRED')],
                                    'CZ')
 
-    @override_settings(PAIN_CSOB_CARD_ACCOUNT_NAME='Account')
     def test_init_payment_not_wrong_status(self):
         account = get_account(account_number='123456', currency='CZK')
         account.save()

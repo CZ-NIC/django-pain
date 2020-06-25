@@ -20,12 +20,13 @@
 from functools import lru_cache
 
 import appsettings
+from django.core.exceptions import ValidationError
 from django.utils import module_loading
 
 from .utils import full_class_name
 
 
-class NamedClassSetting(appsettings.Setting):
+class NamedClassSetting(appsettings.DictSetting):
     """Dictionary of names and dotted paths to classes setting. Class is checked to be specified type."""
 
     def __init__(self, checked_class_str, *args, **kwargs):
@@ -33,10 +34,10 @@ class NamedClassSetting(appsettings.Setting):
         super().__init__(*args, **kwargs)
 
     def transform(self, value):
-        """Import all classes from setting."""
+        """Transform value from dotted strings into module objects."""
         return dict((key, module_loading.import_string(value)) for (key, value) in value.items())
 
-    def checker(self, name, value):
+    def validate(self, value):
         """
         Check if properly configured.
 
@@ -45,68 +46,67 @@ class NamedClassSetting(appsettings.Setting):
           * all values must be subclasses of class specified in checked_class_str
         """
         if not isinstance(value, dict):
-            raise ValueError('{} must be {}, not {}'.format(name, dict, value.__class__))
+            raise ValidationError('{} must be {}, not {}'.format(self.full_name, dict, value.__class__))
         if not all(isinstance(key, str) for key in value.keys()):
-            raise ValueError('All keys of {} must be {}'.format(name, str))
+            raise ValidationError('All keys of {} must be {}'.format(self.full_name, str))
         value = self.transform(value)
 
         checked_class = module_loading.import_string(self.checked_class_str)
         for name, cls in value.items():
             if not issubclass(cls, checked_class):
-                raise ValueError('{} is not subclass of {}'.format(full_class_name(cls), checked_class.__name__))
+                raise ValidationError('{} is not subclass of {}'.format(full_class_name(cls), checked_class.__name__))
 
 
 class CallableListSetting(appsettings.ListSetting):
-    """
-    Callable list setting.
-
-    Contains list of dotted paths refering to callables.
-    """
-
-    def __init__(self, *args, **kwargs):
-        """Ensure that list items are strings."""
-        kwargs['item_type'] = str
-        super().__init__(*args, **kwargs)
+    """Contains list of dotted paths referring to callables."""
 
     def transform(self, value):
         """Translate dotted path to callable."""
         return [module_loading.import_string(call) for call in value]
 
-    def checker(self, name, value):
+    def validate(self, value):
         """Check whether dotted path refers to callable."""
+        if not all(isinstance(val, str) for val in value):
+            raise ValidationError('{} must be a list of dotted paths to callables'.format(self.full_name))
+
         transformed_value = self.transform(value)
         for call in transformed_value:
             if not callable(call):
-                raise ValueError('{} must be a list of dotted paths to callables'.format(name))
+                raise ValidationError('{} must be a list of dotted paths to callables'.format(self.full_name))
 
 
 class PainSettings(appsettings.AppSettings):
-    """
-    Application specific settings.
+    """Specific settings for django-pain app."""
 
-    Attributes:
-        processors: Dictionary of names and dotted paths to processor classes setting.
-        process_payments_lock_file: Location of process_payments command lock file.
-        trim_varsym: Whether variable symbol should be trimmed of leading zeros.
-        import_callbacks: List of dotted paths to callables that takes BankPayment object as
-            their argument and return (possibly) changed BankPayment.
+    # Dictionary of names and dotted paths to processor classes setting.
+    processors = NamedClassSetting('django_pain.processors.AbstractPaymentProcessor', required=True, key_type=str,
+                                   value_type=str)
 
-            These callables are called right before the payment is saved during the import.
-            Especially, these callable can raise ValidationError in order to avoid
-            saving payment to the database.
-    """
+    # A card payment handler classes.
+    card_payment_handlers = NamedClassSetting('django_pain.card_payment_handlers.AbstractCardPaymentHandler',
+                                              key_type=str, value_type=str)
 
-    processors = NamedClassSetting('django_pain.processors.AbstractPaymentProcessor', required=True)
-    card_payment_handlers = NamedClassSetting('django_pain.card_payment_handlers.AbstractCardPaymentHandler')
+    # Location of process_payments command lock file.
     process_payments_lock_file = appsettings.StringSetting(default='/tmp/pain_process_payments.lock')
-    trim_varsym = appsettings.BooleanSetting(default=False)
-    import_callbacks = CallableListSetting()
 
-    csob_card_api_url = appsettings.StringSetting()
-    csob_card_api_public_key = appsettings.StringSetting()
-    csob_card_merchant_id = appsettings.StringSetting()
-    csob_card_merchant_private_key = appsettings.StringSetting()
-    csob_card_account_name = appsettings.StringSetting()
+    # Whether variable symbol should be trimmed of leading zeros.
+    trim_varsym = appsettings.BooleanSetting(default=False)
+
+    # List of dotted paths to callables that takes BankPayment object as their argument and return (possibly) changed
+    # BankPayment.
+    #
+    # These callables are called right before the payment is saved during the import. Especially, these callable can
+    # raise ValidationError in order to avoid saving payment to the database.
+    import_callbacks = CallableListSetting(item_type=str)
+
+    # CSOB card settings
+    csob_card = appsettings.NestedDictSetting(dict(
+        api_url=appsettings.StringSetting(default='https://api.platebnibrana.csob.cz/api/v1.7/'),
+        api_public_key=appsettings.FileSetting(required=True),
+        merchant_id=appsettings.StringSetting(required=True),
+        merchant_private_key=appsettings.FileSetting(required=True),
+        account_name=appsettings.StringSetting(required=True),
+    ), default=None)
 
     class Meta:
         """Meta class."""

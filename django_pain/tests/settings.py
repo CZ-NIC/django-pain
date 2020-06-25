@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2019  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -17,6 +17,7 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Settings for tests."""
+import os
 
 SECRET_KEY = 'Qapla\'!'
 
@@ -58,3 +59,9 @@ TEMPLATES = [
 ]
 
 PAIN_PROCESSORS = {}  # type: dict
+PAIN_CSOB_CARD = {
+    'API_PUBLIC_KEY': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'empty_key.txt'),
+    'MERCHANT_ID': '',
+    'MERCHANT_PRIVATE_KEY': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'empty_key.txt'),
+    'ACCOUNT_NAME': 'Account',
+}
