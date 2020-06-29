@@ -64,8 +64,8 @@ class CSOBCardPaymentHandler(AbstractCardPaymentHandler):
             self._client = CsobClient(
                 SETTINGS.csob_card['merchant_id'],
                 SETTINGS.csob_card['api_url'],
-                SETTINGS.csob_card['merchant_private_key'],
-                SETTINGS.csob_card['api_public_key']
+                str(SETTINGS.csob_card['merchant_private_key']),
+                str(SETTINGS.csob_card['api_public_key'])
             )
         return self._client
 
