@@ -116,4 +116,5 @@ test:node:
         - npm run check-css
         - npm run check-js -- --max-warnings=0
         - npm run test
+        - npm run build
         - json-python-coverage coverage-js/coverage-summary.json
