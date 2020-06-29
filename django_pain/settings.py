@@ -17,6 +17,7 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """django_pain settings."""
+from collections import OrderedDict
 from functools import lru_cache
 
 import appsettings
@@ -35,7 +36,8 @@ class NamedClassSetting(appsettings.DictSetting):
 
     def transform(self, value):
         """Transform value from dotted strings into module objects."""
-        return dict((key, module_loading.import_string(value)) for (key, value) in value.items())
+        # Ordred dict and sorting is workaround for Python 3.5 (random test failing)
+        return OrderedDict((key, module_loading.import_string(value)) for (key, value) in value.items())
 
     def validate(self, value):
         """

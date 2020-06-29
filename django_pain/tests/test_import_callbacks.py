@@ -17,6 +17,8 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Test import callbacks."""
+from collections import OrderedDict
+
 from django.conf import ImproperlyConfigured
 from django.core.exceptions import ValidationError
 from django.test import SimpleTestCase, override_settings
@@ -40,10 +42,10 @@ class TestIgnoreNegativePayments(CacheResetMixin, SimpleTestCase):
         self.assertEqual(payment.state, PaymentState.READY_TO_PROCESS)
         self.assertEqual(payment.processor, '')
 
-    @override_settings(PAIN_PROCESSORS={
-        'dummy': 'django_pain.tests.utils.DummyPaymentProcessor',
-        'ignore': 'django_pain.processors.IgnorePaymentProcessor',
-    })
+    @override_settings(PAIN_PROCESSORS=OrderedDict([
+        ('dummy', 'django_pain.tests.utils.DummyPaymentProcessor'),
+        ('ignore', 'django_pain.processors.IgnorePaymentProcessor'),
+    ]))
     def test_negative_payment(self):
         self.payment.amount.amount = -42
         payment = ignore_negative_payments(self.payment)

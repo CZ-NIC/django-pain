@@ -17,6 +17,7 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Test admin forms."""
+from collections import OrderedDict
 from datetime import date
 
 from django.test import TestCase, override_settings
@@ -51,10 +52,10 @@ class ExceptionPaymentProcessor(DummyPaymentProcessor):
         raise InvalidTaxDateError('Invalid tax date')
 
 
-@override_settings(PAIN_PROCESSORS={
-    'success': 'django_pain.tests.admin.test_forms.SuccessPaymentProcessor',
-    'failure': 'django_pain.tests.admin.test_forms.FailurePaymentProcessor',
-})
+@override_settings(PAIN_PROCESSORS=OrderedDict([
+    ('success', 'django_pain.tests.admin.test_forms.SuccessPaymentProcessor'),
+    ('failure', 'django_pain.tests.admin.test_forms.FailurePaymentProcessor'),
+]))
 class TestBankPaymentForm(CacheResetMixin, TestCase):
     """Test BankPaymentForm."""
 

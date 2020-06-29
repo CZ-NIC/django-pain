@@ -19,6 +19,7 @@
 """Test process_payments command."""
 import fcntl
 import os
+from collections import OrderedDict
 from io import StringIO
 
 from django.core.management import call_command
@@ -200,9 +201,10 @@ class TestProcessPayments(CacheResetMixin, TestCase):
                 ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments finished.'),
             )
 
-    @override_settings(PAIN_PROCESSORS={
-        'dummy_false': 'django_pain.tests.commands.test_process_payments.DummyFalsePaymentProcessor',
-        'dummy_true': 'django_pain.tests.commands.test_process_payments.DummyTruePaymentProcessor'})
+    @override_settings(PAIN_PROCESSORS=OrderedDict([
+        ('dummy_false', 'django_pain.tests.commands.test_process_payments.DummyFalsePaymentProcessor'),
+        ('dummy_true', 'django_pain.tests.commands.test_process_payments.DummyTruePaymentProcessor'),
+    ]))
     def test_payments_from_to(self):
         """Test processed payments."""
         with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
@@ -353,9 +355,10 @@ class TestProcessPayments(CacheResetMixin, TestCase):
                 ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments finished.'),
             )
 
-    @override_settings(PAIN_PROCESSORS={
-        'dummy': 'django_pain.tests.commands.test_process_payments.DummyTruePaymentProcessor',
-        'dummy_false': 'django_pain.tests.commands.test_process_payments.DummyFalsePaymentProcessor'})
+    @override_settings(PAIN_PROCESSORS=OrderedDict([
+        ('dummy', 'django_pain.tests.commands.test_process_payments.DummyTruePaymentProcessor'),
+        ('dummy_false', 'django_pain.tests.commands.test_process_payments.DummyFalsePaymentProcessor'),
+    ]))
     def test_card_payments_unprocessed(self):
         get_payment(identifier='PAYMENT_2', account=self.account, state=PaymentState.READY_TO_PROCESS,
                     payment_type=PaymentType.CARD_PAYMENT, counter_account_number='', processor='dummy_false').save()
@@ -389,9 +392,10 @@ class TestProcessPayments(CacheResetMixin, TestCase):
                 ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments finished.'),
             )
 
-    @override_settings(PAIN_PROCESSORS={
-        'dummy': 'django_pain.tests.commands.test_process_payments.DummyTruePaymentProcessor',
-        'dummy_error': 'django_pain.tests.commands.test_process_payments.DummyFalseErrorPaymentProcessor'})
+    @override_settings(PAIN_PROCESSORS=OrderedDict([
+        ('dummy', 'django_pain.tests.commands.test_process_payments.DummyTruePaymentProcessor'),
+        ('dummy_error', 'django_pain.tests.commands.test_process_payments.DummyFalseErrorPaymentProcessor'),
+    ]))
     def test_card_payments_defferred(self):
         get_payment(identifier='PAYMENT_2', account=self.account, state=PaymentState.READY_TO_PROCESS,
                     payment_type=PaymentType.CARD_PAYMENT, counter_account_number='', processor='dummy_error').save()
