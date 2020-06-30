@@ -22,8 +22,9 @@ from typing import Any
 
 from djmoney.money import Money
 
-from django_pain.card_payment_handlers import AbstractCardPaymentHandler
-from django_pain.constants import InvoiceType
+from django_pain.card_payment_handlers import (AbstractCardPaymentHandler, PaymentHandlerConnectionError,
+                                               PaymentHandlerError)
+from django_pain.constants import InvoiceType, PaymentState
 from django_pain.models import BankAccount, BankPayment, Client, Invoice
 from django_pain.processors import AbstractPaymentProcessor
 
@@ -46,8 +47,30 @@ class DummyCardPaymentHandler(AbstractCardPaymentHandler):
     def init_payment(self, **kwargs):
         """Dummy function."""
 
-    def update_payments_state(self, **kwargs):
+    def update_payments_state(self, payment):
         """Dummy function."""
+        payment.state = PaymentState.READY_TO_PROCESS
+        payment.save()
+
+
+class DummyCardPaymentHandlerExc(DummyCardPaymentHandler):
+    """Dummy card payment handler which throws connectoin exception."""
+    def init_payment(self, **kwargs):
+        """Dummy function."""
+
+    def update_payments_state(self, payment):
+        """Dummy function."""
+        raise PaymentHandlerError('Card Handler Error')
+
+
+class DummyCardPaymentHandlerConnExc(DummyCardPaymentHandler):
+    """Dummy card payment handler which throws connectoin exception."""
+    def init_payment(self, **kwargs):
+        """Dummy function."""
+
+    def update_payments_state(self, payment):
+        """Dummy function."""
+        raise PaymentHandlerConnectionError('Gateway connection error')
 
 
 def get_account(**kwargs: Any) -> BankAccount:

@@ -26,8 +26,8 @@ from django.test import TestCase
 from djmoney.money import Money
 from pycsob import conf as CSOB
 
-from django_pain.card_payment_handlers import CartItem, CSOBCardPaymentHandler, PaymentHandlerConnectionError
-from django_pain.card_payment_handlers.csob import CsobGateError
+from django_pain.card_payment_handlers import (CartItem, CSOBCardPaymentHandler, PaymentHandlerConnectionError,
+                                               PaymentHandlerError)
 from django_pain.constants import PaymentState, PaymentType
 from django_pain.tests.utils import get_account, get_payment
 
@@ -52,7 +52,7 @@ class TestCSOBCardPaymentHandlerStatus(TestCase):
         payment.save()
 
         result_mock = Mock()
-        result_mock.payload = {'paymentStatus': CSOB.PAYMENT_STATUS_CANCELLED}
+        result_mock.payload = {'paymentStatus': CSOB.PAYMENT_STATUS_CANCELLED, 'resultCode': CSOB.RETURN_CODE_OK}
 
         handler = CSOBCardPaymentHandler('csob')
         with patch.object(handler, '_client') as gateway_client_mock:
@@ -61,6 +61,25 @@ class TestCSOBCardPaymentHandlerStatus(TestCase):
             handler.update_payments_state(payment)
 
         self.assertEqual(payment.state, PaymentState.CANCELED)
+
+    def test_update_payment_state_not_ok(self):
+        account = get_account(account_number='123456', currency='CZK')
+        account.save()
+        payment = get_payment(identifier='1', account=account, counter_account_number='',
+                              payment_type=PaymentType.CARD_PAYMENT,
+                              state=PaymentState.INITIALIZED,
+                              card_handler='csob')
+        payment.save()
+
+        result_mock = Mock()
+        result_mock.payload = {'resultCode': CSOB.RETURN_CODE_MERCHANT_BLOCKED}
+
+        handler = CSOBCardPaymentHandler('csob')
+        with patch.object(handler, '_client') as gateway_client_mock:
+            gateway_client_mock.payment_status.return_value = result_mock
+            self.assertRaisesRegex(PaymentHandlerError, 'payment_status resultCode != OK',
+                                   handler.update_payments_state, payment)
+        self.assertEqual(payment.state, PaymentState.INITIALIZED)
 
     def test_update_payment_state_connection_error(self):
         account = get_account(account_number='123456', currency='CZK')
@@ -95,7 +114,7 @@ class TestCSOBCardPaymentHandlerInit(TestCase):
         with patch.object(handler, '_client') as gateway_client_mock:
             gateway_client_mock.gateway_return.return_value = OrderedDict([
                 ('payId', 'unique_id_123'),
-                ('resultCode', 0),
+                ('resultCode', CSOB.RETURN_CODE_OK),
                 ('resultMessage', 'OK'),
                 ('paymentStatus', CSOB.PAYMENT_STATUS_INIT),
                 ('dttime', datetime.datetime(2020, 6, 10, 16, 47, 30))
@@ -121,11 +140,11 @@ class TestCSOBCardPaymentHandlerInit(TestCase):
         with patch.object(handler, '_client') as gateway_client_mock:
             gateway_client_mock.gateway_return.return_value = OrderedDict([
                 ('payId', 'unique_id_123'),
-                ('resultCode', 120),
+                ('resultCode', CSOB.RETURN_CODE_MERCHANT_BLOCKED),
                 ('resultMessage', 'Merchant blocked'),
                 ('dttime', datetime.datetime(2020, 6, 10, 16, 47, 30))
             ])
-            self.assertRaisesRegex(CsobGateError, 'resultCode != OK',
+            self.assertRaisesRegex(PaymentHandlerError, 'resultCode != OK',
                                    handler.init_payment,
                                    100, '123', 'donations', 'https://example.com', 'POST',
                                    [CartItem('Gift for FRED', 1, 1000000,
@@ -140,12 +159,12 @@ class TestCSOBCardPaymentHandlerInit(TestCase):
         with patch.object(handler, '_client') as gateway_client_mock:
             gateway_client_mock.gateway_return.return_value = OrderedDict([
                 ('payId', 'unique_id_123'),
-                ('resultCode', 0),
+                ('resultCode', CSOB.RETURN_CODE_OK),
                 ('resultMessage', 'OK'),
                 ('paymentStatus', CSOB.PAYMENT_STATUS_CANCELLED),
                 ('dttime', datetime.datetime(2020, 6, 10, 16, 47, 30))
             ])
-            self.assertRaisesRegex(CsobGateError, 'paymentStatus != PAYMENT_STATUS_INIT',
+            self.assertRaisesRegex(PaymentHandlerError, 'paymentStatus != PAYMENT_STATUS_INIT',
                                    handler.init_payment,
                                    100, '123', 'donations', 'https://example.com', 'POST',
                                    [CartItem('Gift for FRED', 1, 1000000,
