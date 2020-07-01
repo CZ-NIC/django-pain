@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2019  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -18,7 +18,8 @@
 
 """Test mixins."""
 from django_pain.import_callbacks import _get_ignore_processor_name
-from django_pain.settings import get_processor_class, get_processor_instance, get_processor_objective
+from django_pain.settings import (get_card_payment_handler_class, get_card_payment_handler_instance,
+                                  get_processor_class, get_processor_instance, get_processor_objective)
 
 
 class CacheResetMixin(object):
@@ -30,4 +31,6 @@ class CacheResetMixin(object):
         get_processor_class.cache_clear()
         get_processor_instance.cache_clear()
         get_processor_objective.cache_clear()
+        get_card_payment_handler_class.cache_clear()
+        get_card_payment_handler_instance.cache_clear()
         _get_ignore_processor_name.cache_clear()

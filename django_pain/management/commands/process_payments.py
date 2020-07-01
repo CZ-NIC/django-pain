@@ -24,7 +24,7 @@ from copy import deepcopy
 from django.core.management.base import BaseCommand, CommandError, no_translations
 from django.utils.dateparse import parse_datetime
 
-from django_pain.constants import PaymentState
+from django_pain.constants import PaymentState, PaymentType
 from django_pain.models import BankAccount, BankPayment
 from django_pain.settings import SETTINGS, get_processor_instance
 
@@ -63,8 +63,8 @@ class Command(BaseCommand):
                                       % ', '.join(non_existing_accounts))
 
     @staticmethod
-    def _process_payments(payments):
-        """Process the payments."""
+    def _process_transfer_payments(payments):
+        """Process the payments made by bank transfer."""
         for processor_name in SETTINGS.processors:
             processor = get_processor_instance(processor_name)
             if not payments:
@@ -95,6 +95,33 @@ class Command(BaseCommand):
         for unprocessed_payment in payments:
             unprocessed_payment.state = PaymentState.DEFERRED
             unprocessed_payment.save()
+
+    @staticmethod
+    def _process_card_payments(payments):
+        """Process the payments made by card."""
+        if not payments:
+            return
+
+        LOGGER.info('Processing card payments.')
+        processor_names = [payment['processor'] for payment in payments.values('processor').distinct()]
+        for processor_name in processor_names:
+            processor = get_processor_instance(processor_name)
+            processors_payments = payments.filter(processor=processor_name)
+
+            LOGGER.info('Processing card payments with processor %s.', processor_name)
+            results = processor.process_payments(
+                deepcopy(payment) for payment in processors_payments)  # pragma: no cover
+
+            for payment, processed in zip(processors_payments, results):
+                if processed.result:
+                    payment.state = PaymentState.PROCESSED
+                    payment.processing_error = processed.error
+                    payment.save()
+                else:
+                    LOGGER.info('Saving payment %s as DEFERRED with error %s.', payment.uuid, processed.error)
+                    payment.state = PaymentState.DEFERRED
+                    payment.processing_error = processed.error
+                    payment.save()
 
     @no_translations
     def handle(self, *args, **options):
@@ -139,7 +166,8 @@ class Command(BaseCommand):
 
             LOGGER.info('Processing %s unprocessed payments.', payments.count())
 
-            self._process_payments(payments)
+            self._process_card_payments(payments.filter(payment_type=PaymentType.CARD_PAYMENT))
+            self._process_transfer_payments(payments.filter(payment_type=PaymentType.TRANSFER))
 
         except AccountDoesNotExist as e:
             LOGGER.error(str(e))
