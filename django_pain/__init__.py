@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2019  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -18,4 +18,4 @@
 
 """Django application for managing bank payments and invoices."""
 
-__version__ = '2.0.0-rc1'
+__version__ = '2.0.0-rc2'
