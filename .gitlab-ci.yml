@@ -38,11 +38,11 @@ image:ubuntu:bionic:
         IMAGE_NAME: ubuntu:bionic
         IMAGE_TAG: $CI_REGISTRY_IMAGE/$IMAGE_NAME
 
-image:ubuntu:node:
+image:node12:
     <<: *image
     variables:
-        IMAGE_NAME: ubuntu:node
-        IMAGE_TAG: $CI_REGISTRY_IMAGE/$IMAGE_NAME
+        IMAGE_NAME: node
+        IMAGE_TAG: $CI_REGISTRY_IMAGE/$IMAGE_NAME:12
 
 ########################################################################################################################
 # Basic declarations
@@ -52,8 +52,8 @@ image:ubuntu:node:
 .ubuntu-bionic: &ubuntu-bionic
     image: "$CI_REGISTRY/$CI_PROJECT_PATH/ubuntu:bionic"
 
-.ubuntu-node: &ubuntu-node
-    image: "$CI_REGISTRY/$CI_PROJECT_PATH/ubuntu:node"
+.node: &node
+    image: "$CI_REGISTRY/$CI_PROJECT_PATH/node:12"
 
 .install-dependencies: &install-dependencies
     before_script:
@@ -105,8 +105,8 @@ test-thawed:
     script:
         - tox -e py35-thaw,py36-thaw,py37-thaw,py38-thaw
 
-test:node:
-    <<: *ubuntu-node
+test:node12:
+    <<: *node
     before_script:
         - node --version
         - npm --version
