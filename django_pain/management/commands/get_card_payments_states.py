@@ -21,12 +21,12 @@ import logging
 
 from django.core.management.base import BaseCommand, no_translations
 from django.db import transaction
-from django.utils.dateparse import parse_datetime
 
 from django_pain.card_payment_handlers import PaymentHandlerConnectionError, PaymentHandlerError
 from django_pain.constants import PaymentState
 from django_pain.models import BankPayment
 from django_pain.settings import get_card_payment_handler_instance
+from django_pain.utils import parse_datetime_safe
 
 LOGGER = logging.getLogger(__name__)
 
@@ -38,9 +38,9 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         """Command takes optional arguments restricting processed time interval."""
-        parser.add_argument('-f', '--from', dest='time_from', type=parse_datetime,
+        parser.add_argument('-f', '--from', dest='time_from', type=parse_datetime_safe,
                             help="ISO datetime after which payments should be processed")
-        parser.add_argument('-t', '--to', dest='time_to', type=parse_datetime,
+        parser.add_argument('-t', '--to', dest='time_to', type=parse_datetime_safe,
                             help="ISO datetime before which payments should be processed")
 
     def _get_payments_states(self, payments):

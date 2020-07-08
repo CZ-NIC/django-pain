@@ -216,6 +216,17 @@ class TestProcessPayments(CacheResetMixin, TestCase):
                 transform=tuple, ordered=False)
             self.assertEqual(BankPayment.objects.first().objective, '')
 
+    def test_invalid_date_raises_exception(self):
+        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
+            with self.assertRaises(CommandError):
+                call_command('process_payments', '--from', '2017-01-32 00:00', '--to', '2017-02-01 00:00')
+            with self.assertRaises(CommandError):
+                call_command('process_payments', '--from', 'not a date', '--to', '2017-02-01 00:00')
+            with self.assertRaises(CommandError):
+                call_command('process_payments', '--from', '2017-01-01 00:00', '--to', '2017-01-32 00:00')
+            with self.assertRaises(CommandError):
+                call_command('process_payments', '--from', '2017-01-01 00:00', '--to', 'not a date')
+
     def test_lock(self):
         """Test process payments lock."""
         with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):

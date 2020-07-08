@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2019  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -17,8 +17,19 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Various utils."""
+from datetime import datetime
+
+from django.utils.dateparse import parse_datetime
 
 
 def full_class_name(cls):
     """Return full class name includeing the module path."""
     return "{}.{}".format(cls.__module__, cls.__qualname__)
+
+
+def parse_datetime_safe(value: str) -> datetime:
+    """Parse date_time using Django utils, but raise an exception when unsuccessful."""
+    result = parse_datetime(value)
+    if result is None:
+        raise ValueError('Could not parse date.')
+    return result
