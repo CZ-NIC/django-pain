@@ -22,11 +22,11 @@ import logging
 from copy import deepcopy
 
 from django.core.management.base import BaseCommand, CommandError, no_translations
-from django.utils.dateparse import parse_datetime
 
 from django_pain.constants import PaymentState, PaymentType
 from django_pain.models import BankAccount, BankPayment
 from django_pain.settings import SETTINGS, get_processor_instance
+from django_pain.utils import parse_datetime_safe
 
 LOGGER = logging.getLogger(__name__)
 
@@ -42,9 +42,9 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         """Command takes optional arguments restricting processed time interval."""
-        parser.add_argument('-f', '--from', dest='time_from', type=parse_datetime,
+        parser.add_argument('-f', '--from', dest='time_from', type=parse_datetime_safe,
                             help="ISO datetime after which payments should be processed")
-        parser.add_argument('-t', '--to', dest='time_to', type=parse_datetime,
+        parser.add_argument('-t', '--to', dest='time_to', type=parse_datetime_safe,
                             help="ISO datetime before which payments should be processed")
         group = parser.add_mutually_exclusive_group()
         group.add_argument('--include-accounts', type=(lambda x: set(x.split(','))),

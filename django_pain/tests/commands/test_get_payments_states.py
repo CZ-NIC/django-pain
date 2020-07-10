@@ -20,6 +20,7 @@
 import datetime
 
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import TestCase, override_settings
 from testfixtures import LogCapture
 
@@ -133,3 +134,13 @@ class TestGetPaymentsStates(TestCase):
                                   ('PAYMENT_2', PaymentState.READY_TO_PROCESS.value),
                                   ('PAYMENT_3', PaymentState.INITIALIZED.value)],
                                  transform=tuple)
+
+    def test_invalid_from_to_raises_exception(self):
+        with self.assertRaises(CommandError):
+            call_command('get_card_payments_states', '--from', '2009-01-32 00:00', '--to', '2017-02-01 00:00')
+        with self.assertRaises(CommandError):
+            call_command('get_card_payments_states', '--from', 'not a date', '--to', '2017-01-02 00:00')
+        with self.assertRaises(CommandError):
+            call_command('get_card_payments_states', '--from', '2009-01-01 00:00', '--to', '2017-01-32 00:00')
+        with self.assertRaises(CommandError):
+            call_command('get_card_payments_states', '--from', '2009-01-01 00:00', '--to', 'not a date')

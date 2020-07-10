@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2019  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -17,14 +17,28 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Test utils."""
+from datetime import datetime
+
 from django.test import SimpleTestCase
 
 from django_pain.models.bank import BankAccount
-from django_pain.utils import full_class_name
+from django_pain.utils import full_class_name, parse_datetime_safe
 
 
-class TestUtils(SimpleTestCase):
+class FullClassNameTest(SimpleTestCase):
 
     def test_str(self):
         """Test full_class_name."""
         self.assertEqual(full_class_name(BankAccount), 'django_pain.models.bank.BankAccount')
+
+
+class ParseDatetimeSafeTest(SimpleTestCase):
+
+    def test_parse_datetime_safe(self):
+        self.assertEquals(parse_datetime_safe('2017-01-31 00:00'), datetime(2017, 1, 31, 0, 0))
+
+    def test_parse_datetime_safe_fails_on_invalid(self):
+        with self.assertRaises(ValueError):
+            parse_datetime_safe('2017-01-32 00:00')
+        with self.assertRaises(ValueError):
+            parse_datetime_safe('not a date')
