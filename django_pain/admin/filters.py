@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2019  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -18,6 +18,8 @@
 
 """Admin filters."""
 from django.contrib.admin import ChoicesFieldListFilter
+from django.contrib.admin.options import IncorrectLookupParameters
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext as _
 
 from django_pain.constants import PaymentState
@@ -27,11 +29,18 @@ from django_pain.models import PAYMENT_STATE_CHOICES
 class PaymentStateListFilter(ChoicesFieldListFilter):
     """Custom filter for payment state."""
 
+    REALIZED_STATES = (PaymentState.READY_TO_PROCESS, PaymentState.DEFERRED, PaymentState.PROCESSED)
+
     def choices(self, cl):
         """Return modified enum choices."""
         yield {
             'selected': self.lookup_val is None,
-            'query_string': cl.get_query_string({}, [self.lookup_kwarg]),
+            'query_string': cl.get_query_string(remove=self.expected_parameters()),
+            'display': _('Realized'),
+        }
+        yield {
+            'selected': self.lookup_val == 'all',
+            'query_string': cl.get_query_string({self.lookup_kwarg: 'all'}, [self.lookup_kwarg]),
             'display': _('All'),
         }
         for enum_value in list(PaymentState):  # type: PaymentState
@@ -41,3 +50,17 @@ class PaymentStateListFilter(ChoicesFieldListFilter):
                 'query_string': cl.get_query_string({self.lookup_kwarg: str_value}),
                 'display': dict(PAYMENT_STATE_CHOICES)[enum_value],
             }
+
+    def queryset(self, request, queryset):
+        """Return filtered queryset."""
+        if not self.used_parameters:
+            return queryset.filter(state__in=self.REALIZED_STATES)
+        elif self.used_parameters.get(self.lookup_kwarg) == 'all':
+            return queryset
+
+        try:
+            return queryset.filter(**self.used_parameters)
+        except (ValueError, ValidationError) as e:
+            # Fields may raise a ValueError or ValidationError when converting
+            # the parameters to the correct type.
+            raise IncorrectLookupParameters(e)
