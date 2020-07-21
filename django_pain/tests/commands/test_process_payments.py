@@ -42,28 +42,32 @@ class DummyTruePaymentProcessor(DummyPaymentProcessor):
     default_objective = 'True objective'
 
     def process_payments(self, payments):
-        return [ProcessPaymentResult(result=True) for payment in payments]
+        for payment in payments:
+            yield ProcessPaymentResult(result=True)
 
 
 class DummyFalsePaymentProcessor(DummyPaymentProcessor):
     """Simple processor that just returns failure."""
 
     def process_payments(self, payments):
-        return [ProcessPaymentResult(result=False) for payment in payments]
+        for payment in payments:
+            yield ProcessPaymentResult(result=False)
 
 
 class DummyTrueErrorPaymentProcessor(DummyPaymentProcessor):
     """Simple processor that returns success with processing error."""
 
     def process_payments(self, payments):
-        return [ProcessPaymentResult(result=True, error=PaymentProcessingError.DUPLICITY) for payment in payments]
+        for payment in payments:
+            yield ProcessPaymentResult(result=True, error=PaymentProcessingError.DUPLICITY)
 
 
 class DummyFalseErrorPaymentProcessor(DummyPaymentProcessor):
     """Simple processor that returns failure with processing error."""
 
     def process_payments(self, payments):
-        return [ProcessPaymentResult(result=False, error=PaymentProcessingError.DUPLICITY) for payment in payments]
+        for payment in payments:
+            yield ProcessPaymentResult(result=False, error=PaymentProcessingError.DUPLICITY)
 
 
 @freeze_time('2018-01-01')
