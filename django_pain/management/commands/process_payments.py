@@ -20,6 +20,7 @@
 import fcntl
 import logging
 from copy import deepcopy
+from itertools import zip_longest
 
 from django.core.management.base import BaseCommand, CommandError, no_translations
 from django.utils.dateparse import parse_datetime
@@ -71,10 +72,10 @@ class Command(BaseCommand):
                 break
 
             LOGGER.info('Processing payments with processor %s.', processor_name)
-            results = processor.process_payments(deepcopy(payment) for payment in payments)  # pragma: no cover
+            results = processor.process_payments(deepcopy(payment) for payment in payments)
             unprocessed_payments = []
 
-            for payment, processed in zip(payments, results):
+            for payment, processed in zip_longest(payments, results):
                 if processed.result:
                     payment.state = PaymentState.PROCESSED
                     payment.processor = processor_name
@@ -110,9 +111,9 @@ class Command(BaseCommand):
 
             LOGGER.info('Processing card payments with processor %s.', processor_name)
             results = processor.process_payments(
-                deepcopy(payment) for payment in processors_payments)  # pragma: no cover
+                deepcopy(payment) for payment in processors_payments)
 
-            for payment, processed in zip(processors_payments, results):
+            for payment, processed in zip_longest(processors_payments, results):
                 if processed.result:
                     payment.state = PaymentState.PROCESSED
                     payment.processing_error = processed.error
