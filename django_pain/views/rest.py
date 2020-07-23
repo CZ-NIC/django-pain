@@ -20,6 +20,7 @@
 import logging
 from copy import deepcopy
 
+from django.db import transaction
 from rest_framework import mixins, routers, status, viewsets
 from rest_framework.response import Response
 
@@ -51,6 +52,7 @@ class BankPaymentViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet)
         payment.processing_error = result.error
         payment.save()
 
+    @transaction.atomic()
     def retrieve(self, request, *args, **kwargs):
         """Update payment state and return update payment."""
         payment = self.get_object()
