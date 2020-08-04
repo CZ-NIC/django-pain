@@ -17,22 +17,27 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Test process_payments command."""
+
 import fcntl
 import os
+import threading
 from collections import OrderedDict
 from datetime import date
 from io import StringIO
+from queue import Queue
+from unittest.mock import patch
 
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.test import TestCase, override_settings
+from django.db import close_old_connections, transaction
+from django.test import TestCase, TransactionTestCase, override_settings, skipUnlessDBFeature
 from freezegun import freeze_time
 from testfixtures import LogCapture, TempDirectory
 
 from django_pain.constants import PaymentProcessingError, PaymentState, PaymentType
 from django_pain.models import BankAccount, BankPayment
 from django_pain.processors import ProcessPaymentResult
-from django_pain.settings import SETTINGS
+from django_pain.settings import SETTINGS, get_processor_class, get_processor_instance
 from django_pain.tests.mixins import CacheResetMixin
 from django_pain.tests.utils import DummyPaymentProcessor, get_payment
 
@@ -65,6 +70,130 @@ class DummyFalseErrorPaymentProcessor(DummyPaymentProcessor):
 
     def process_payments(self, payments):
         return [ProcessPaymentResult(result=False, error=PaymentProcessingError.DUPLICITY) for payment in payments]
+
+
+@skipUnlessDBFeature('has_select_for_update')
+class TestProcessPaymentsLocks(CacheResetMixin, TransactionTestCase):
+
+    def setUp(self):
+        self.tempdir = TempDirectory()
+        self.account_in = BankAccount(account_number='123456/7890', currency='CZK')
+        self.account_ex = BankAccount(account_number='987654/3210', currency='CZK')
+        self.account_in.save()
+        self.account_ex.save()
+        get_payment(identifier='PAYMENT_1', account=self.account_in, state=PaymentState.READY_TO_PROCESS).save()
+        get_payment(identifier='PAYMENT_2', account=self.account_ex, state=PaymentState.READY_TO_PROCESS).save()
+        self.log_handler = LogCapture('django_pain.management.commands.process_payments', propagate=False)
+        # Exception in a threads does not fail the test - wee need to collect it somemehow
+        self.errors = Queue()  # type: Queue
+
+    def tearDown(self):
+        self.log_handler.uninstall()
+        self.tempdir.cleanup()
+
+    @override_settings(PAIN_PROCESSORS={
+        'dummy': 'django_pain.tests.commands.test_process_payments.DummyTruePaymentProcessor'})
+    def test_processing_does_not_overwrite_locked_rows(self):
+        processing_finished = threading.Event()
+        query_finished = threading.Event()
+
+        def target_processing():
+            query_finished.wait()
+            try:
+                call_command('process_payments')
+            except Exception as e:  # pragma: no cover
+                self.errors.put(e)
+                raise e
+            finally:
+                processing_finished.set()
+                close_old_connections()
+
+        def target_query():
+            try:
+                with transaction.atomic():
+                    payment = BankPayment.objects.select_for_update().filter(identifier='PAYMENT_2').get()
+                    payment.processor = 'manual'
+                    payment.save()
+                    query_finished.set()
+                    processing_finished.wait()
+            except Exception as e:  # pragma: no cover
+                self.errors.put(e)
+                raise e
+            finally:
+                query_finished.set()
+                close_old_connections()
+
+        threads = [threading.Thread(target=target_processing), threading.Thread(target=target_query)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        self.assertTrue(self.errors.empty())
+        self.assertQuerysetEqual(
+            BankPayment.objects.values_list('identifier', 'account', 'state', 'processor'),
+            [('PAYMENT_1', self.account_in.pk, PaymentState.PROCESSED, 'dummy'),
+                ('PAYMENT_2', self.account_ex.pk, PaymentState.READY_TO_PROCESS, 'manual')],
+            transform=tuple, ordered=False)
+
+    @override_settings(PAIN_PROCESSORS={
+        'dummy': 'django_pain.tests.commands.test_process_payments.DummyTruePaymentProcessor'})
+    def test_processed_rows_not_overwritten(self):
+        processing_started = threading.Event()
+        query_finished = threading.Event()
+
+        def mock_process_payments(payments):
+            processing_started.set()
+            query_finished.wait()
+            return [ProcessPaymentResult(result=True) for p in payments]
+
+        def target_processing():
+            try:
+                # cache may prevent mocking
+                get_processor_instance.cache_clear()
+                get_processor_class.cache_clear()
+                with patch('django_pain.tests.commands.test_process_payments.DummyTruePaymentProcessor') as MockClass:
+                    instance = MockClass.return_value
+                    instance.process_payments = mock_process_payments
+                    call_command('process_payments', '--exclude-accounts', self.account_ex.account_number)
+            except Exception as e:  # pragma: no cover
+                self.errors.put(e)
+                raise e
+            finally:
+                processing_started.set()
+                # mock might be cached
+                get_processor_instance.cache_clear()
+                get_processor_class.cache_clear()
+                close_old_connections()
+
+        def target_query():
+            processing_started.wait()
+            try:
+                with transaction.atomic():
+                    payments = BankPayment.objects.select_for_update(skip_locked=True).all()
+                    for p in payments:
+                        p.state = PaymentState.PROCESSED
+                        p.processor = 'manual'
+                        p.save()
+            except Exception as e:  # pragma: no cover
+                self.errors.put(e)
+                raise e
+            finally:
+                query_finished.set()
+                close_old_connections()
+
+        threads = [threading.Thread(target=target_processing), threading.Thread(target=target_query)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        self.assertTrue(self.errors.empty())
+        self.assertQuerysetEqual(
+            BankPayment.objects.values_list('identifier', 'account', 'state', 'processor'),
+            [('PAYMENT_1', self.account_in.pk, PaymentState.PROCESSED, 'dummy'),
+                ('PAYMENT_2', self.account_ex.pk, PaymentState.PROCESSED, 'manual')],
+            transform=tuple, ordered=False)
 
 
 @freeze_time('2018-01-01')
@@ -393,12 +522,12 @@ class TestProcessPayments(CacheResetMixin, TestCase):
                 ('django_pain.management.commands.process_payments', 'INFO', 'Processing 3 unprocessed payments.'),
                 ('django_pain.management.commands.process_payments', 'INFO', 'Processing card payments.'),
                 ('django_pain.management.commands.process_payments', 'INFO',
+                 'Processing card payments with processor dummy.'),
+                ('django_pain.management.commands.process_payments', 'INFO',
                  'Processing card payments with processor dummy_false.'),
                 ('django_pain.management.commands.process_payments', 'INFO',
                  'Saving payment %s as DEFERRED with error None.'
                  % BankPayment.objects.get(identifier='PAYMENT_2').uuid),
-                ('django_pain.management.commands.process_payments', 'INFO',
-                 'Processing card payments with processor dummy.'),
                 ('django_pain.management.commands.process_payments', 'INFO',
                  'Processing payments with processor dummy.'),
                 ('django_pain.management.commands.process_payments', 'INFO',
@@ -432,12 +561,12 @@ class TestProcessPayments(CacheResetMixin, TestCase):
                 ('django_pain.management.commands.process_payments', 'INFO', 'Processing 3 unprocessed payments.'),
                 ('django_pain.management.commands.process_payments', 'INFO', 'Processing card payments.'),
                 ('django_pain.management.commands.process_payments', 'INFO',
+                 'Processing card payments with processor dummy.'),
+                ('django_pain.management.commands.process_payments', 'INFO',
                  'Processing card payments with processor dummy_error.'),
                 ('django_pain.management.commands.process_payments', 'INFO',
                  'Saving payment %s as DEFERRED with error PaymentProcessingError.DUPLICITY.'
                  % BankPayment.objects.get(identifier='PAYMENT_2').uuid),
-                ('django_pain.management.commands.process_payments', 'INFO',
-                 'Processing card payments with processor dummy.'),
                 ('django_pain.management.commands.process_payments', 'INFO',
                  'Processing payments with processor dummy.'),
                 ('django_pain.management.commands.process_payments', 'INFO',

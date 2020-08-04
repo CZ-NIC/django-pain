@@ -19,18 +19,21 @@
 """Test admin views."""
 from datetime import date
 from decimal import ROUND_HALF_UP
+from queue import Queue
+from threading import Event, Thread
 
 from django.contrib import admin
 from django.contrib.auth.models import Permission, User
 from django.contrib.contenttypes.models import ContentType
-from django.test import RequestFactory, TestCase, override_settings
+from django.db import close_old_connections, transaction
+from django.test import RequestFactory, TestCase, TransactionTestCase, override_settings, skipUnlessDBFeature
 from django.urls import reverse
 from freezegun import freeze_time
 from moneyed.localization import _FORMATTER
 
 from django_pain.admin import BankPaymentAdmin
 from django_pain.constants import InvoiceType, PaymentProcessingError, PaymentState
-from django_pain.models import BankPayment
+from django_pain.models import BankAccount, BankPayment
 from django_pain.tests.mixins import CacheResetMixin
 from django_pain.tests.utils import DummyPaymentProcessor, get_account, get_client, get_invoice, get_payment
 
@@ -74,6 +77,94 @@ class TestBankAccountAdmin(TestCase):
         response = self.client.get(reverse('admin:django_pain_bankaccount_change', args=(self.account.pk,)))
         self.assertContains(response, '123456/0300')
         self.assertContains(response, '<div class="readonly">EUR</div>', html=True)
+
+
+@skipUnlessDBFeature('has_select_for_update')
+@override_settings(ROOT_URLCONF='django_pain.tests.urls')
+class TestDatabaseLocking(TransactionTestCase):
+
+    def setUp(self):
+        self.admin = User.objects.create_superuser('admin', 'admin@example.com', 'password')
+
+    def tearDown(self):
+        self.admin.delete()
+
+    def test_account_admin_locking(self):
+        instance = get_account(account_number='123456/0300', currency='EUR')
+        viewname = 'admin:django_pain_bankaccount_changelist'
+        find_in_response = '123456/0300'
+        model_class = BankAccount
+        self._test_admin_locking(instance, viewname, find_in_response, model_class)
+
+    def test_payment_admin_locking(self):
+        account = get_account(account_name='My Account')
+        account.save()
+        instance = get_payment(
+            identifier='My Payment 1', account=account, state=PaymentState.READY_TO_PROCESS,
+            variable_symbol='VAR1', transaction_date=date(2019, 1, 1),
+        )
+        viewname = 'admin:django_pain_bankpayment_changelist'
+        find_in_response = 'VAR1'
+        model_class = BankPayment
+        self._test_admin_locking(instance, viewname, find_in_response, model_class)
+
+    def _test_admin_locking(self, instance, viewname, find_in_response, model_class):
+        instance.save()
+        self.client.force_login(self.admin)
+
+        admin_started = Event()
+        admin_finished = Event()
+        external_started = Event()
+        external_finished = Event()
+
+        # Exception in a threads does not fail the test - wee need to collect it somemehow
+        errors = Queue()   # type: Queue
+
+        def target_admin():
+            try:
+                with transaction.atomic():
+                    external_started.wait()
+                    response = self.client.get(reverse(viewname))
+                    self.assertContains(response, find_in_response)
+                    admin_started.set()
+                    external_finished.wait()
+                    admin_finished.set()
+            except Exception as e:  # pragma: no cover
+                errors.put(e)
+                raise e
+            finally:
+                admin_started.set()
+                admin_finished.set()
+                close_old_connections()
+
+        def target_external():
+            try:
+                external_started.set()
+                with transaction.atomic():
+                    admin_started.wait()
+                    instances = list(model_class.objects.select_for_update(skip_locked=True).all())
+                    self.assertEquals([], instances)
+                external_finished.set()
+
+                with transaction.atomic():
+                    admin_finished.wait()
+                    instances = list(model_class.objects.select_for_update(skip_locked=True).all())
+                    self.assertEqual([instance], instances)
+            except Exception as e:  # pragma: no cover
+                errors.put(e)
+                raise e
+            finally:
+                external_started.set()
+                external_finished.set()
+                close_old_connections()
+
+        threads = [Thread(target=target_admin), Thread(target=target_external)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        self.assertTrue(errors.empty())
 
 
 @override_settings(

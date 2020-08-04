@@ -22,6 +22,7 @@ import logging
 from copy import deepcopy
 
 from django.core.management.base import BaseCommand, CommandError, no_translations
+from django.db import transaction
 
 from django_pain.constants import PaymentState, PaymentType
 from django_pain.models import BankAccount, BankPayment
@@ -103,8 +104,10 @@ class Command(BaseCommand):
             return
 
         LOGGER.info('Processing card payments.')
-        processor_names = [payment['processor'] for payment in payments.values('processor').distinct()]
+        # We sort the names for easier testing.
+        processor_names = sorted(set(payment['processor'] for payment in payments.values('processor')))
         for processor_name in processor_names:
+
             processor = get_processor_instance(processor_name)
             processors_payments = payments.filter(processor=processor_name)
 
@@ -151,23 +154,25 @@ class Command(BaseCommand):
                     SETTINGS.process_payments_lock_file, str(error)))
 
         try:
-            payments = BankPayment.objects.filter(state__in=[PaymentState.READY_TO_PROCESS, PaymentState.DEFERRED])
-            if options['time_from'] is not None:
-                payments = payments.filter(create_time__gte=options['time_from'])
-            if options['time_to'] is not None:
-                payments = payments.filter(create_time__lte=options['time_to'])
-            if options['include_accounts']:
-                self._check_accounts_existence(options['include_accounts'])
-                payments = payments.filter(account__account_number__in=options['include_accounts'])
-            if options['exclude_accounts']:
-                self._check_accounts_existence(options['exclude_accounts'])
-                payments = payments.exclude(account__account_number__in=options['exclude_accounts'])
-            payments = payments.order_by('transaction_date')
+            with transaction.atomic():
+                payments = BankPayment.objects.select_for_update(skip_locked=True)
+                payments = payments.filter(state__in=[PaymentState.READY_TO_PROCESS, PaymentState.DEFERRED])
+                if options['time_from'] is not None:
+                    payments = payments.filter(create_time__gte=options['time_from'])
+                if options['time_to'] is not None:
+                    payments = payments.filter(create_time__lte=options['time_to'])
+                if options['include_accounts']:
+                    self._check_accounts_existence(options['include_accounts'])
+                    payments = payments.filter(account__account_number__in=options['include_accounts'])
+                if options['exclude_accounts']:
+                    self._check_accounts_existence(options['exclude_accounts'])
+                    payments = payments.exclude(account__account_number__in=options['exclude_accounts'])
+                payments = payments.order_by('transaction_date')
 
-            LOGGER.info('Processing %s unprocessed payments.', payments.count())
+                LOGGER.info('Processing %s unprocessed payments.', payments.count())
 
-            self._process_card_payments(payments.filter(payment_type=PaymentType.CARD_PAYMENT))
-            self._process_transfer_payments(payments.filter(payment_type=PaymentType.TRANSFER))
+                self._process_card_payments(payments.filter(payment_type=PaymentType.CARD_PAYMENT))
+                self._process_transfer_payments(payments.filter(payment_type=PaymentType.TRANSFER))
 
         except AccountDoesNotExist as e:
             LOGGER.error(str(e))

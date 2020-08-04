@@ -51,6 +51,10 @@ class BankAccountAdmin(admin.ModelAdmin):
         else:
             return ('currency',)
 
+    def get_queryset(self, request):
+        """Override super's get_queryset to add locking."""
+        return super().get_queryset(request).select_for_update()
+
 
 class InvoicesInline(admin.TabularInline):
     """Inline model admin for invoices related to payment."""
@@ -84,6 +88,10 @@ class InvoicesInline(admin.TabularInline):
         """Read only access."""
         return False
 
+    def get_queryset(self, request):
+        """Override super's get_queryset to add locking."""
+        return super().get_queryset(request).select_for_update()
+
 
 class BankPaymentAdmin(admin.ModelAdmin):
     """Model admin for BankPayment."""
@@ -113,6 +121,10 @@ class BankPaymentAdmin(admin.ModelAdmin):
     inlines = (
         InvoicesInline,
     )
+
+    def get_queryset(self, request):
+        """Override super's get_queryset to add locking."""
+        return super().get_queryset(request).select_for_update()
 
     class Media:
         """Media class."""
