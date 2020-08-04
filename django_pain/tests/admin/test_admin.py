@@ -51,7 +51,7 @@ class TestBankAccountAdmin(TestCase):
 
     def setUp(self):
         self.admin = User.objects.create_superuser('admin', 'admin@example.com', 'password')
-        self.account = get_account(account_number='123456/0300', currency='USD')
+        self.account = get_account(account_number='123456/0300', currency='EUR')
         self.account.save()
 
     def test_get_list(self):
@@ -64,14 +64,14 @@ class TestBankAccountAdmin(TestCase):
         """Test GET request on bank account add."""
         self.client.force_login(self.admin)
         response = self.client.get(reverse('admin:django_pain_bankaccount_add'))
-        self.assertContains(response, '<option value="USD">US Dollar</option>', html=True)
+        self.assertContains(response, '<option value="EUR">Euro</option>', html=True)
 
     def test_get_change(self):
         """Test GET request on bank account change."""
         self.client.force_login(self.admin)
         response = self.client.get(reverse('admin:django_pain_bankaccount_change', args=(self.account.pk,)))
         self.assertContains(response, '123456/0300')
-        self.assertContains(response, '<div class="readonly">USD</div>', html=True)
+        self.assertContains(response, '<div class="readonly">EUR</div>', html=True)
 
 
 @override_settings(
