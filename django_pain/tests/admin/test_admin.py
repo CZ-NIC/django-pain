@@ -18,6 +18,7 @@
 
 """Test admin views."""
 from datetime import date
+from decimal import ROUND_HALF_UP
 
 from django.contrib import admin
 from django.contrib.auth.models import Permission, User
@@ -25,6 +26,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 from freezegun import freeze_time
+from moneyed.localization import _FORMATTER
 
 from django_pain.admin import BankPaymentAdmin
 from django_pain.constants import InvoiceType, PaymentProcessingError, PaymentState
@@ -131,7 +133,7 @@ class TestBankPaymentAdmin(CacheResetMixin, TestCase):
             (None, {
                 'fields': (
                     'counter_account_number', 'objective', 'client_link',
-                    'transaction_date', 'constant_symbol', 'variable_symbol', 'specific_symbol', 'amount',
+                    'transaction_date', 'constant_symbol', 'variable_symbol', 'specific_symbol', 'unbreakable_amount',
                     'description', 'counter_account_name', 'create_time', 'account', 'state'
                 )
             }),
@@ -142,7 +144,7 @@ class TestBankPaymentAdmin(CacheResetMixin, TestCase):
             (None, {
                 'fields': (
                     'counter_account_number',
-                    'transaction_date', 'constant_symbol', 'variable_symbol', 'specific_symbol', 'amount',
+                    'transaction_date', 'constant_symbol', 'variable_symbol', 'specific_symbol', 'unbreakable_amount',
                     'description', 'counter_account_name', 'create_time', 'account', 'state',
                 )
             }),
@@ -156,7 +158,7 @@ class TestBankPaymentAdmin(CacheResetMixin, TestCase):
             (None, {
                 'fields': (
                     'counter_account_number', 'objective', 'client_link',
-                    'transaction_date', 'constant_symbol', 'variable_symbol', 'specific_symbol', 'amount',
+                    'transaction_date', 'constant_symbol', 'variable_symbol', 'specific_symbol', 'unbreakable_amount',
                     'description', 'counter_account_name', 'create_time', 'account', ('state', 'processing_error'),
                 )
             }),
@@ -254,6 +256,36 @@ class TestBankPaymentAdminNormalUser(CacheResetMixin, TestCase):
             form_instance.fields['processor'].choices,
             [('', '---------'), ('dummy', 'Dummy objective')]
         )
+
+    @override_settings(LANGUAGE_CODE='cs')
+    def test_unbreakable_amount_cs(self):
+        modeladmin = BankPaymentAdmin(BankPayment, admin.site)
+        payment = BankPayment(amount=10000.445)
+
+        original_definition = _FORMATTER.formatting_definitions.get('CS', None)
+        try:
+            _FORMATTER.add_formatting_definition(
+                'cs', group_size=3, group_separator=' ', decimal_point=',', positive_sign='', trailing_positive_sign='',
+                negative_sign='-', trailing_negative_sign='', rounding_method=ROUND_HALF_UP)
+            formatted = modeladmin.unbreakable_amount(payment)
+        finally:
+            _FORMATTER.formatting_definitions['CS'] = original_definition
+        self.assertEquals('10&nbsp;000,45&nbsp;Kč', formatted)
+
+    @override_settings(LANGUAGE_CODE='en')
+    def test_unbreakable_amount_en(self):
+        modeladmin = BankPaymentAdmin(BankPayment, admin.site)
+        payment = BankPayment(amount=10000.445)
+
+        original_definition = _FORMATTER.formatting_definitions.get('EN', None)
+        try:
+            _FORMATTER.add_formatting_definition(
+                'en', group_size=3, group_separator=',', decimal_point='.', positive_sign='', trailing_positive_sign='',
+                negative_sign='-', trailing_negative_sign='', rounding_method=ROUND_HALF_UP)
+            formatted = modeladmin.unbreakable_amount(payment)
+        finally:
+            _FORMATTER.formatting_definitions['EN'] = original_definition
+        self.assertEquals('10,000.45&nbsp;Kč', formatted)
 
 
 @override_settings(PAIN_PROCESSORS={
