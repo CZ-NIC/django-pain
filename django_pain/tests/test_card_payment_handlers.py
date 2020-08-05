@@ -128,7 +128,7 @@ class TestCSOBCardPaymentHandlerInit(TestCase):
         self.assertEqual(payment.identifier, 'unique_id_123')
         self.assertEqual(payment.state, PaymentState.INITIALIZED)
         self.assertEqual(payment.card_payment_state, CSOB.PAYMENT_STATUSES[CSOB.PAYMENT_STATUS_INIT])
-        self.assertEqual(payment.amount, Money(100, 'XYZ'))
+        self.assertEqual(payment.amount, Money(100, 'CZK'))
         self.assertEqual(payment.processor, 'donations')
         self.assertEqual(payment.card_handler, 'csob')
 

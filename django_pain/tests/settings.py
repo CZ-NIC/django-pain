@@ -65,3 +65,6 @@ PAIN_CSOB_CARD = {
     'MERCHANT_PRIVATE_KEY': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'empty_key.txt'),
     'ACCOUNT_NAME': 'Account',
 }
+
+DEFAULT_CURRENCY = 'CZK'
+CURRENCIES = ['CZK', 'EUR']
