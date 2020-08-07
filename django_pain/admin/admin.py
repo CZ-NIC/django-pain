@@ -28,9 +28,7 @@ from django.urls import reverse
 from django.utils.formats import date_format
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
-from django.utils.translation import get_language
-from django.utils.translation import gettext_lazy as _
-from django.utils.translation import to_locale
+from django.utils.translation import get_language, gettext_lazy as _, to_locale
 from moneyed.localization import format_money
 
 from django_pain.constants import PaymentState
