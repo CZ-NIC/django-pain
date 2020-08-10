@@ -181,6 +181,30 @@ It is advisable to set this only to languages you intend to support.
 
 __ https://docs.djangoproject.com/en/dev/ref/settings/#languages
 
+Currency formatting
+===================
+
+In case Django does not format currencies correctly according to its locale setting it may be necessary to define the formatting rules manually:
+
+.. code-block:: python
+
+    from moneyed.localization import _FORMATTER as money_formatter
+    from decimal import ROUND_HALF_UP
+    money_formatter.add_formatting_definition(
+        'cs', group_size=3, group_separator=' ', decimal_point=',',
+        positive_sign='',  trailing_positive_sign='',
+        negative_sign='-', trailing_negative_sign='',
+        rounding_method=ROUND_HALF_UP
+    )
+
+First argument of `add_formatting_definition` should be a properly formatted `locale name`_ from the ``LANGUAGES`` setting.
+
+.. _locale name: https://docs.djangoproject.com/en/dev/topics/i18n/#term-locale-name
+
+This setting comes from py-moneyed_ library.
+
+.. _py-moneyed: https://github.com/limist/py-moneyed
+
 
 --------
 Commands
