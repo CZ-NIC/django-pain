@@ -33,7 +33,7 @@ from django_pain.settings import get_card_payment_handler_instance, get_processo
 LOGGER = logging.getLogger(__name__)
 
 
-class BankPaymentViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
+class BankPaymentViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """BankPayment API for create and retrieve."""
 
     queryset = BankPayment.objects.filter(payment_type=PaymentType.CARD_PAYMENT).select_for_update()
