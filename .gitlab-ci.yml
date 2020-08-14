@@ -9,6 +9,13 @@ stages:
 
 variables:
     TOX_PARALLEL_NO_SPINNER: 1
+    POSTGRES_DB: test_pain
+    POSTGRES_USER: pain
+    POSTGRES_PASSWORD: password
+    # Setting PGHOST breaks startup of postgres service
+    PGDATABASE: test_pain
+    PGUSER: pain
+    PGPASSWORD: password
 
 ########################################################################################################################
 # Docker
@@ -67,7 +74,11 @@ image:node12:
     script:
         # First, build all virtualenvs in parallel without actually executing any tests.
         - tox --parallel all --notest
-        - tox
+        # Can't set PGHOST as a job variable, it breaks postgres service startup.
+        - PGHOST=pain-postgres tox
+    services:
+        - name: postgres:12
+          alias: pain-postgres
 
 ########################################################################################################################
 # Individual jobs

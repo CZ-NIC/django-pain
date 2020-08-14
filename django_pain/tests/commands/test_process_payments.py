@@ -20,6 +20,7 @@
 import fcntl
 import os
 from collections import OrderedDict
+from datetime import date
 from io import StringIO
 
 from django.core.management import call_command
@@ -372,9 +373,11 @@ class TestProcessPayments(CacheResetMixin, TestCase):
     ]))
     def test_card_payments_unprocessed(self):
         get_payment(identifier='PAYMENT_2', account=self.account, state=PaymentState.READY_TO_PROCESS,
-                    payment_type=PaymentType.CARD_PAYMENT, counter_account_number='', processor='dummy_false').save()
+                    payment_type=PaymentType.CARD_PAYMENT, counter_account_number='', processor='dummy_false',
+                    transaction_date=date(2018, 5, 10)).save()
         get_payment(identifier='PAYMENT_3', account=self.account, state=PaymentState.READY_TO_PROCESS,
-                    payment_type=PaymentType.CARD_PAYMENT, counter_account_number='', processor='dummy').save()
+                    payment_type=PaymentType.CARD_PAYMENT, counter_account_number='', processor='dummy',
+                    transaction_date=date(2018, 5, 11)).save()
         with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
             call_command('process_payments')
             self.assertQuerysetEqual(
@@ -409,9 +412,11 @@ class TestProcessPayments(CacheResetMixin, TestCase):
     ]))
     def test_card_payments_defferred(self):
         get_payment(identifier='PAYMENT_2', account=self.account, state=PaymentState.READY_TO_PROCESS,
-                    payment_type=PaymentType.CARD_PAYMENT, counter_account_number='', processor='dummy_error').save()
+                    payment_type=PaymentType.CARD_PAYMENT, counter_account_number='', processor='dummy_error',
+                    transaction_date=date(2018, 5, 10)).save()
         get_payment(identifier='PAYMENT_3', account=self.account, state=PaymentState.READY_TO_PROCESS,
-                    payment_type=PaymentType.CARD_PAYMENT, counter_account_number='', processor='dummy').save()
+                    payment_type=PaymentType.CARD_PAYMENT, counter_account_number='', processor='dummy',
+                    transaction_date=date(2018, 5, 11)).save()
         with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
             call_command('process_payments')
             self.assertQuerysetEqual(
