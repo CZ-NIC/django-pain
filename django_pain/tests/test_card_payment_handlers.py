@@ -62,6 +62,26 @@ class TestCSOBCardPaymentHandlerStatus(TestCase):
 
         self.assertEqual(payment.state, PaymentState.CANCELED)
 
+    def test_update_payment_state_no_update_not_initialized(self):
+        account = get_account(account_number='123456', currency='CZK')
+        account.save()
+        payment = get_payment(identifier='1', account=account, counter_account_number='',
+                              payment_type=PaymentType.CARD_PAYMENT,
+                              state=PaymentState.PROCESSED,
+                              card_handler='csob')
+        payment.save()
+
+        result_mock = Mock()
+        result_mock.payload = {'paymentStatus': CSOB.PAYMENT_STATUS_CANCELLED, 'resultCode': CSOB.RETURN_CODE_OK}
+
+        handler = CSOBCardPaymentHandler('csob')
+        with patch.object(handler, '_client') as gateway_client_mock:
+            gateway_client_mock.payment_status.return_value = result_mock
+
+            handler.update_payments_state(payment)
+
+        self.assertEqual(payment.state, PaymentState.PROCESSED)
+
     def test_update_payment_state_not_ok(self):
         account = get_account(account_number='123456', currency='CZK')
         account.save()
