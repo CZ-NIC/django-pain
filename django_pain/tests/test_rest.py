@@ -46,7 +46,7 @@ class TestBankPaymentRestAPI(CacheResetMixin, TestCase):
         account.save()
         payment = get_payment(identifier='1', account=account, counter_account_number='',
                               payment_type=PaymentType.CARD_PAYMENT,
-                              state=PaymentState.READY_TO_PROCESS,
+                              state=PaymentState.INITIALIZED,
                               card_handler='csob')
         payment.save()
 
