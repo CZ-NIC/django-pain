@@ -70,6 +70,14 @@ class BankPaymentViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, vie
         serializer = BankPaymentSerializer(payment)
         return Response(serializer.data)
 
+    @transaction.atomic()
+    def create(self, request, *args, **kwargs):
+        """Create new payment."""
+        try:
+            return super().create(request, *args, **kwargs)
+        except PaymentHandlerConnectionError:
+            return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
 
 ROUTER = routers.DefaultRouter()
 ROUTER.register(r'bankpayment', BankPaymentViewSet)

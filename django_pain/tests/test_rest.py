@@ -149,3 +149,22 @@ class TestBankPaymentRestAPI(CacheResetMixin, TestCase):
             })
 
         self.assertEqual(response.status_code, 201)
+
+    def test_create_gw_connection_error(self):
+        account = get_account(account_number='123456', currency='CZK')
+        account.save()
+
+        with patch('django_pain.card_payment_handlers.csob.CsobClient') as gateway_client_mock:
+            gateway_client_mock.side_effect = PaymentHandlerConnectionError()
+            response = self.client.post('/api/private/bankpayment/', data={
+                'amount': '1000',
+                'variable_symbol': '130',
+                'processor': 'donations',
+                'card_handler': 'csob',
+                'return_url': 'https://donations.nic.cz/return/',
+                'return_method': 'POST',
+                'language': 'cs',
+                'cart': '[{"name":"Dar","amount":1000,"description":"Longer description","quantity":1}]',
+            })
+
+        self.assertEqual(response.status_code, 503)
