@@ -47,10 +47,8 @@ class Command(BaseCommand):
         """Get states of the payments using their card_payment_handler."""
         for payment in payments:
             try:
-                with transaction.atomic():
-                    payment = BankPayment.objects.select_for_update().get(id=payment.id)
-                    card_payment_handler = get_card_payment_handler_instance(payment.card_handler)
-                    card_payment_handler.update_payments_state(payment)
+                card_payment_handler = get_card_payment_handler_instance(payment.card_handler)
+                card_payment_handler.update_payments_state(payment)
             except PaymentHandlerConnectionError:
                 LOGGER.error('Connection error while updating state of payment identifier=%s', payment.identifier)
             except PaymentHandlerError:
@@ -60,14 +58,16 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """Run the command."""
         LOGGER.info('Command get_card_payments_states started.')
-        payments = BankPayment.objects.filter(state__in=[PaymentState.INITIALIZED])
-        if options['time_from'] is not None:
-            payments = payments.filter(create_time__gte=options['time_from'])
-        if options['time_to'] is not None:
-            payments = payments.filter(create_time__lte=options['time_to'])
-        payments = payments.order_by('create_time')
-        if payments:
-            LOGGER.info('Getting state of %s payment(s).', payments.count())
-            self._get_payments_states(payments)
-        else:
-            LOGGER.info('No payments to update state.')
+        with transaction.atomic():
+            payments = BankPayment.objects.select_for_update(skip_locked=True)
+            payments = payments.filter(state__in=[PaymentState.INITIALIZED])
+            if options['time_from'] is not None:
+                payments = payments.filter(create_time__gte=options['time_from'])
+            if options['time_to'] is not None:
+                payments = payments.filter(create_time__lte=options['time_to'])
+            payments = payments.order_by('create_time')
+            if payments:
+                LOGGER.info('Getting state of %s payment(s).', payments.count())
+                self._get_payments_states(payments)
+            else:
+                LOGGER.info('No payments to update state.')
