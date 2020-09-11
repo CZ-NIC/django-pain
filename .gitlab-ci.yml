@@ -71,6 +71,8 @@ image:node12:
         SRC_DIR: /usr/local/env
 
 .test: &test
+    tags:
+        - builder
     script:
         # First, build all virtualenvs in parallel without actually executing any tests.
         - tox --parallel all --notest
