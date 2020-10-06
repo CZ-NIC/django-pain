@@ -25,8 +25,10 @@ from pycsob import conf as CSOB
 
 from django_pain.card_payment_handlers import PaymentHandlerConnectionError
 from django_pain.constants import PaymentState, PaymentType
+from django_pain.models import BankPayment
 from django_pain.serializers import ExternalPaymentState
 from django_pain.settings import get_card_payment_handler_instance
+from django_pain.tests.mixins import CacheResetMixin
 from django_pain.tests.utils import get_account, get_payment
 
 
@@ -34,7 +36,7 @@ from django_pain.tests.utils import get_account, get_payment
                    PAIN_CARD_PAYMENT_HANDLERS={
                        'csob': 'django_pain.card_payment_handlers.csob.CSOBCardPaymentHandler'
                    })
-class TestBankPaymentRestAPI(TestCase):
+class TestBankPaymentRestAPI(CacheResetMixin, TestCase):
     def test_retrieve_not_exists(self):
         response = self.client.get('/api/private/bankpayment/no-i-do-not-exists/')
         self.assertEqual(response.status_code, 404)
@@ -44,7 +46,7 @@ class TestBankPaymentRestAPI(TestCase):
         account.save()
         payment = get_payment(identifier='1', account=account, counter_account_number='',
                               payment_type=PaymentType.CARD_PAYMENT,
-                              state=PaymentState.READY_TO_PROCESS,
+                              state=PaymentState.INITIALIZED,
                               card_handler='csob')
         payment.save()
 
@@ -75,6 +77,52 @@ class TestBankPaymentRestAPI(TestCase):
 
         self.assertEqual(response.status_code, 503)
 
+    @override_settings(PAIN_PROCESSORS={
+        'dummy': 'django_pain.tests.commands.test_process_payments.DummyTruePaymentProcessor'})
+    def test_retrieve_process_paid(self):
+        account = get_account(account_number='123456', currency='CZK')
+        account.save()
+        payment = get_payment(identifier='1', account=account, counter_account_number='',
+                              payment_type=PaymentType.CARD_PAYMENT, processor='dummy',
+                              state=PaymentState.INITIALIZED,
+                              card_handler='csob')
+        payment.save()
+
+        result_mock = Mock()
+        result_mock.payload = {'paymentStatus': CSOB.PAYMENT_STATUS_CONFIRMED, 'resultCode': CSOB.RETURN_CODE_OK}
+
+        card_payment_hadler = get_card_payment_handler_instance(payment.card_handler)
+        with patch.object(card_payment_hadler, '_client') as gateway_client_mock:
+            gateway_client_mock.payment_status.return_value = result_mock
+            response = self.client.get('/api/private/bankpayment/{}/'.format(payment.uuid))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['state'], ExternalPaymentState.PAID)
+        self.assertEqual(BankPayment.objects.first().state, PaymentState.PROCESSED)
+
+    @override_settings(PAIN_PROCESSORS={
+        'dummy': 'django_pain.tests.commands.test_process_payments.DummyFalsePaymentProcessor'})
+    def test_retrieve_process_paid_error(self):
+        account = get_account(account_number='123456', currency='CZK')
+        account.save()
+        payment = get_payment(identifier='1', account=account, counter_account_number='',
+                              payment_type=PaymentType.CARD_PAYMENT, processor='dummy',
+                              state=PaymentState.INITIALIZED,
+                              card_handler='csob')
+        payment.save()
+
+        result_mock = Mock()
+        result_mock.payload = {'paymentStatus': CSOB.PAYMENT_STATUS_CONFIRMED, 'resultCode': CSOB.RETURN_CODE_OK}
+
+        card_payment_hadler = get_card_payment_handler_instance(payment.card_handler)
+        with patch.object(card_payment_hadler, '_client') as gateway_client_mock:
+            gateway_client_mock.payment_status.return_value = result_mock
+            response = self.client.get('/api/private/bankpayment/{}/'.format(payment.uuid))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['state'], ExternalPaymentState.PAID)
+        self.assertEqual(BankPayment.objects.first().state, PaymentState.DEFERRED)
+
     def test_create(self):
         account = get_account(account_number='123456', currency='CZK')
         account.save()
@@ -101,3 +149,22 @@ class TestBankPaymentRestAPI(TestCase):
             })
 
         self.assertEqual(response.status_code, 201)
+
+    def test_create_gw_connection_error(self):
+        account = get_account(account_number='123456', currency='CZK')
+        account.save()
+
+        with patch('django_pain.card_payment_handlers.csob.CsobClient') as gateway_client_mock:
+            gateway_client_mock.side_effect = PaymentHandlerConnectionError()
+            response = self.client.post('/api/private/bankpayment/', data={
+                'amount': '1000',
+                'variable_symbol': '130',
+                'processor': 'donations',
+                'card_handler': 'csob',
+                'return_url': 'https://donations.nic.cz/return/',
+                'return_method': 'POST',
+                'language': 'cs',
+                'cart': '[{"name":"Dar","amount":1000,"description":"Longer description","quantity":1}]',
+            })
+
+        self.assertEqual(response.status_code, 503)

@@ -121,7 +121,10 @@ class CSOBCardPaymentHandler(AbstractCardPaymentHandler):
             raise PaymentHandlerConnectionError('Gateway connection error')
         if gateway_result['resultCode'] == CSOB.RETURN_CODE_OK:
             payment.card_payment_state = CSOB.PAYMENT_STATUSES[gateway_result['paymentStatus']]
-            payment.state = CSOB_GATEWAY_TO_PAYMENT_STATE_MAPPING[gateway_result['paymentStatus']]
+            # `state` attribute must not be updated unless it's INITIALIZED, as we would easily go from
+            # PROCESSED to READY_TO_PROCESS again.
+            if payment.state == PaymentState.INITIALIZED:
+                payment.state = CSOB_GATEWAY_TO_PAYMENT_STATE_MAPPING[gateway_result['paymentStatus']]
             payment.save()
         else:
             LOGGER.error('payment_status resultCode != OK: %s', gateway_result)

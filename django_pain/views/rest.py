@@ -17,6 +17,10 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """REST API module."""
+import logging
+from copy import deepcopy
+
+from django.db import transaction
 from rest_framework import mixins, routers, status, viewsets
 from rest_framework.response import Response
 
@@ -24,16 +28,31 @@ from django_pain.card_payment_handlers import PaymentHandlerConnectionError
 from django_pain.constants import PaymentState, PaymentType
 from django_pain.models import BankPayment
 from django_pain.serializers import BankPaymentSerializer
-from django_pain.settings import get_card_payment_handler_instance
+from django_pain.settings import get_card_payment_handler_instance, get_processor_instance
+
+LOGGER = logging.getLogger(__name__)
 
 
-class BankPaymentViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
+class BankPaymentViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """BankPayment API for create and retrieve."""
 
     queryset = BankPayment.objects.filter(payment_type=PaymentType.CARD_PAYMENT).select_for_update()
     serializer_class = BankPaymentSerializer
     lookup_field = 'uuid'
 
+    def _process_payment(self, payment):
+        processor = get_processor_instance(payment.processor)
+        LOGGER.info('Processing card payment with processor %s.', processor)
+        result = list(processor.process_payments([deepcopy(payment)]))[0]
+        if result.result:
+            payment.state = PaymentState.PROCESSED
+        else:
+            LOGGER.info('Saving payment %s as DEFERRED with error %s.', payment.uuid, result.error)
+            payment.state = PaymentState.DEFERRED
+        payment.processing_error = result.error
+        payment.save()
+
+    @transaction.atomic()
     def retrieve(self, request, *args, **kwargs):
         """Update payment state and return update payment."""
         payment = self.get_object()
@@ -46,10 +65,18 @@ class BankPaymentViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet)
             return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         if old_payment_state == PaymentState.INITIALIZED and payment.state == PaymentState.READY_TO_PROCESS:
-            pass  # TODO: Process payment with processor
+            self._process_payment(payment)
 
         serializer = BankPaymentSerializer(payment)
         return Response(serializer.data)
+
+    @transaction.atomic()
+    def create(self, request, *args, **kwargs):
+        """Create new payment."""
+        try:
+            return super().create(request, *args, **kwargs)
+        except PaymentHandlerConnectionError:
+            return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
 ROUTER = routers.DefaultRouter()
