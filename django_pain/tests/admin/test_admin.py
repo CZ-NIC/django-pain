@@ -128,7 +128,7 @@ class TestDatabaseLocking(TransactionTestCase):
                     self.assertContains(response, find_in_response)
                     admin_started.set()
                     external_finished.wait()
-                    admin_finished.set()
+                admin_finished.set()
             except Exception as e:  # pragma: no cover
                 errors.put(e)
                 raise e
