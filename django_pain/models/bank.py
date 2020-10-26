@@ -18,12 +18,14 @@
 
 """Payments and invoices models."""
 import uuid
+from typing import Optional
 
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import BLANK_CHOICE_DASH, CheckConstraint, Q
 from django.utils.translation import gettext_lazy as _
 from djmoney.models.fields import CurrencyField, MoneyField
+from teller.statement import Payment
 
 from django_pain.constants import CURRENCY_PRECISION, InvoiceType, PaymentProcessingError, PaymentState, PaymentType
 from django_pain.settings import SETTINGS, get_processor_instance, get_processor_objective
@@ -149,3 +151,21 @@ class BankPayment(models.Model):
             proc = get_processor_instance(proc_name)
             choices.append((proc_name, proc.default_objective))
         return choices
+
+    @classmethod
+    def from_payment_data_class(cls, payment: Payment):
+        """Convert Payment data class from teller to Django model."""
+        result = cls(identifier=payment.identifier,
+                     transaction_date=payment.transaction_date,
+                     counter_account_number=cls._value_or_blank(payment.counter_account),
+                     counter_account_name=cls._value_or_blank(payment.name),
+                     amount=payment.amount,
+                     description=cls._value_or_blank(payment.description),
+                     constant_symbol=cls._value_or_blank(payment.constant_symbol),
+                     variable_symbol=cls._value_or_blank(payment.variable_symbol),
+                     specific_symbol=cls._value_or_blank(payment.specific_symbol))
+        return result
+
+    @staticmethod
+    def _value_or_blank(value: Optional[str]) -> str:
+        return '' if value is None else value

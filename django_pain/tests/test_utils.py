@@ -17,12 +17,12 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Test utils."""
-from datetime import datetime
+from datetime import date, datetime
 
 from django.test import SimpleTestCase
 
 from django_pain.models.bank import BankAccount
-from django_pain.utils import full_class_name, parse_datetime_safe
+from django_pain.utils import full_class_name, parse_date_safe, parse_datetime_safe
 
 
 class FullClassNameTest(SimpleTestCase):
@@ -30,6 +30,18 @@ class FullClassNameTest(SimpleTestCase):
     def test_str(self):
         """Test full_class_name."""
         self.assertEqual(full_class_name(BankAccount), 'django_pain.models.bank.BankAccount')
+
+
+class ParseDateSafeTest(SimpleTestCase):
+
+    def test_parse_date_safe(self):
+        self.assertEquals(parse_date_safe('2017-01-31'), date(2017, 1, 31))
+
+    def test_parse_date_safe_fails_on_invalid(self):
+        with self.assertRaises(ValueError):
+            parse_date_safe('2017-01-32')
+        with self.assertRaises(ValueError):
+            parse_date_safe('not a date')
 
 
 class ParseDatetimeSafeTest(SimpleTestCase):

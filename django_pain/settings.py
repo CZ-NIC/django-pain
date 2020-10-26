@@ -21,10 +21,83 @@ from collections import OrderedDict
 from functools import lru_cache
 
 import appsettings
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.utils import module_loading
+from teller.downloaders import BankStatementDownloader
+from teller.parsers import BankStatementParser
 
 from .utils import full_class_name
+
+
+class NamedDictSetting(appsettings.DictSetting):
+    """
+    Dictionary of names and DictSetting. The Dictsetting is shared between the keys.
+
+    The parameters are the same for each key but the values to which the marameters are set may be different.
+    """
+
+    def __init__(self, settings: dict, *args, **kwargs):
+        super().__init__(*args, key_type=str, value_type=dict, **kwargs)
+        self.settings = settings
+
+    def transform(self, value):
+        """Transform the values of each setting group."""
+        transformed_value = OrderedDict()
+        for key, group in value.items():
+            transformed_group = dict()
+            for k, v in group.items():
+                setting = self.settings[k]
+                transformed_group[k] = setting.transform(v)
+            transformed_value[key] = transformed_group
+        return transformed_value
+
+    def validate(self, value):
+        """Run custom validation on the setting value."""
+        if not isinstance(value, dict):
+            raise ValidationError('{} must be {}, not {}'.format(self.full_name, dict, value.__class__))
+        super().validate(value)
+
+    def check(self):
+        """Validate the setting value including the subsettings."""
+        super().check()
+
+        # We can not use super().check() to validate subgroups so we do it manually.
+        exceptions = []
+        for name, group in self.raw_value.items():
+            try:
+                self._check_group(group)
+            except ValidationError as error:
+                exceptions.extend(error.messages)
+        if exceptions:
+            raise ImproperlyConfigured(
+                "Setting {} is improperly configured.\n".format(self.full_name) + '\n'.join(exceptions))
+
+    def _check_group(self, group):
+        if sorted(group.keys()) != sorted(self.settings.keys()):
+            raise ValidationError("Invalid keys.")
+
+        for key, subsetting in self.settings.items():
+            value = group[key]
+            subsetting.validate(value)
+            subsetting.run_validators(value)
+
+
+class ClassPathValidator:
+    """Validator which checks type of the imported value."""
+
+    message = "%(value)s is not a subclass of %(type)s."
+
+    def __init__(self, value_type, message=None):
+        self.value_type = value_type
+        if message:
+            self.message = message
+
+    def __call__(self, value):
+        """Import value and validate its type."""
+        actual_type = module_loading.import_string(value)
+        if not issubclass(actual_type, self.value_type):
+            params = {"value": value, "type": self.value_type.__name__}
+            raise ValidationError(self.message, params=params)
 
 
 class NamedClassSetting(appsettings.DictSetting):
@@ -100,6 +173,16 @@ class PainSettings(appsettings.AppSettings):
     # These callables are called right before the payment is saved during the import. Especially, these callable can
     # raise ValidationError in order to avoid saving payment to the database.
     import_callbacks = CallableListSetting(item_type=str)
+
+    downloaders = NamedDictSetting(
+        dict(
+            DOWNLOADER=appsettings.ObjectSetting(required=True,
+                                                 validators=[ClassPathValidator(BankStatementDownloader)]),
+            PARSER=appsettings.ObjectSetting(required=True,
+                                             validators=[ClassPathValidator(BankStatementParser)]),
+            DOWNLOADER_PARAMS=appsettings.DictSetting(required=True, key_type=str)
+        )
+    )
 
     # CSOB card settings
     csob_card = appsettings.NestedDictSetting(dict(

@@ -124,6 +124,21 @@ Boolean setting.
 If ``True``, bank statement parser removes leading zeros from the variable symbol.
 Default is ``False``.
 
+``PAIN_DOWNLOADERS``
+====================
+
+A setting containing dotted paths to payment downloader and parser classes and downloader parameters.
+There should be a separate entry in the dictionary for each bank from which payments should be downloaded.
+The downloaders and parsers are provided in `teller` library.
+
+Example configuration:
+
+.. code-block:: python
+
+    DOWNLOADERS = {'test_bank': {'DOWNLOADER': 'teller.downloaders.TestStatementDownloader',
+                                 'PARSER': 'teller.downloaders.TestStatementParser',
+                                 'DOWNLOADER_PARAMS': {'base_url': 'https://bank.test', 'password': 'letmein'}}}
+
 ``PAIN_IMPORT_CALLBACK``
 ========================
 
@@ -222,6 +237,22 @@ A bank statement should be provided on the standard input or in a file as a posi
 
 The mandatory argument ``PARSER`` must be a dotted path to a payment-parser class such as
 ``django_pain.parsers.transproc.TransprocXMLParser``.
+
+``download_payments``
+=====================
+
+.. code-block::
+
+    download_payments [--start START] [--end END]
+
+Download payments from the banks.
+
+There are two optional arguments ``START`` and ``END`` which set the download interval for which the banks will be
+queried. Both parameters should be entered as date in ISO format.
+Default value for ``END`` is today.
+Default value for ``START`` is seven days before ``END``.
+
+Example ``download_payments --start 2020-09-01 --end 2020-10-31``
 
 ``list_payments``
 =================
