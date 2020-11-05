@@ -5,4 +5,4 @@ django-app-settings>=0.7.1
 lxml
 django-lang-switch
 django-rest-framework
-pycsob @ git+https://github.com/zbohm/pycsob.git@dttm
+pycsob>=0.6.0
