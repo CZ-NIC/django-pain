@@ -6,3 +6,4 @@ lxml
 django-lang-switch
 django-rest-framework
 pycsob>=0.6.0
+fred-teller

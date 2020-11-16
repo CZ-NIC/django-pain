@@ -19,6 +19,8 @@
 """Test processor utils."""
 from django.core.exceptions import ImproperlyConfigured
 from django.test import SimpleTestCase, override_settings
+from teller.downloaders import BankStatementDownloader
+from teller.parsers import BankStatementParser
 
 from django_pain.settings import (SETTINGS, get_card_payment_handler_class, get_card_payment_handler_instance,
                                   get_processor_class, get_processor_instance, get_processor_objective)
@@ -53,6 +55,94 @@ class TestProcessorsSetting(SimpleTestCase):
         """Test not subclass of AbstractPaymentProcessor."""
         with self.assertRaisesRegex(ImproperlyConfigured, '{} is not subclass of AbstractPaymentProcessor'.format(
                 'django_pain.tests.test_settings.TestProcessorsSetting')):
+            SETTINGS.check()
+
+
+class DummyDownloader(BankStatementDownloader):
+    """Dummy class which does not do anything. It is used in TestDownloadersSetting."""
+
+
+class DummyParser(BankStatementParser):
+    """Dummy class which does not do anything. It is used in TestDownloadersSetting."""
+
+
+class TestDownloadersSetting(SimpleTestCase):
+    """Test DownloadersSetting."""
+
+    test_settings = {'DOWNLOADER': 'django_pain.tests.test_settings.DummyDownloader',
+                     'PARSER': 'django_pain.tests.test_settings.DummyParser',
+                     'DOWNLOADER_PARAMS': {'param_name': 'param_val'}}
+
+    missing_key_settings = {'DOWNLOADER': 'django_pain.tests.test_settings.DummyDownloader',
+                            'DOWNLOADER_PARAMS': {'param_name': 'param_val'}}
+
+    invalid_sub_settings = {'DOWNLOADER': 'django_pain.tests.test_settings.DummyDownloader',
+                            'PARSER': 'django_pain.tests.test_settings.DummyParser',
+                            'DOWNLOADER_PARAMS': {1: 0}}
+
+    invalid_downloader = {'DOWNLOADER': 'django_pain.tests.test_settings.DummyParser',
+                          'PARSER': 'django_pain.tests.test_settings.DummyParser',
+                          'DOWNLOADER_PARAMS': {'param_name': 'param_val'}}
+
+    invalid_parser = {'DOWNLOADER': 'django_pain.tests.test_settings.DummyDownloader',
+                      'PARSER': 'django_pain.tests.test_settings.DummyDownloader',
+                      'DOWNLOADER_PARAMS': {'param_name': 'param_val'}}
+
+    @override_settings(PAIN_DOWNLOADERS={'dummy': test_settings})
+    def test_ok(self):
+        """Test ok setting."""
+        SETTINGS.check()
+        expected = {'DOWNLOADER': DummyDownloader,
+                    'PARSER': DummyParser,
+                    'DOWNLOADER_PARAMS': {'param_name': 'param_val'}}
+        self.assertEqual(SETTINGS.downloaders, {'dummy': expected})
+
+    @override_settings(PAIN_DOWNLOADERS=[])
+    def test_not_dict(self):
+        """Test not dictionary setting."""
+        with self.assertRaisesRegex(ImproperlyConfigured, 'PAIN_DOWNLOADERS must be {}, not {}'.format(dict, list)):
+            SETTINGS.check()
+
+    @override_settings(PAIN_DOWNLOADERS={0: {}})
+    def test_not_str_key(self):
+        """Test dictionary with not str keys."""
+        expected = 'The key 0 is not of type str.'
+        with self.assertRaisesRegex(ImproperlyConfigured, expected):
+            SETTINGS.check()
+
+    @override_settings(PAIN_DOWNLOADERS={'dummy': 1})
+    def test_not_dict_value(self):
+        """Test dictionary with not dict values."""
+        expected = "Item dummy's value 1 is not of type dict."
+        with self.assertRaisesRegex(ImproperlyConfigured, expected):
+            SETTINGS.check()
+
+    @override_settings(PAIN_DOWNLOADERS={'dummy': missing_key_settings})
+    def test_wrong_keys(self):
+        """Test dictionary with wrong keys."""
+        expected = "Invalid keys."
+        with self.assertRaisesRegex(ImproperlyConfigured, expected):
+            SETTINGS.check()
+
+    @override_settings(PAIN_DOWNLOADERS={'dummy': invalid_sub_settings})
+    def test_invalid_subsettings(self):
+        """Test invalid subsettings."""
+        expected = "The key 1 is not of type str."
+        with self.assertRaisesRegex(ImproperlyConfigured, expected):
+            SETTINGS.check()
+
+    @override_settings(PAIN_DOWNLOADERS={'dummy': invalid_downloader})
+    def test_invalid_downloader(self):
+        """Test invalid downloader."""
+        expected = 'django_pain.tests.test_settings.DummyParser is not a subclass of BankStatementDownloader'
+        with self.assertRaisesRegex(ImproperlyConfigured, expected):
+            SETTINGS.check()
+
+    @override_settings(PAIN_DOWNLOADERS={'dummy': invalid_parser})
+    def test_invalid_parser(self):
+        """Test invalid parser."""
+        expected = "django_pain.tests.test_settings.DummyDownloader is not a subclass of BankStatementParser"
+        with self.assertRaisesRegex(ImproperlyConfigured, expected):
             SETTINGS.check()
 
 

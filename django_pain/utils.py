@@ -17,9 +17,9 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Various utils."""
-from datetime import datetime
+from datetime import date, datetime
 
-from django.utils.dateparse import parse_datetime
+from django.utils.dateparse import parse_date, parse_datetime
 
 
 def full_class_name(cls):
@@ -27,9 +27,17 @@ def full_class_name(cls):
     return "{}.{}".format(cls.__module__, cls.__qualname__)
 
 
+def parse_date_safe(value: str) -> date:
+    """Parse date using Django utils, but raise an exception when unsuccessful."""
+    result = parse_date(value)
+    if result is None:
+        raise ValueError('Could not parse date.')
+    return result
+
+
 def parse_datetime_safe(value: str) -> datetime:
     """Parse date_time using Django utils, but raise an exception when unsuccessful."""
     result = parse_datetime(value)
     if result is None:
-        raise ValueError('Could not parse date.')
+        raise ValueError('Could not parse date_time.')
     return result

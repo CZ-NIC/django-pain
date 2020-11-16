@@ -17,11 +17,14 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Test models."""
+from datetime import date
+
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.db.models import BLANK_CHOICE_DASH
 from django.test import SimpleTestCase, TestCase, override_settings
 from djmoney.money import Money
+from teller.statement import Payment
 
 from django_pain.constants import InvoiceType, PaymentType
 from django_pain.models import BankPayment
@@ -104,3 +107,51 @@ class TestBankPayment(CacheResetMixin, TestCase):
 
         payment = get_payment(account=account, payment_type=PaymentType.CARD_PAYMENT, counter_account_number='123')
         self.assertRaises(IntegrityError, payment.save)
+
+    def test_from_payment_data_class(self):
+        payment_data = Payment()
+        payment_data.identifier = 'abc123'
+        payment_data.transaction_date = date(2020, 9, 1)
+        payment_data.counter_account = '12345/678'
+        payment_data.name = 'John Doe'
+        payment_data.amount = Money(1, 'CZK')
+        payment_data.description = 'Hello!'
+        payment_data.constant_symbol = '123'
+        payment_data.variable_symbol = '456'
+        payment_data.specific_symbol = '789'
+
+        model = BankPayment.from_payment_data_class(payment_data)
+
+        self.assertEqual(model.identifier, payment_data.identifier)
+        self.assertEqual(model.transaction_date, payment_data.transaction_date)
+        self.assertEqual(model.counter_account_number, payment_data.counter_account)
+        self.assertEqual(model.counter_account_name, payment_data.name)
+        self.assertEqual(model.amount, payment_data.amount)
+        self.assertEqual(model.description, payment_data.description)
+        self.assertEqual(model.constant_symbol, payment_data.constant_symbol)
+        self.assertEqual(model.variable_symbol, payment_data.variable_symbol)
+        self.assertEqual(model.specific_symbol, payment_data.specific_symbol)
+
+    def test_from_payment_data_class_blank_values(self):
+        payment_data = Payment()
+        payment_data.identifier = 'abc123'
+        payment_data.transaction_date = date(2020, 9, 1)
+        payment_data.counter_account = None
+        payment_data.name = None
+        payment_data.amount = Money(1, 'CZK')
+        payment_data.description = None
+        payment_data.constant_symbol = None
+        payment_data.variable_symbol = None
+        payment_data.specific_symbol = None
+
+        model = BankPayment.from_payment_data_class(payment_data)
+
+        self.assertEqual(model.identifier, payment_data.identifier)
+        self.assertEqual(model.transaction_date, payment_data.transaction_date)
+        self.assertEqual(model.counter_account_number, '')
+        self.assertEqual(model.counter_account_name, '')
+        self.assertEqual(model.amount, payment_data.amount)
+        self.assertEqual(model.description, '')
+        self.assertEqual(model.constant_symbol, '')
+        self.assertEqual(model.variable_symbol, '')
+        self.assertEqual(model.specific_symbol, '')
