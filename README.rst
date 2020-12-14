@@ -18,9 +18,8 @@ Bank accounts and payments may be managed through a Django admin site.
 .. _fred-transproc: https://github.com/CZ-NIC/fred-transproc
 
 
-------------
 Installation
-------------
+============
 
 You need to add ``django_pain.apps.DjangoPainConfig`` and ``django_lang_switch.apps.DjangoLangSwitchConfig`` to your ``INSTALLED_APPS``.
 In order for user interface to work, you also need to add the Django admin site.
@@ -53,9 +52,8 @@ After that, you can transpile the JavaScript code by calling ``npm run build``.
 
 .. _settings: `Other related settings`_
 
-------------
 Requirements
-------------
+============
 
 All requirements are listed in ``requirements.txt``.
 
@@ -64,33 +62,31 @@ If you wish to use LDAP authentication, you can use django-python3-ldap__.
 __ https://github.com/etianen/django-python3-ldap
 
 
--------
 Plugins
--------
+=======
 
 ``fred-pain``
-=============
+-------------
 
 https://gitlab.office.nic.cz/fred/pain
 
 Provides payment processor for FRED.
 
 ``payments-pain``
-=================
+-----------------
 
 https://gitlab.office.nic.cz/ginger/payments-pain
 
 Provides payment processor for Ginger Payments (and therefore the Academy).
 
 
---------
 Settings
---------
+========
 
 In order for ``django-pain`` to work, you need to define some settings in your ``settings.py``.
 
 ``PAIN_PROCESSORS``
-===================
+-------------------
 
 A required setting containing a dictionary of payment processor names and dotted paths to payment processors classes.
 The payments are offered to the payment processors in that order.
@@ -112,20 +108,20 @@ When you change this setting (including the initial setup), you have to run ``dj
 Permissions for manual assignment to individual payment processors are created in this step.
 
 ``PAIN_PROCESS_PAYMENTS_LOCK_FILE``
-===================================
+-----------------------------------
 
 Path to the lock file for the ``process_payments`` command.
 The default value is ``/tmp/pain_process_payments.lock``.
 
 ``PAIN_TRIM_VARSYM``
-====================
+--------------------
 
 Boolean setting.
 If ``True``, bank statement parser removes leading zeros from the variable symbol.
 Default is ``False``.
 
 ``PAIN_DOWNLOADERS``
-====================
+--------------------
 
 A setting containing dotted paths to payment downloader and parser classes and downloader parameters.
 There should be a separate entry in the dictionary for each bank from which payments should be downloaded.
@@ -140,7 +136,7 @@ Example configuration:
                                  'DOWNLOADER_PARAMS': {'base_url': 'https://bank.test', 'password': 'letmein'}}}
 
 ``PAIN_IMPORT_CALLBACK``
-========================
+------------------------
 
 List setting containing dotted paths to callables.
 
@@ -149,15 +145,15 @@ This callable is called right before the payment is saved during the import.
 Especially, this callable can throw ValidationError in order to avoid saving payment to the database.
 Default value is empty list.
 
-----------------------
+
 Other related settings
-----------------------
+======================
 
 Plugins usually have settings of their own, see the plugin docs.
 Apart from that, there are several settings that don't have to be set, but it's really advisable to do so.
 
 ``CURRENCIES``
-==============
+--------------
 
 A list of currency codes used in the application.
 The default is the list of all available currencies (which is pretty long).
@@ -173,7 +169,7 @@ This setting comes from django-money_ app. Changing this setting requires genera
 .. _django-money: https://github.com/django-money/django-money
 
 ``DEFAULT_CURRENCY``
-====================
+--------------------
 
 The currency code of the default currency.
 It should be one of the currencies defined in the ``CURRENCIES`` setting.
@@ -188,7 +184,7 @@ Example configuration:
 This setting comes from django-money_ app. Changing this setting requires generating migrations.
 
 ``LANGUAGES``
-=============
+-------------
 
 See `Django docs`__.
 It is advisable to set this only to languages you intend to support.
@@ -197,7 +193,7 @@ It is advisable to set this only to languages you intend to support.
 __ https://docs.djangoproject.com/en/dev/ref/settings/#languages
 
 Currency formatting
-===================
+-------------------
 
 In case Django does not format currencies correctly according to its locale setting it may be necessary to define the formatting rules manually:
 
@@ -221,12 +217,11 @@ This setting comes from py-moneyed_ library.
 .. _py-moneyed: https://github.com/limist/py-moneyed
 
 
---------
 Commands
---------
+========
 
 ``import_payments``
-===================
+-------------------
 
 .. code-block::
 
@@ -239,7 +234,7 @@ The mandatory argument ``PARSER`` must be a dotted path to a payment-parser clas
 ``django_pain.parsers.transproc.TransprocXMLParser``.
 
 ``download_payments``
-=====================
+---------------------
 
 .. code-block::
 
@@ -255,7 +250,7 @@ Default value for ``START`` is seven days before ``END``.
 Example ``download_payments --start 2020-09-01 --end 2020-10-31``
 
 ``list_payments``
-=================
+-----------------
 
 .. code-block::
 
@@ -274,7 +269,7 @@ If ``--limit LIMIT`` is set, the command will list at most ``LIMIT`` payments.
 If there are any non-listed payments, the command will announce their count.
 
 ``process_payments``
-====================
+--------------------
 
 .. code-block::
 
@@ -291,9 +286,8 @@ The options ``--from`` and ``--to`` limit payments to be processed by their crea
 They expect an ISO-formatted datetime value.
 
 
----------
- Changes
----------
+Changes
+=======
 
 See CHANGELOG_.
 
