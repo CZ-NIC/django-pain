@@ -17,10 +17,12 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Test import_payments command."""
+import sys
 from datetime import date
 from decimal import Decimal
 from io import StringIO
 from typing import Any, Mapping
+from unittest import skipUnless
 from unittest.mock import patch, sentinel
 
 from django.core.management import call_command
@@ -28,12 +30,20 @@ from django.core.management.base import CommandError
 from django.test import TestCase, override_settings
 from djmoney.money import Money
 from freezegun import freeze_time
-from teller.downloaders import BankStatementDownloader, TellerDownloadError
-from teller.parsers import BankStatementParser
-from teller.statement import BankStatement, Payment
 from testfixtures import LogCapture
 
+from django_pain.management.commands.download_payments import Command as DownloadCommand
 from django_pain.models import BankAccount, BankPayment
+
+try:
+    from teller.downloaders import BankStatementDownloader, TellerDownloadError
+    from teller.parsers import BankStatementParser
+    from teller.statement import BankStatement, Payment
+except ImportError:
+    BankStatementDownloader = object
+    BankStatementParser = object
+    BankStatement = object
+    Payment = object
 
 
 class DummyStatementDownloader(BankStatementDownloader):
@@ -94,6 +104,7 @@ class DummyCreditCardSummaryParser(BankStatementParser):
         return statement
 
 
+@skipUnless('teller' in sys.modules, 'Can not run without teller library.')
 class DownloadPaymentsTest(TestCase):
 
     test_settings = {'DOWNLOADER': 'django_pain.tests.commands.test_download_payments.DummyStatementDownloader',
@@ -280,3 +291,55 @@ class DownloadPaymentsTest(TestCase):
             ('django_pain.management.commands.download_payments', 'INFO', 'Skipped 1 payments.'),
             ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments finished.')
         )
+
+    def test_from_payment_data_class(self):
+        payment_data = Payment()
+        payment_data.identifier = 'abc123'
+        payment_data.transaction_date = date(2020, 9, 1)
+        payment_data.counter_account = '12345/678'
+        payment_data.name = 'John Doe'
+        payment_data.amount = Money(1, 'CZK')
+        payment_data.description = 'Hello!'
+        payment_data.constant_symbol = '123'
+        payment_data.variable_symbol = '456'
+        payment_data.specific_symbol = '789'
+
+        account = BankAccount(account_number='1234567890/2010')
+        model = DownloadCommand()._payment_from_data_class(account, payment_data)
+
+        self.assertEqual(model.identifier, payment_data.identifier)
+        self.assertEqual(model.account, account)
+        self.assertEqual(model.transaction_date, payment_data.transaction_date)
+        self.assertEqual(model.counter_account_number, payment_data.counter_account)
+        self.assertEqual(model.counter_account_name, payment_data.name)
+        self.assertEqual(model.amount, payment_data.amount)
+        self.assertEqual(model.description, payment_data.description)
+        self.assertEqual(model.constant_symbol, payment_data.constant_symbol)
+        self.assertEqual(model.variable_symbol, payment_data.variable_symbol)
+        self.assertEqual(model.specific_symbol, payment_data.specific_symbol)
+
+    def test_from_payment_data_class_blank_values(self):
+        payment_data = Payment()
+        payment_data.identifier = 'abc123'
+        payment_data.transaction_date = date(2020, 9, 1)
+        payment_data.counter_account = None
+        payment_data.name = None
+        payment_data.amount = Money(1, 'CZK')
+        payment_data.description = None
+        payment_data.constant_symbol = None
+        payment_data.variable_symbol = None
+        payment_data.specific_symbol = None
+
+        account = BankAccount(account_number='1234567890/2010')
+        model = DownloadCommand()._payment_from_data_class(account, payment_data)
+
+        self.assertEqual(model.identifier, payment_data.identifier)
+        self.assertEqual(model.account, account)
+        self.assertEqual(model.transaction_date, payment_data.transaction_date)
+        self.assertEqual(model.counter_account_number, '')
+        self.assertEqual(model.counter_account_name, '')
+        self.assertEqual(model.amount, payment_data.amount)
+        self.assertEqual(model.description, '')
+        self.assertEqual(model.constant_symbol, '')
+        self.assertEqual(model.variable_symbol, '')
+        self.assertEqual(model.specific_symbol, '')

@@ -20,6 +20,7 @@
 import logging
 from datetime import date, timedelta
 from typing import Iterable, Optional, Tuple
+from warnings import warn
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -27,11 +28,17 @@ from django.core.management.base import BaseCommand, CommandError, no_translatio
 from django.db import transaction
 from django.db.utils import IntegrityError
 from django.utils import timezone
-from teller.statement import BankStatement
 
 from django_pain.models import BankAccount, BankPayment
 from django_pain.settings import SETTINGS
 from django_pain.utils import parse_date_safe
+
+try:
+    from teller.statement import BankStatement, Payment
+except ImportError:
+    warn('Failed to import teller library.', UserWarning)
+    BankStatement = object
+    Payment = object
 
 LOGGER = logging.getLogger(__name__)
 
@@ -116,10 +123,26 @@ class Command(BaseCommand):
             raise CommandError('Bank account {} does not exist.'.format(account_number))
         payments = []
         for payment_data in statement:
-            payment = BankPayment.from_payment_data_class(payment_data)
-            payment.account = account
+            payment = self._payment_from_data_class(account, payment_data)
             payments.append(payment)
         return payments
+
+    def _payment_from_data_class(self, account: BankAccount, payment: Payment) -> BankPayment:
+        """Convert Payment data class from teller to Django model."""
+        result = BankPayment(identifier=payment.identifier,
+                             account=account,
+                             transaction_date=payment.transaction_date,
+                             counter_account_number=self._value_or_blank(payment.counter_account),
+                             counter_account_name=self._value_or_blank(payment.name),
+                             amount=payment.amount,
+                             description=self._value_or_blank(payment.description),
+                             constant_symbol=self._value_or_blank(payment.constant_symbol),
+                             variable_symbol=self._value_or_blank(payment.variable_symbol),
+                             specific_symbol=self._value_or_blank(payment.specific_symbol))
+        return result
+
+    def _value_or_blank(self, value: Optional[str]) -> str:
+        return '' if value is None else value
 
     def save_payments(self, payments: Iterable[BankPayment]) -> None:
         """Save payments and related objects to database."""

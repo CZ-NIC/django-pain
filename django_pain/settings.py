@@ -23,8 +23,6 @@ from functools import lru_cache
 import appsettings
 from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.utils import module_loading
-from teller.downloaders import BankStatementDownloader
-from teller.parsers import BankStatementParser
 
 from .utils import full_class_name
 
@@ -176,12 +174,11 @@ class PainSettings(appsettings.AppSettings):
 
     downloaders = NamedDictSetting(
         dict(
-            DOWNLOADER=appsettings.ObjectSetting(required=True,
-                                                 validators=[ClassPathValidator(BankStatementDownloader)]),
-            PARSER=appsettings.ObjectSetting(required=True,
-                                             validators=[ClassPathValidator(BankStatementParser)]),
+            DOWNLOADER=appsettings.ObjectSetting(required=True),
+            PARSER=appsettings.ObjectSetting(required=True),
             DOWNLOADER_PARAMS=appsettings.DictSetting(required=True, key_type=str)
-        )
+        ),
+        required=False
     )
 
     # CSOB card settings
