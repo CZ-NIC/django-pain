@@ -17,16 +17,24 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Test processor utils."""
+from warnings import warn
+
 from django.core.exceptions import ImproperlyConfigured
 from django.test import SimpleTestCase, override_settings
-from teller.downloaders import BankStatementDownloader
-from teller.parsers import BankStatementParser
 
 from django_pain.settings import (SETTINGS, get_card_payment_handler_class, get_card_payment_handler_instance,
                                   get_processor_class, get_processor_instance, get_processor_objective)
 
 from .mixins import CacheResetMixin
 from .utils import DummyCardPaymentHandler, DummyPaymentProcessor
+
+try:
+    from teller.downloaders import BankStatementDownloader
+    from teller.parsers import BankStatementParser
+except ImportError:
+    warn('Failed to import teller library.')
+    BankStatementDownloader = object
+    BankStatementParser = object
 
 
 class TestProcessorsSetting(SimpleTestCase):
@@ -128,20 +136,6 @@ class TestDownloadersSetting(SimpleTestCase):
     def test_invalid_subsettings(self):
         """Test invalid subsettings."""
         expected = "The key 1 is not of type str."
-        with self.assertRaisesRegex(ImproperlyConfigured, expected):
-            SETTINGS.check()
-
-    @override_settings(PAIN_DOWNLOADERS={'dummy': invalid_downloader})
-    def test_invalid_downloader(self):
-        """Test invalid downloader."""
-        expected = 'django_pain.tests.test_settings.DummyParser is not a subclass of BankStatementDownloader'
-        with self.assertRaisesRegex(ImproperlyConfigured, expected):
-            SETTINGS.check()
-
-    @override_settings(PAIN_DOWNLOADERS={'dummy': invalid_parser})
-    def test_invalid_parser(self):
-        """Test invalid parser."""
-        expected = "django_pain.tests.test_settings.DummyDownloader is not a subclass of BankStatementParser"
         with self.assertRaisesRegex(ImproperlyConfigured, expected):
             SETTINGS.check()
 
