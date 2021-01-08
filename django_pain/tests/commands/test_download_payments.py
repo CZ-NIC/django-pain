@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2020  CZ.NIC, z. s. p. o.
+# Copyright (C) 2020-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -18,6 +18,7 @@
 
 """Test import_payments command."""
 import sys
+from collections import OrderedDict
 from datetime import date
 from decimal import Decimal
 from io import StringIO
@@ -291,6 +292,41 @@ class DownloadPaymentsTest(TestCase):
             ('django_pain.management.commands.download_payments', 'INFO', 'Skipped 1 payments.'),
             ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments finished.')
         )
+
+    @override_settings(PAIN_DOWNLOADERS=OrderedDict([('earth', test_settings),
+                                                     ('mars', test_settings),
+                                                     ('pluto', test_settings)]))
+    def test_select_subset_of_banks(self):
+        out = StringIO()
+        err = StringIO()
+        call_command('download_payments', '--verbosity=3', '--downloader', 'earth', '--downloader', 'mars',
+                     stdout=out, stderr=err)
+
+        self.log_handler.check(
+            ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments started.'),
+            ('django_pain.management.commands.download_payments', 'INFO', 'Processing: earth'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Downloading payments for earth.'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Parsing payments for earth.'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Saving payments for earth.'),
+            ('django_pain.management.commands.download_payments', 'INFO', 'Processing: mars'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Downloading payments for mars.'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Parsing payments for mars.'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Saving payments for mars.'),
+            ('django_pain.management.commands.download_payments', 'INFO',
+                'Payment ID PAYMENT_1 already exists - skipping.'),
+            ('django_pain.management.commands.download_payments', 'INFO',
+                'Payment ID PAYMENT_2 already exists - skipping.'),
+            ('django_pain.management.commands.download_payments', 'INFO', 'Skipped 2 payments.'),
+            ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments finished.')
+        )
+
+    @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
+    def test_invalid_cli_option_raises_error(self):
+        out = StringIO()
+        err = StringIO()
+        with self.assertRaisesRegex(CommandError, "Error: argument -d/--downloader: invalid choice: 'invalid'"):
+            call_command('download_payments', '--verbosity=3', '--downloader', 'test', '--downloader', 'invalid',
+                         stdout=out, stderr=err)
 
     def test_from_payment_data_class(self):
         payment_data = Payment()
