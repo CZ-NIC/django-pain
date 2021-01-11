@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2020  CZ.NIC, z. s. p. o.
+# Copyright (C) 2020-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -18,8 +18,9 @@
 
 """Command for downloading payments from bank."""
 import logging
+from collections import OrderedDict
 from datetime import date, timedelta
-from typing import Iterable, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 from warnings import warn
 
 from django.conf import settings
@@ -55,6 +56,9 @@ class Command(BaseCommand):
                             help='end date of the download interval, default: TODAY')
         parser.add_argument('-s', '--start', type=parse_date_safe, required=False,
                             help='start date of the download interval, default: END minus seven days')
+        parser.add_argument('-d', '--downloader', type=str, action='append', choices=SETTINGS.downloaders.keys(),
+                            dest='downloaders', required=False,
+                            help='select subset of PAIN_DOWNLOADERS, default: all defined downloaders')
 
     @no_translations
     def handle(self, *args, **options):
@@ -63,8 +67,9 @@ class Command(BaseCommand):
         LOGGER.info('Command download_payments started.')
 
         start_date, end_date = self._set_dates(options['start'], options['end'])
+        downloaders = self._filter_downloaders(options['downloaders'])
 
-        for key, value in SETTINGS.downloaders.items():
+        for key, value in downloaders.items():
             LOGGER.info('Processing: {}'.format(key))
 
             downloader_class = value['DOWNLOADER']
@@ -108,6 +113,12 @@ class Command(BaseCommand):
         if start_date > end_date:
             raise CommandError('Start date has to be lower or equal to the end date.')
         return start_date, end_date
+
+    def _filter_downloaders(self, selected_downloaders: Optional[List[str]]) -> Dict[str, Dict[str, Any]]:
+        if selected_downloaders is not None:
+            return OrderedDict((k, v) for k, v in SETTINGS.downloaders.items() if k in selected_downloaders)
+        else:
+            return SETTINGS.downloaders
 
     def _get_today(self) -> date:
         if settings.USE_TZ:
