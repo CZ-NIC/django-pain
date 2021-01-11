@@ -238,16 +238,21 @@ The mandatory argument ``PARSER`` must be a dotted path to a payment-parser clas
 
 .. code-block::
 
-    download_payments [--start START] [--end END]
+    download_payments [--start START] [--end END] [--downloader DOWNLOADER]
 
 Download payments from the banks.
 
-There are two optional arguments ``START`` and ``END`` which set the download interval for which the banks will be
+There are two optional arguments ``--start`` and ``--end`` which set the download interval for which the banks will be
 queried. Both parameters should be entered as date in ISO format.
 Default value for ``END`` is today.
 Default value for ``START`` is seven days before ``END``.
 
 Example ``download_payments --start 2020-09-01 --end 2020-10-31``
+
+Optional repeatable parameter ``--downloader`` selects which downloaders defined in the ``PAIN_DOWNLOADERS`` settings will
+be used. If the parameter is omitted all defined downloaders will be used.
+
+Example ``download_payments --downloader somebank --downloader someotherbank``
 
 ``list_payments``
 -----------------
