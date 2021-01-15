@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2019  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -69,7 +69,8 @@ class TestImportPayments(TestCase):
         account = BankAccount(account_number='123456/7890', currency='CZK')
         account.save()
         self.account = account
-        self.log_handler = LogCapture('django_pain.management.commands.import_payments', propagate=False)
+        self.log_handler = LogCapture(('django_pain.management.commands.import_payments',
+                                       'django_pain.management.command_mixins'), propagate=False)
 
     def tearDown(self):
         self.log_handler.uninstall()
@@ -124,12 +125,6 @@ class TestImportPayments(TestCase):
         call_command('import_payments', '--parser=django_pain.tests.commands.test_import_payments.DummyPaymentsParser',
                      '--no-color', stderr=err)
 
-        self.assertEqual(err.getvalue().strip().split('\n'), [
-            'Payment ID PAYMENT_1 has not been saved due to the following errors:',
-            'Bank payment with this Payment ID and Destination account already exists.',
-            'Payment ID PAYMENT_2 has not been saved due to the following errors:',
-            'Bank payment with this Payment ID and Destination account already exists.',
-        ])
         self.log_handler.check(
             ('django_pain.management.commands.import_payments', 'INFO', 'Command import_payments started.'),
             ('django_pain.management.commands.import_payments', 'DEBUG', 'Importing payments from -.'),
@@ -141,14 +136,9 @@ class TestImportPayments(TestCase):
             ('django_pain.management.commands.import_payments', 'DEBUG', 'Importing payments from -.'),
             ('django_pain.management.commands.import_payments', 'DEBUG', 'Parsing payments from -.'),
             ('django_pain.management.commands.import_payments', 'DEBUG', 'Saving 2 payments from - to database.'),
-            ('django_pain.management.commands.import_payments', 'WARNING',
-                'Payment ID PAYMENT_1 has not been saved due to the following errors:'),
-            ('django_pain.management.commands.import_payments', 'WARNING',
-                'Bank payment with this Payment ID and Destination account already exists.'),
-            ('django_pain.management.commands.import_payments', 'WARNING',
-                'Payment ID PAYMENT_2 has not been saved due to the following errors:'),
-            ('django_pain.management.commands.import_payments', 'WARNING',
-                'Bank payment with this Payment ID and Destination account already exists.'),
+            ('django_pain.management.command_mixins', 'INFO', 'Payment ID PAYMENT_1 already exists - skipping.'),
+            ('django_pain.management.command_mixins', 'INFO', 'Payment ID PAYMENT_2 already exists - skipping.'),
+            ('django_pain.management.command_mixins', 'INFO', 'Skipped 2 payments.'),
             ('django_pain.management.commands.import_payments', 'INFO', 'Command import_payments finished.'),
         )
 
@@ -206,9 +196,10 @@ class TestImportPayments(TestCase):
             ('django_pain.management.commands.import_payments', 'DEBUG', 'Importing payments from -.'),
             ('django_pain.management.commands.import_payments', 'DEBUG', 'Parsing payments from -.'),
             ('django_pain.management.commands.import_payments', 'DEBUG', 'Saving 1 payments from - to database.'),
-            ('django_pain.management.commands.import_payments', 'WARNING',
+            ('django_pain.management.command_mixins', 'WARNING',
                 'Payment ID PAYMENT_3 has not been saved due to the following errors:'),
-            ('django_pain.management.commands.import_payments', 'WARNING',
+            ('django_pain.management.command_mixins', 'WARNING',
                 'Payment is credit card transaction summary.'),
+            ('django_pain.management.command_mixins', 'INFO', 'Skipped 1 payments.'),
             ('django_pain.management.commands.import_payments', 'INFO', 'Command import_payments finished.'),
         )
