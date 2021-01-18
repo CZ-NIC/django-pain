@@ -24,12 +24,10 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 from warnings import warn
 
 from django.conf import settings
-from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand, CommandError, no_translations
-from django.db import transaction
-from django.db.utils import IntegrityError
 from django.utils import timezone
 
+from django_pain.management.command_mixins import SavePaymentsMixin
 from django_pain.models import BankAccount, BankPayment
 from django_pain.settings import SETTINGS
 from django_pain.utils import parse_date_safe
@@ -44,7 +42,7 @@ except ImportError:
 LOGGER = logging.getLogger(__name__)
 
 
-class Command(BaseCommand):
+class Command(BaseCommand, SavePaymentsMixin):
     """Download payments from banks."""
 
     help = 'Download payments from the banks.'
@@ -154,56 +152,3 @@ class Command(BaseCommand):
 
     def _value_or_blank(self, value: Optional[str]) -> str:
         return '' if value is None else value
-
-    def save_payments(self, payments: Iterable[BankPayment]) -> None:
-        """Save payments and related objects to database."""
-        skipped = 0
-        for payment in payments:
-            try:
-                skipped += self._save_if_not_exists(payment)
-            except ValidationError as error:
-                skipped += 1
-                message = 'Payment ID %s has not been saved due to the following errors:'
-                LOGGER.warning(message, payment.identifier)
-                if self.options['verbosity'] >= 1:
-                    self.stderr.write(self.style.WARNING(message % payment.identifier))
-
-                if hasattr(error, 'message_dict'):
-                    for field in error.message_dict:
-                        prefix = '{}: '.format(field) if field != '__all__' else ''
-                        for message in error.message_dict[field]:
-                            LOGGER.warning('%s%s', prefix, message)
-                            if self.options['verbosity'] >= 1:
-                                self.stderr.write(self.style.WARNING('%s%s' % (prefix, message)))
-                else:
-                    LOGGER.warning('\n'.join(error.messages))
-                    if self.options['verbosity'] >= 1:
-                        self.stderr.write(self.style.WARNING('\n'.join(error.messages)))
-            except IntegrityError as error:
-                skipped += 1
-                message = 'Payment ID %s has not been saved due to the following error: %s'
-                LOGGER.warning(message, payment.identifier, str(error))
-                if self.options['verbosity'] >= 1:
-                    self.stderr.write(self.style.WARNING(message % (payment.identifier, str(error))))
-            else:
-                if self.options['verbosity'] >= 2:
-                    self.stdout.write(self.style.SUCCESS('Payment ID {} has been imported.'.format(payment.identifier)))
-        if skipped:
-            LOGGER.info('Skipped %d payments.', skipped)
-
-    def _save_if_not_exists(self, payment: BankPayment) -> int:
-        """Return value is the number of skipped payments."""
-        with transaction.atomic():
-            if self._payment_exists(payment):
-                LOGGER.info('Payment ID %s already exists - skipping.', payment)
-                return 1
-            else:
-                payment.full_clean()
-                for callback in SETTINGS.import_callbacks:
-                    payment = callback(payment)
-                payment.save()
-                return 0
-
-    def _payment_exists(self, payment: BankPayment) -> bool:
-        query = BankPayment.objects.filter(account=payment.account, identifier=payment.identifier)
-        return query.exists()

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2019  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -19,22 +19,18 @@
 """Command for importing payments from bank."""
 import logging
 import sys
-from typing import Iterable
 
-from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand, CommandError, no_translations
-from django.db import transaction
-from django.db.utils import IntegrityError
 from django.utils import module_loading
 
-from django_pain.models import BankAccount, BankPayment
+from django_pain.management.command_mixins import SavePaymentsMixin
+from django_pain.models import BankAccount
 from django_pain.parsers.common import AbstractBankStatementParser
-from django_pain.settings import SETTINGS
 
 LOGGER = logging.getLogger(__name__)
 
 
-class Command(BaseCommand):
+class Command(BaseCommand, SavePaymentsMixin):
     """Import payments from bank."""
 
     help = 'Import payments from the bank. Bank statement should be provided on standard input.'
@@ -73,38 +69,3 @@ class Command(BaseCommand):
             finally:
                 handle.close()
         LOGGER.info('Command import_payments finished.')
-
-    def save_payments(self, payments: Iterable[BankPayment]) -> None:
-        """Save payments and related objects to database."""
-        for payment in payments:
-            try:
-                with transaction.atomic():
-                    payment.full_clean()
-                    for callback in SETTINGS.import_callbacks:
-                        payment = callback(payment)
-                    payment.save()
-            except ValidationError as error:
-                message = 'Payment ID %s has not been saved due to the following errors:'
-                LOGGER.warning(message, payment.identifier)
-                if self.options['verbosity'] >= 1:
-                    self.stderr.write(self.style.WARNING(message % payment.identifier))
-
-                if hasattr(error, 'message_dict'):
-                    for field in error.message_dict:
-                        prefix = '{}: '.format(field) if field != '__all__' else ''
-                        for message in error.message_dict[field]:
-                            LOGGER.warning('%s%s', prefix, message)
-                            if self.options['verbosity'] >= 1:
-                                self.stderr.write(self.style.WARNING('%s%s' % (prefix, message)))
-                else:
-                    LOGGER.warning('\n'.join(error.messages))
-                    if self.options['verbosity'] >= 1:
-                        self.stderr.write(self.style.WARNING('\n'.join(error.messages)))
-            except IntegrityError as error:
-                message = 'Payment ID %s has not been saved due to the following error: %s'
-                LOGGER.warning(message, payment.identifier, str(error))
-                if self.options['verbosity'] >= 1:
-                    self.stderr.write(self.style.WARNING(message % (payment.identifier, str(error))))
-            else:
-                if self.options['verbosity'] >= 2:
-                    self.stdout.write(self.style.SUCCESS('Payment ID {} has been imported.'.format(payment.identifier)))

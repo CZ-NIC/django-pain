@@ -117,7 +117,8 @@ class DownloadPaymentsTest(TestCase):
         account = BankAccount(account_number='1234567890/2010', currency='CZK')
         account.save()
         self.account = account
-        self.log_handler = LogCapture('django_pain.management.commands.download_payments', propagate=False)
+        self.log_handler = LogCapture(('django_pain.management.commands.download_payments',
+                                       'django_pain.management.command_mixins'), propagate=False)
 
     def tearDown(self):
         self.log_handler.uninstall()
@@ -247,11 +248,9 @@ class DownloadPaymentsTest(TestCase):
             ('django_pain.management.commands.download_payments', 'DEBUG', 'Downloading payments for test.'),
             ('django_pain.management.commands.download_payments', 'DEBUG', 'Parsing payments for test.'),
             ('django_pain.management.commands.download_payments', 'DEBUG', 'Saving payments for test.'),
-            ('django_pain.management.commands.download_payments', 'INFO',
-                'Payment ID PAYMENT_1 already exists - skipping.'),
-            ('django_pain.management.commands.download_payments', 'INFO',
-                'Payment ID PAYMENT_2 already exists - skipping.'),
-            ('django_pain.management.commands.download_payments', 'INFO', 'Skipped 2 payments.'),
+            ('django_pain.management.command_mixins', 'INFO', 'Payment ID PAYMENT_1 already exists - skipping.'),
+            ('django_pain.management.command_mixins', 'INFO', 'Payment ID PAYMENT_2 already exists - skipping.'),
+            ('django_pain.management.command_mixins', 'INFO', 'Skipped 2 payments.'),
             ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments finished.')
         )
 
@@ -285,11 +284,10 @@ class DownloadPaymentsTest(TestCase):
             ('django_pain.management.commands.download_payments', 'DEBUG', 'Downloading payments for test.'),
             ('django_pain.management.commands.download_payments', 'DEBUG', 'Parsing payments for test.'),
             ('django_pain.management.commands.download_payments', 'DEBUG', 'Saving payments for test.'),
-            ('django_pain.management.commands.download_payments', 'WARNING',
+            ('django_pain.management.command_mixins', 'WARNING',
                 'Payment ID PAYMENT_3 has not been saved due to the following errors:'),
-            ('django_pain.management.commands.download_payments', 'WARNING',
-                'Payment is credit card transaction summary.'),
-            ('django_pain.management.commands.download_payments', 'INFO', 'Skipped 1 payments.'),
+            ('django_pain.management.command_mixins', 'WARNING', 'Payment is credit card transaction summary.'),
+            ('django_pain.management.command_mixins', 'INFO', 'Skipped 1 payments.'),
             ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments finished.')
         )
 
@@ -312,11 +310,9 @@ class DownloadPaymentsTest(TestCase):
             ('django_pain.management.commands.download_payments', 'DEBUG', 'Downloading payments for mars.'),
             ('django_pain.management.commands.download_payments', 'DEBUG', 'Parsing payments for mars.'),
             ('django_pain.management.commands.download_payments', 'DEBUG', 'Saving payments for mars.'),
-            ('django_pain.management.commands.download_payments', 'INFO',
-                'Payment ID PAYMENT_1 already exists - skipping.'),
-            ('django_pain.management.commands.download_payments', 'INFO',
-                'Payment ID PAYMENT_2 already exists - skipping.'),
-            ('django_pain.management.commands.download_payments', 'INFO', 'Skipped 2 payments.'),
+            ('django_pain.management.command_mixins', 'INFO', 'Payment ID PAYMENT_1 already exists - skipping.'),
+            ('django_pain.management.command_mixins', 'INFO', 'Payment ID PAYMENT_2 already exists - skipping.'),
+            ('django_pain.management.command_mixins', 'INFO', 'Skipped 2 payments.'),
             ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments finished.')
         )
 
