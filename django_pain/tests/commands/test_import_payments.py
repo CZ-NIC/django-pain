@@ -181,9 +181,10 @@ class TestImportPayments(TestCase):
         """Test import callback raising exception."""
         out = StringIO()
         err = StringIO()
-        call_command('import_payments',
-                     '--parser=django_pain.tests.commands.test_import_payments.DummyCreditCardSummaryParser',
-                     '--no-color', '--verbosity=3', stdout=out, stderr=err)
+        with self.assertWarnsRegex(UserWarning, 'Counter account number "None/None" encountered'):
+            call_command('import_payments',
+                         '--parser=django_pain.tests.commands.test_import_payments.DummyCreditCardSummaryParser',
+                         '--no-color', '--verbosity=3', stdout=out, stderr=err)
 
         self.assertEqual(out.getvalue().strip(), '')
         self.assertEqual(err.getvalue().strip().split('\n'), [

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2019-2020  CZ.NIC, z. s. p. o.
+# Copyright (C) 2019-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -65,9 +65,26 @@ class TestSkipCreditCardTransactionSummary(SimpleTestCase):
     def setUp(self):
         super().setUp()
 
-    def test_credit_card_summary_payment(self):
+    def test_credit_card_summary_payment_none_slash_none(self):
         payment = get_payment(
             counter_account_number='None/None',
+            constant_symbol='1176',
+        )
+        with self.assertWarnsRegex(UserWarning, 'Counter account number "None/None" encountered'):
+            with self.assertRaises(ValidationError):
+                payment = skip_credit_card_transaction_summary(payment)
+
+    def test_credit_card_summary_payment_none(self):
+        payment = get_payment(
+            counter_account_number=None,
+            constant_symbol='1176',
+        )
+        with self.assertRaises(ValidationError):
+            payment = skip_credit_card_transaction_summary(payment)
+
+    def test_credit_card_summary_payment_empty_str(self):
+        payment = get_payment(
+            counter_account_number='',
             constant_symbol='1176',
         )
         with self.assertRaises(ValidationError):
