@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -61,11 +61,15 @@ class NamedDictSetting(appsettings.DictSetting):
 
         # We can not use super().check() to validate subgroups so we do it manually.
         exceptions = []
-        for name, group in self.raw_value.items():
-            try:
-                self._check_group(group)
-            except ValidationError as error:
-                exceptions.extend(error.messages)
+        try:
+            for name, group in self.raw_value.items():
+                try:
+                    self._check_group(group)
+                except ValidationError as error:
+                    exceptions.extend(error.messages)
+        except AttributeError as e:
+            if self.required:
+                exceptions.append(e)
         if exceptions:
             raise ImproperlyConfigured(
                 "Setting {} is improperly configured.\n".format(self.full_name) + '\n'.join(exceptions))
