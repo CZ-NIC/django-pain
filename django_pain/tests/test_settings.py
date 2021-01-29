@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -19,6 +19,7 @@
 """Test processor utils."""
 from warnings import warn
 
+from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.test import SimpleTestCase, override_settings
 
@@ -138,6 +139,12 @@ class TestDownloadersSetting(SimpleTestCase):
         expected = "The key 1 is not of type str."
         with self.assertRaisesRegex(ImproperlyConfigured, expected):
             SETTINGS.check()
+
+    @override_settings()
+    def test_not_required(self):
+        """Test there is no exception when the setting is missing."""
+        del settings.PAIN_DOWNLOADERS
+        SETTINGS.check()
 
 
 class TestCallableListSetting(SimpleTestCase):
