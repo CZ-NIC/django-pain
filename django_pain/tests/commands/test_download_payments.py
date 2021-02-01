@@ -97,7 +97,7 @@ class DummyCreditCardSummaryParser(BankStatementParser):
     def parse_string(self, source: str) -> BankStatement:
         statement = BankStatement('1234567890/2010')
         payment = Payment(identifier='PAYMENT_3',
-                          counter_account='None/None',
+                          counter_account='',
                           amount=Money('42.00', 'CZK'),
                           transaction_date=date(2020, 9, 15),
                           constant_symbol='1176')

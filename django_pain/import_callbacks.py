@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2019  CZ.NIC, z. s. p. o.
+# Copyright (C) 2019-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -18,6 +18,7 @@
 
 """Import callbacks."""
 from functools import lru_cache
+from warnings import warn
 
 from django.conf import ImproperlyConfigured
 from django.core.exceptions import ValidationError
@@ -57,6 +58,9 @@ def skip_credit_card_transaction_summary(payment: BankPayment) -> BankPayment:
 
     This function is intended to be used as pain import callback.
     """
-    if payment.counter_account_number == 'None/None' and payment.constant_symbol in ('1176', '1178'):
+    if payment.counter_account_number in ('None/None', None, '') and payment.constant_symbol in ('1176', '1178'):
+        if payment.counter_account_number == 'None/None':
+            warn('Counter account number "None/None" encountered. This is deprecated. Use empty str or None instead.',
+                 UserWarning)
         raise ValidationError('Payment is credit card transaction summary.')
     return payment
