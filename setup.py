@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -52,7 +52,7 @@ SETUP_REQUIRES = ['Babel >=2.3', 'setuptools_webpack']
 INSTALL_REQUIRES = open('requirements.txt').read().splitlines()
 EXTRAS_REQUIRE = {'quality': ['isort', 'flake8', 'pydocstyle', 'polint', 'mypy'],
                   'test': ['testfixtures', 'freezegun'],
-                  'teller': ['fred-teller']}
+                  'teller': ['fred-teller ~=0.1.0']}
 
 setup(name='django-pain',
       version='2.0.0',
