@@ -82,23 +82,26 @@ class Command(BaseCommand, SavePaymentsMixin):
             try:
                 # TODO: urllib3.connectionpool logs the URL in the DEBUG mode
                 LOGGER.debug('Downloading payments for %s.', key)
-                raw_statement = downloader.get_statement(start_date, end_date)
+                raw_statements = downloader.get_statements(start_date, end_date)
             except Exception:
                 # Do not log the error message here as it may contain sensitive information such as login credentials.
                 LOGGER.error('Downloading payments for %s failed.', key)
                 continue
 
             LOGGER.debug('Parsing payments for %s.', key)
-            try:
-                statement = parser_class.parse_string(raw_statement)
-            except Exception as e:
-                LOGGER.error(str(e))
-                continue
+            payments = []  # type: List[BankPayment]
+            for raw_statement in raw_statements:
+                try:
+                    statement = parser_class.parse_string(raw_statement)
+                except Exception as e:
+                    LOGGER.error(str(e))
+                    continue
 
-            payments = self._convert_to_models(statement)
+                payments.extend(self._convert_to_models(statement))
 
-            LOGGER.debug('Saving payments for %s.', key)
-            self.save_payments(payments)
+            if len(payments) > 0:
+                LOGGER.debug('Saving payments for %s.', key)
+                self.save_payments(payments)
 
         LOGGER.info('Command download_payments finished.')
 

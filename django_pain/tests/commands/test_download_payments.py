@@ -22,7 +22,7 @@ from collections import OrderedDict
 from datetime import date
 from decimal import Decimal
 from io import StringIO
-from typing import Any, Mapping
+from typing import Any, Iterable, Mapping
 from unittest import skipUnless
 from unittest.mock import patch, sentinel
 
@@ -63,8 +63,8 @@ class DummyStatementDownloader(BankStatementDownloader):
         super().__init__(base_url, timeout)
         self.password = password
 
-    def get_statement(self, start_date: date, end_date: date) -> str:
-        return self.statement
+    def _download_data(self, start_date: date, end_date: date) -> Iterable[str]:
+        return [self.statement]
 
 
 class DummyStatementParser(BankStatementParser):
@@ -146,7 +146,7 @@ class DownloadPaymentsTest(TestCase):
         )
 
     @freeze_time("2020-01-09T23:30")
-    @patch('django_pain.tests.commands.test_download_payments.DummyStatementDownloader.get_statement')
+    @patch('django_pain.tests.commands.test_download_payments.DummyStatementDownloader.get_statements')
     @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
     def test_default_parameters(self, mock_method):
         with override_settings(USE_TZ=False):
@@ -157,7 +157,7 @@ class DownloadPaymentsTest(TestCase):
             call_command('download_payments', '--no-color')
         mock_method.assert_called_with(date(year=2020, month=1, day=3), date(year=2020, month=1, day=10))
 
-    @patch('django_pain.tests.commands.test_download_payments.DummyStatementDownloader.get_statement')
+    @patch('django_pain.tests.commands.test_download_payments.DummyStatementDownloader.get_statements')
     @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
     def test_parameters(self, mock_method):
         call_command('download_payments', '--no-color', '--start', '2020-01-01', '--end', '2020-01-21')
@@ -193,7 +193,7 @@ class DownloadPaymentsTest(TestCase):
             ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments finished.')
         )
 
-    @patch('django_pain.tests.commands.test_download_payments.DummyStatementDownloader.get_statement')
+    @patch('django_pain.tests.commands.test_download_payments.DummyStatementDownloader.get_statements')
     @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
     def test_download_error(self, mock_method):
         mock_method.side_effect = TellerDownloadError
