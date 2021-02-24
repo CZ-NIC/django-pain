@@ -55,7 +55,7 @@ EXTRAS_REQUIRE = {'quality': ['isort', 'flake8', 'pydocstyle', 'polint', 'mypy']
                   'teller': ['fred-teller ~=0.2.0']}
 
 setup(name='django-pain',
-      version='2.0.0',
+      version='2.1.0',
       description='Django application for managing bank payments and invoices',
       long_description=readme(),
       url='http://www.nic.cz/',
