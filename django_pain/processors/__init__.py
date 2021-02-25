@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2019  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -17,12 +17,13 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Processors module."""
-from .common import AbstractPaymentProcessor, InvalidTaxDateError, ProcessPaymentResult
+from .common import AbstractPaymentProcessor, InvalidTaxDateError, PaymentProcessorError, ProcessPaymentResult
 from .ignore import IgnorePaymentProcessor
 
 __all__ = [
     'AbstractPaymentProcessor',
     'InvalidTaxDateError',
+    'PaymentProcessorError',
     'ProcessPaymentResult',
     'IgnorePaymentProcessor',
 ]

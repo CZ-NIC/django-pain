@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -27,6 +27,7 @@ from django.db import transaction
 
 from django_pain.constants import PaymentState, PaymentType
 from django_pain.models import BankAccount, BankPayment
+from django_pain.processors import PaymentProcessorError
 from django_pain.settings import SETTINGS, get_processor_instance
 from django_pain.utils import parse_datetime_safe
 
@@ -73,9 +74,15 @@ class Command(BaseCommand):
                 break
 
             LOGGER.info('Processing payments with processor %s.', processor_name)
-            results = processor.process_payments(deepcopy(payment) for payment in payments)
-            unprocessed_payments = []
+            try:
+                results = processor.process_payments(deepcopy(payment) for payment in payments)
+            except PaymentProcessorError as error:
+                LOGGER.error('Error occured while processing payments with processor %s: %s Skipping.',
+                             processor_name,
+                             str(error))
+                continue
 
+            unprocessed_payments = []
             for payment, processed in zip_longest(payments, results):
                 if processed.result:
                     payment.state = PaymentState.PROCESSED

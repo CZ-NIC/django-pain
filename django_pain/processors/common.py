@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2019  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -22,6 +22,10 @@ from typing import Iterable
 
 from django_pain.constants import PaymentProcessingError
 from django_pain.models import BankPayment
+
+
+class PaymentProcessorError(Exception):
+    """Generic payment processor error."""
 
 
 class InvalidTaxDateError(Exception):
@@ -88,11 +92,17 @@ class AbstractPaymentProcessor(ABC):
         """
         Process bank payment.
 
-        Each processor class has to implement this method. Result is iterable
-        of named tuples (``ProcessPaymentResult``). If n-th payment has been
-        recognized and processed, n-th position of returned iterable must
-        have ``result`` set to True, otherwise value of ``result`` must be
-        False.
+        Each processor class has to implement this method.
+
+        Returns:
+            Iterable of named tuples (``ProcessPaymentResult``). If n-th payment
+            has been recognized and processed, n-th position of returned iterable
+            must have ``result`` set to True, otherwise value of ``result`` must
+            be False.
+
+        Raises:
+            PaymentProcessorError when a major error which precents processing
+            of all payments occurs.
         """
 
     @abstractmethod

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -36,7 +36,7 @@ from testfixtures import LogCapture, TempDirectory
 
 from django_pain.constants import PaymentProcessingError, PaymentState, PaymentType
 from django_pain.models import BankAccount, BankPayment
-from django_pain.processors import ProcessPaymentResult
+from django_pain.processors import PaymentProcessorError, ProcessPaymentResult
 from django_pain.settings import SETTINGS, get_processor_class, get_processor_instance
 from django_pain.tests.mixins import CacheResetMixin
 from django_pain.tests.utils import DummyPaymentProcessor, get_payment
@@ -74,6 +74,13 @@ class DummyFalseErrorPaymentProcessor(DummyPaymentProcessor):
     def process_payments(self, payments):
         for payment in payments:
             yield ProcessPaymentResult(result=False, error=PaymentProcessingError.DUPLICITY)
+
+
+class DummyBrokenProcessor(DummyPaymentProcessor):
+    """Simple processor that rises error every time it is called."""
+
+    def process_payments(self, payments):
+        raise PaymentProcessorError('It is broken!')
 
 
 @skipUnlessDBFeature('has_select_for_update')
@@ -330,6 +337,34 @@ class TestProcessPayments(CacheResetMixin, TestCase):
                 ('django_pain.management.commands.process_payments', 'INFO',
                     'Saving payment %s as DEFERRED with error PaymentProcessingError.DUPLICITY.'
                     % BankPayment.objects.first().uuid),
+                ('django_pain.management.commands.process_payments', 'INFO',
+                    'Marking 0 unprocessed payments as DEFERRED.'),
+                ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments finished.'),
+            )
+
+    @override_settings(PAIN_PROCESSORS=OrderedDict([
+        ('broken', 'django_pain.tests.commands.test_process_payments.DummyBrokenProcessor'),
+        ('dummy', 'django_pain.tests.commands.test_process_payments.DummyTruePaymentProcessor')]))
+    def test_payments_processed_after_first_processor_fails(self):
+        """Test payments processed after first_processor fails."""
+        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
+            call_command('process_payments')
+
+            self.assertQuerysetEqual(
+                BankPayment.objects.values_list('identifier', 'account', 'state', 'processor'),
+                [('PAYMENT_1', self.account.pk, PaymentState.PROCESSED, 'dummy')],
+                transform=tuple, ordered=False)
+            self.assertEqual(BankPayment.objects.first().objective, 'True objective')
+            self.log_handler.check(
+                ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments started.'),
+                ('django_pain.management.commands.process_payments', 'INFO', 'Lock acquired.'),
+                ('django_pain.management.commands.process_payments', 'INFO', 'Processing 1 unprocessed payments.'),
+                ('django_pain.management.commands.process_payments', 'INFO',
+                    'Processing payments with processor broken.'),
+                ('django_pain.management.commands.process_payments', 'ERROR',
+                 'Error occured while processing payments with processor broken: It is broken! Skipping.'),
+                ('django_pain.management.commands.process_payments', 'INFO',
+                    'Processing payments with processor dummy.'),
                 ('django_pain.management.commands.process_payments', 'INFO',
                     'Marking 0 unprocessed payments as DEFERRED.'),
                 ('django_pain.management.commands.process_payments', 'INFO', 'Command process_payments finished.'),
