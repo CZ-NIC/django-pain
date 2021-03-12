@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -22,9 +22,10 @@ from django.db import IntegrityError
 from django.db.models import BLANK_CHOICE_DASH
 from django.test import SimpleTestCase, TestCase, override_settings
 from djmoney.money import Money
+from freezegun import freeze_time
 
 from django_pain.constants import InvoiceType, PaymentType
-from django_pain.models import BankPayment
+from django_pain.models import BankPayment, PaymentImportHistory
 
 from .mixins import CacheResetMixin
 from .utils import get_account, get_invoice, get_payment
@@ -104,3 +105,38 @@ class TestBankPayment(CacheResetMixin, TestCase):
 
         payment = get_payment(account=account, payment_type=PaymentType.CARD_PAYMENT, counter_account_number='123')
         self.assertRaises(IntegrityError, payment.save)
+
+
+class TestPaymentImportHistory(CacheResetMixin, TestCase):
+    """Test PaymentImportHistory model."""
+
+    @freeze_time('2021-02-01 10:15')
+    def test_str(self):
+        """Test string representation."""
+        import_history = PaymentImportHistory(origin='test')
+        self.assertEquals(str(import_history), 'test None')
+
+        import_history.save()
+        self.assertEquals(str(import_history), 'test 2021-02-01 10:15:00')
+
+    def test_filenames(self):
+        import_history = PaymentImportHistory(origin='test')
+        self.assertEqual(list(import_history.filenames), [])
+
+        import_history.add_filename('file_1.txt')
+        self.assertEqual(list(import_history.filenames), ['file_1.txt'])
+
+        import_history.add_filename('file_2.txt')
+        self.assertEqual(list(import_history.filenames), ['file_1.txt', 'file_2.txt'])
+
+    def test_filename_can_not_contain_separator(self):
+        import_history = PaymentImportHistory(origin='test')
+        with self.assertRaisesRegex(ValueError, 'Characted ; not allowed in filenames'):
+            import_history.add_filename('file;name.txt')
+
+    def test_success(self):
+        """Test success property."""
+        self.assertTrue(PaymentImportHistory(origin='test', errors=0, finished=True).success)
+        self.assertFalse(PaymentImportHistory(origin='test', errors=1, finished=True).success)
+        self.assertFalse(PaymentImportHistory(origin='test', errors=None, finished=True).success)
+        self.assertFalse(PaymentImportHistory(origin='test', errors=0, finished=False).success)

@@ -81,8 +81,17 @@ msgstr "Django admin"
 msgid "Duplicate payment"
 msgstr "Duplicitní platba"
 
+msgid "Errors"
+msgstr "Chyby"
+
+msgid "File names"
+msgstr "Jména souborů"
+
 msgid "Fill out both fields"
 msgstr "Vyplňte obě pole"
+
+msgid "Finished"
+msgstr "Dokončeno"
 
 msgid ""
 "If you use external authentication system such as LDAP, you don't have to "
@@ -93,6 +102,9 @@ msgstr ""
 
 msgid "Ignore payment"
 msgstr "Ignorovat platbu"
+
+msgid "Import start time"
+msgstr "Čas začátku importu"
 
 msgid "Invoice"
 msgstr "Faktura"
@@ -112,6 +124,9 @@ msgstr "Faktury související s platbou"
 msgid "Objective"
 msgstr "Účel"
 
+msgid "Origin"
+msgstr "Zdroj"
+
 msgid "PAIN Administration"
 msgstr "Administrace PAIN"
 
@@ -120,6 +135,9 @@ msgstr "Heslo"
 
 msgid "Payment ID"
 msgstr "Identifikátor platby"
+
+msgid "Payment Import History"
+msgstr "Historie importu plateb"
 
 msgid "Payment is older than 15 days, it can't be processed automatically"
 msgstr "Platba je starší než 15 dní, nelze ji automaticky spárovat."
@@ -153,6 +171,9 @@ msgstr "Přijatá částka je nižší, než očekávaná"
 
 msgid "Specific symbol"
 msgstr "Specifický symbol"
+
+msgid "Success"
+msgstr "Úspěch"
 
 msgid "Tax date"
 msgstr "Datum uskutečnění zdanitelného plnění"
