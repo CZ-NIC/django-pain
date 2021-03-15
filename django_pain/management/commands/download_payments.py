@@ -28,16 +28,18 @@ from django.core.management.base import BaseCommand, CommandError, no_translatio
 from django.utils import timezone
 
 from django_pain.management.command_mixins import SavePaymentsMixin
-from django_pain.models import BankAccount, BankPayment
+from django_pain.models import BankAccount, BankPayment, PaymentImportHistory
 from django_pain.settings import SETTINGS
 from django_pain.utils import parse_date_safe
 
 try:
+    from teller.downloaders import RawStatement
     from teller.statement import BankStatement, Payment
 except ImportError:
     warn('Failed to import teller library.', UserWarning)
     BankStatement = object  # type: ignore
     Payment = object  # type: ignore
+    RawStatement = object  # type: ignore
 
 LOGGER = logging.getLogger(__name__)
 
@@ -69,6 +71,8 @@ class Command(BaseCommand, SavePaymentsMixin):
 
         for key, value in downloaders.items():
             LOGGER.info('Processing: {}'.format(key))
+            import_history = PaymentImportHistory(origin=key)
+            import_history.save()
 
             downloader_class = value['DOWNLOADER']
             parser_class = value['PARSER']
@@ -88,20 +92,21 @@ class Command(BaseCommand, SavePaymentsMixin):
                 LOGGER.error('Downloading payments for %s failed.', key)
                 continue
 
-            LOGGER.debug('Parsing payments for %s.', key)
-            payments = []  # type: List[BankPayment]
-            for raw_statement in raw_statements:
-                try:
-                    statement = parser_class.parse_file(raw_statement)
-                except Exception as e:
-                    LOGGER.error(str(e))
-                    continue
+            for statement in raw_statements:
+                if statement.name:
+                    import_history.add_filename(statement.name)
+            import_history.save()
 
-                payments.extend(self._convert_to_models(statement))
+            LOGGER.debug('Parsing payments for %s.', key)
+            payments, parsing_errors = self._parse_payments(parser_class, raw_statements)
 
             if len(payments) > 0:
                 LOGGER.debug('Saving payments for %s.', key)
-                self.save_payments(payments)
+            result = self.save_payments(payments)
+
+            import_history.errors = result.errors + parsing_errors
+            import_history.finished = True
+            import_history.save()
 
         LOGGER.info('Command download_payments finished.')
 
@@ -126,6 +131,19 @@ class Command(BaseCommand, SavePaymentsMixin):
             return timezone.localtime().date()
         else:
             return date.today()
+
+    def _parse_payments(self, parser, raw_statements: Iterable[RawStatement]) -> Tuple[List[BankPayment], int]:
+        parsing_errors = 0
+        payments = []  # type: List[BankPayment]
+        for raw_statement in raw_statements:
+            try:
+                statement = parser.parse_file(raw_statement)
+            except Exception as e:
+                LOGGER.error(str(e))
+                parsing_errors += 1
+                continue
+            payments.extend(self._convert_to_models(statement))
+        return payments, parsing_errors
 
     def _convert_to_models(self, statement: BankStatement) -> Iterable[BankPayment]:
         account_number = statement.account_number
