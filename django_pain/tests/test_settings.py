@@ -34,8 +34,8 @@ try:
     from teller.parsers import BankStatementParser
 except ImportError:
     warn('Failed to import teller library.')
-    BankStatementDownloader = object
-    BankStatementParser = object
+    BankStatementDownloader = object  # type: ignore
+    BankStatementParser = object  # type: ignore
 
 
 class TestProcessorsSetting(SimpleTestCase):

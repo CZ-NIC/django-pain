@@ -52,10 +52,10 @@ SETUP_REQUIRES = ['Babel >=2.3', 'setuptools_webpack']
 INSTALL_REQUIRES = open('requirements.txt').read().splitlines()
 EXTRAS_REQUIRE = {'quality': ['isort', 'flake8', 'pydocstyle', 'polint', 'mypy'],
                   'test': ['testfixtures', 'freezegun'],
-                  'teller': ['fred-teller ~=0.2.0']}
+                  'teller': ['fred-teller ~=0.3.1']}
 
 setup(name='django-pain',
-      version='2.1.0',
+      version='2.1.0-rc2',
       description='Django application for managing bank payments and invoices',
       long_description=readme(),
       url='http://www.nic.cz/',

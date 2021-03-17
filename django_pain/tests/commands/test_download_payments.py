@@ -22,7 +22,8 @@ from collections import OrderedDict
 from datetime import date
 from decimal import Decimal
 from io import StringIO
-from typing import Any, Iterable, Mapping
+from pathlib import Path
+from typing import Any, Iterable, Mapping, TextIO, Union
 from unittest import skipUnless
 from unittest.mock import patch, sentinel
 
@@ -37,14 +38,15 @@ from django_pain.management.commands.download_payments import Command as Downloa
 from django_pain.models import BankAccount, BankPayment
 
 try:
-    from teller.downloaders import BankStatementDownloader, TellerDownloadError
+    from teller.downloaders import BankStatementDownloader, RawStatement, TellerDownloadError
     from teller.parsers import BankStatementParser
     from teller.statement import BankStatement, Payment
 except ImportError:
-    BankStatementDownloader = object
-    BankStatementParser = object
-    BankStatement = object
-    Payment = object
+    BankStatementDownloader = object  # type: ignore
+    BankStatementParser = object  # type: ignore
+    BankStatement = object  # type: ignore
+    Payment = object  # type: ignore
+    RawStatement = object  # type: ignore
 
 
 class DummyStatementDownloader(BankStatementDownloader):
@@ -63,7 +65,7 @@ class DummyStatementDownloader(BankStatementDownloader):
         super().__init__(base_url, timeout)
         self.password = password
 
-    def _download_data(self, start_date: date, end_date: date) -> Iterable[str]:
+    def _download_data(self, start_date: date, end_date: date) -> Iterable[RawStatement]:
         return [self.statement]
 
 
@@ -71,7 +73,7 @@ class DummyStatementParser(BankStatementParser):
     """Simple downloader that just returns two fixed payments."""
 
     @classmethod
-    def parse_string(cls, source: str) -> BankStatement:
+    def parse_file(cls, source: Union[str, TextIO, Path], encoding='utf-8') -> BankStatement:
         if source is not DummyStatementDownloader.statement:
             raise ValueError('Expected DummyStatementDownloader.statement as source.')  # pragma: no cover
 
@@ -94,7 +96,7 @@ class DummyCreditCardSummaryParser(BankStatementParser):
     """Simple parser that just returns one credit card summary payment."""
 
     @classmethod
-    def parse_string(self, source: str) -> BankStatement:
+    def parse_file(cls, source: Union[str, TextIO, Path], encoding='utf-8') -> BankStatement:
         statement = BankStatement('1234567890/2010')
         payment = Payment(identifier='PAYMENT_3',
                           counter_account='',
@@ -206,7 +208,7 @@ class DownloadPaymentsTest(TestCase):
             ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments finished.')
         )
 
-    @patch('django_pain.tests.commands.test_download_payments.DummyStatementParser.parse_string')
+    @patch('django_pain.tests.commands.test_download_payments.DummyStatementParser.parse_file')
     @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
     def test_parser_error(self, mock_method):
         mock_method.side_effect = ValueError('Something went wrong.')
@@ -220,7 +222,7 @@ class DownloadPaymentsTest(TestCase):
             ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments finished.')
         )
 
-    @patch('django_pain.tests.commands.test_download_payments.DummyStatementParser.parse_string')
+    @patch('django_pain.tests.commands.test_download_payments.DummyStatementParser.parse_file')
     @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
     def test_invalid_account(self, mock_method):
         statement = BankStatement('11111/11')
