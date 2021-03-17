@@ -36,8 +36,8 @@ try:
     from teller.statement import BankStatement, Payment
 except ImportError:
     warn('Failed to import teller library.', UserWarning)
-    BankStatement = object
-    Payment = object
+    BankStatement = object  # type: ignore
+    Payment = object  # type: ignore
 
 LOGGER = logging.getLogger(__name__)
 
@@ -92,7 +92,7 @@ class Command(BaseCommand, SavePaymentsMixin):
             payments = []  # type: List[BankPayment]
             for raw_statement in raw_statements:
                 try:
-                    statement = parser_class.parse_string(raw_statement)
+                    statement = parser_class.parse_file(raw_statement)
                 except Exception as e:
                     LOGGER.error(str(e))
                     continue
