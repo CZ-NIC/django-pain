@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -18,6 +18,7 @@
 
 """Payments and invoices models."""
 import uuid
+from typing import Tuple
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -149,3 +150,50 @@ class BankPayment(models.Model):
             proc = get_processor_instance(proc_name)
             choices.append((proc_name, proc.default_objective))
         return choices
+
+
+class PaymentImportHistory(models.Model):
+    """Record of payment imports."""
+
+    separator = ';'
+
+    origin = models.TextField(verbose_name=_('Origin'), help_text='Key of PAIN_DOWNLOADERS setting.')
+    start_datetime = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name=_('Import start time'),
+                                          help_text='Import start time.')
+    _filenames = models.TextField(null=True, blank=True, verbose_name=_('File names'),
+                                  help_text='Names of the files the data were imported from if known.')
+    errors = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name=_('Errors'),
+                                              help_text='Number of payments skipped due to an error.')
+    finished = models.BooleanField(default=False, verbose_name=_('Finished'),
+                                   help_text='Indicates whether the import command finished without raising an error.')
+
+    class Meta:
+        """Model Meta class."""
+
+        verbose_name = _('Payment Import History')
+        verbose_name_plural = _('Payment Import History')
+
+    @property
+    def success(self) -> bool:
+        """Indicate successful import, i.e. the command finished and there were no errors."""
+        return self.finished and self.errors == 0
+    success.fget.short_description = _('Success')  # type: ignore
+
+    @property
+    def filenames(self) -> Tuple[str, ...]:
+        """Wrap _filenames field to return iterator."""
+        if self._filenames is None:
+            return ()
+        else:
+            return tuple(self._filenames.split(self.separator))
+    filenames.fget.short_description = _('File names')  # type: ignore
+
+    def add_filename(self, filename: str) -> None:
+        """Add value to _filenames field so it stays consistent."""
+        if self.separator in filename:
+            raise ValueError('Characted {} not allowed in filenames.'.format(self.separator))
+        self._filenames = self.separator.join(self.filenames + (filename,))
+
+    def __str__(self) -> str:
+        """Return string representation of an import record."""
+        return '{} {}'.format(self.origin, self.start_datetime)

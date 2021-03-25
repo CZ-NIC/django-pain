@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -17,7 +17,7 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Test admin views."""
-from datetime import date
+from datetime import date, datetime
 from decimal import ROUND_HALF_UP
 from queue import Queue
 from threading import Event, Thread
@@ -33,7 +33,7 @@ from moneyed.localization import _FORMATTER
 
 from django_pain.admin import BankPaymentAdmin
 from django_pain.constants import InvoiceType, PaymentProcessingError, PaymentState
-from django_pain.models import BankAccount, BankPayment
+from django_pain.models import BankAccount, BankPayment, PaymentImportHistory
 from django_pain.tests.mixins import CacheResetMixin
 from django_pain.tests.utils import DummyPaymentProcessor, get_account, get_client, get_invoice, get_payment
 
@@ -77,6 +77,58 @@ class TestBankAccountAdmin(TestCase):
         response = self.client.get(reverse('admin:django_pain_bankaccount_change', args=(self.account.pk,)))
         self.assertContains(response, '123456/0300')
         self.assertContains(response, '<div class="readonly">EUR</div>', html=True)
+
+
+@override_settings(ROOT_URLCONF='django_pain.tests.urls')
+class TestPaymentImportHistoryAdmin(TestCase):
+    """Test PaymentImportHistory."""
+
+    def setUp(self):
+        self.admin = User.objects.create_superuser('admin', 'admin@example.com', 'password')
+        self.import_history = PaymentImportHistory(origin='some_test_bank',
+                                                   start_datetime=datetime(2021, 3, 20, 12, 45))
+        self.import_history.save()
+
+    def test_get_list(self):
+        """Test GET request on model list."""
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('admin:django_pain_paymentimporthistory_changelist'))
+        self.assertContains(response, 'some_test_bank')
+        self.assertContains(response, 'March')
+
+    def test_get_change(self):
+        """Test GET request on PaymentImportHistory change."""
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('admin:django_pain_paymentimporthistory_change',
+                                           args=(self.import_history.pk,)))
+        self.assertContains(response, 'some_test_bank')
+        self.assertContains(response, 'March')
+
+    def test_delete_not_allowed(self):
+        """Test PaymentImportHistory can not be deleted in admin."""
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('admin:django_pain_paymentimporthistory_delete',
+                                           args=(self.import_history.pk,)))
+        self.assertEqual(response.status_code, 403)
+
+    def test_save_not_allowed(self):
+        """Test PaymentImportHistory can not be saved in admin."""
+        self.client.force_login(self.admin)
+        response_get = self.client.get(reverse('admin:django_pain_paymentimporthistory_change',
+                                               args=(self.import_history.pk,)))
+        self.assertNotContains(response_get, 'name="_save"', html=True)
+        self.assertNotContains(response_get, 'name="_addanother"', html=True)
+        self.assertNotContains(response_get, 'name="_continue"', html=True)
+
+        response_post = self.client.post(reverse('admin:django_pain_paymentimporthistory_change',
+                                                 args=(self.import_history.pk,)))
+        self.assertEqual(response_post.status_code, 403)
+
+    def test_add_not_allowed(self):
+        """Test PaymentImportHistory can not be added in admin."""
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('admin:django_pain_paymentimporthistory_add'))
+        self.assertEqual(response.status_code, 403)
 
 
 @skipUnlessDBFeature('has_select_for_update')

@@ -17,7 +17,8 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Test import_payments command."""
-from datetime import date
+from collections import namedtuple
+from datetime import date, datetime
 from decimal import Decimal
 from io import StringIO
 from typing import List
@@ -26,9 +27,10 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase, override_settings
 from djmoney.money import Money
+from freezegun import freeze_time
 from testfixtures import LogCapture, TempDirectory
 
-from django_pain.models import BankAccount, BankPayment
+from django_pain.models import BankAccount, BankPayment, PaymentImportHistory
 from django_pain.parsers import AbstractBankStatementParser
 from django_pain.tests.utils import get_payment
 
@@ -62,8 +64,19 @@ class DummyExceptionParser(AbstractBankStatementParser):
         raise BankAccount.DoesNotExist('Bank account ACCOUNT does not exist.')
 
 
+@freeze_time("2020-01-09T23:30")
 class TestImportPayments(TestCase):
     """Test import_payments command."""
+
+    fake_date = datetime(2020, 1, 9, 23, 30)
+    ImportHistoryRow = namedtuple('ImportHistoryRow', ('origin', 'start_datetime', 'filenames', 'errors', 'finished'))
+
+    def assertImportHistory(self, *expected):
+        self.assertQuerysetEqual(
+            PaymentImportHistory.objects.values_list('origin', 'start_datetime', '_filenames', 'errors', 'finished'),
+            expected,
+            transform=tuple,
+            ordered=False)
 
     def setUp(self):
         account = BankAccount(account_number='123456/7890', currency='CZK')
@@ -94,6 +107,8 @@ class TestImportPayments(TestCase):
             ('PAYMENT_2', self.account.pk, '098765/4321', date(2018, 5, 9), Decimal('370.00'), 'CZK', ''),
         ], transform=tuple, ordered=False)
 
+        self.assertImportHistory(self.ImportHistoryRow('transproc', self.fake_date, '-', 0, True))
+
         self.log_handler.check(
             ('django_pain.management.commands.import_payments', 'INFO', 'Command import_payments started.'),
             ('django_pain.management.commands.import_payments', 'DEBUG', 'Importing payments from -.'),
@@ -109,6 +124,7 @@ class TestImportPayments(TestCase):
                          '--parser=django_pain.tests.commands.test_import_payments.DummyExceptionParser', '--no-color')
 
         self.assertEqual(str(cm.exception), 'Bank account ACCOUNT does not exist.')
+        self.assertImportHistory(self.ImportHistoryRow('transproc', self.fake_date, '-', 1, False))
         self.log_handler.check(
             ('django_pain.management.commands.import_payments', 'INFO', 'Command import_payments started.'),
             ('django_pain.management.commands.import_payments', 'DEBUG', 'Importing payments from -.'),
@@ -124,6 +140,9 @@ class TestImportPayments(TestCase):
                      '--no-color', stdout=out)
         call_command('import_payments', '--parser=django_pain.tests.commands.test_import_payments.DummyPaymentsParser',
                      '--no-color', stderr=err)
+
+        self.assertImportHistory(self.ImportHistoryRow('transproc', self.fake_date, '-', 0, True),
+                                 self.ImportHistoryRow('transproc', self.fake_date, '-', 0, True))
 
         self.log_handler.check(
             ('django_pain.management.commands.import_payments', 'INFO', 'Command import_payments started.'),
@@ -192,6 +211,7 @@ class TestImportPayments(TestCase):
             'Payment is credit card transaction summary.',
         ])
         self.assertEqual(BankPayment.objects.count(), 0)
+        self.ImportHistoryRow('transproc', self.fake_date, None, 1, True)
         self.log_handler.check(
             ('django_pain.management.commands.import_payments', 'INFO', 'Command import_payments started.'),
             ('django_pain.management.commands.import_payments', 'DEBUG', 'Importing payments from -.'),
@@ -201,6 +221,6 @@ class TestImportPayments(TestCase):
                 'Payment ID PAYMENT_3 has not been saved due to the following errors:'),
             ('django_pain.management.command_mixins', 'WARNING',
                 'Payment is credit card transaction summary.'),
-            ('django_pain.management.command_mixins', 'INFO', 'Skipped 1 payments.'),
+            ('django_pain.management.command_mixins', 'INFO', '1 payments not saved due to errors.'),
             ('django_pain.management.commands.import_payments', 'INFO', 'Command import_payments finished.'),
         )

@@ -18,24 +18,26 @@
 
 """Test import_payments command."""
 import sys
-from collections import OrderedDict
-from datetime import date
+from collections import OrderedDict, namedtuple
+from datetime import date, datetime
 from decimal import Decimal
 from io import StringIO
 from pathlib import Path
 from typing import Any, Iterable, Mapping, TextIO, Union
 from unittest import skipUnless
-from unittest.mock import patch, sentinel
+from unittest.mock import MagicMock, patch
 
+from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from django.db.utils import IntegrityError
 from django.test import TestCase, override_settings
 from djmoney.money import Money
 from freezegun import freeze_time
 from testfixtures import LogCapture
 
 from django_pain.management.commands.download_payments import Command as DownloadCommand
-from django_pain.models import BankAccount, BankPayment
+from django_pain.models import BankAccount, BankPayment, PaymentImportHistory
 
 try:
     from teller.downloaders import BankStatementDownloader, RawStatement, TellerDownloadError
@@ -52,7 +54,8 @@ except ImportError:
 class DummyStatementDownloader(BankStatementDownloader):
     """Simple downloader that just returns fixed string"""
 
-    statement = sentinel.statement
+    statement = MagicMock(spec=StringIO)
+    statement.name = None
 
     def __init__(self, base_url: str, password: str, timeout: int = 3):
         expected_url = 'https://bank.test'
@@ -74,8 +77,7 @@ class DummyStatementParser(BankStatementParser):
 
     @classmethod
     def parse_file(cls, source: Union[str, TextIO, Path], encoding='utf-8') -> BankStatement:
-        if source is not DummyStatementDownloader.statement:
-            raise ValueError('Expected DummyStatementDownloader.statement as source.')  # pragma: no cover
+        cls._verify_source(source)
 
         statement = BankStatement('1234567890/2010')
         payment_1 = Payment(identifier='PAYMENT_1',
@@ -90,6 +92,11 @@ class DummyStatementParser(BankStatementParser):
         statement.add_payment(payment_1)
         statement.add_payment(payment_2)
         return statement
+
+    @classmethod
+    def _verify_source(cls, source: Union[str, TextIO, Path]) -> None:
+        if source is not DummyStatementDownloader.statement:
+            raise ValueError('Expected DummyStatementDownloader.statement as source.')  # pragma: no cover
 
 
 class DummyCreditCardSummaryParser(BankStatementParser):
@@ -108,12 +115,23 @@ class DummyCreditCardSummaryParser(BankStatementParser):
 
 
 @skipUnless('teller' in sys.modules, 'Can not run without teller library.')
+@freeze_time("2020-01-09T23:30")
 class DownloadPaymentsTest(TestCase):
 
     test_settings = {'DOWNLOADER': 'django_pain.tests.commands.test_download_payments.DummyStatementDownloader',
                      'PARSER': 'django_pain.tests.commands.test_download_payments.DummyStatementParser',
                      'DOWNLOADER_PARAMS': {'base_url': 'https://bank.test', 'password': 'letmein'}
                      }  # type: Mapping[str, Any]
+
+    fake_date = datetime(2020, 1, 9, 23, 30)
+    ImportHistoryRow = namedtuple('ImportHistoryRow', ('origin', 'start_datetime', 'filenames', 'errors', 'finished'))
+
+    def assertImportHistory(self, *expected):
+        self.assertQuerysetEqual(
+            PaymentImportHistory.objects.values_list('origin', 'start_datetime', '_filenames', 'errors', 'finished'),
+            expected,
+            transform=tuple,
+            ordered=False)
 
     def setUp(self):
         account = BankAccount(account_number='1234567890/2010', currency='CZK')
@@ -138,6 +156,8 @@ class DownloadPaymentsTest(TestCase):
             ('PAYMENT_2', self.account.pk, '098765/4321', date(2020, 9, 17), Decimal('370.00'), 'CZK', ''),
         ], transform=tuple, ordered=False)
 
+        self.assertImportHistory(self.ImportHistoryRow('test', self.fake_date, None, 0, True))
+
         self.log_handler.check(
             ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments started.'),
             ('django_pain.management.commands.download_payments', 'INFO', 'Processing: test'),
@@ -147,7 +167,6 @@ class DownloadPaymentsTest(TestCase):
             ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments finished.')
         )
 
-    @freeze_time("2020-01-09T23:30")
     @patch('django_pain.tests.commands.test_download_payments.DummyStatementDownloader.get_statements')
     @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
     def test_default_parameters(self, mock_method):
@@ -188,6 +207,9 @@ class DownloadPaymentsTest(TestCase):
     def test_downloader_init_error(self, mock_method):
         mock_method.side_effect = ValueError
         call_command('download_payments', '--no-color')
+
+        self.assertImportHistory(self.ImportHistoryRow('test', self.fake_date, None, None, False))
+
         self.log_handler.check(
             ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments started.'),
             ('django_pain.management.commands.download_payments', 'INFO', 'Processing: test'),
@@ -200,6 +222,9 @@ class DownloadPaymentsTest(TestCase):
     def test_download_error(self, mock_method):
         mock_method.side_effect = TellerDownloadError
         call_command('download_payments', '--no-color')
+
+        self.assertImportHistory(self.ImportHistoryRow('test', self.fake_date, None, None, False))
+
         self.log_handler.check(
             ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments started.'),
             ('django_pain.management.commands.download_payments', 'INFO', 'Processing: test'),
@@ -213,6 +238,9 @@ class DownloadPaymentsTest(TestCase):
     def test_parser_error(self, mock_method):
         mock_method.side_effect = ValueError('Something went wrong.')
         call_command('download_payments', '--no-color')
+
+        self.assertImportHistory(self.ImportHistoryRow('test', self.fake_date, None, 1, True))
+
         self.log_handler.check(
             ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments started.'),
             ('django_pain.management.commands.download_payments', 'INFO', 'Processing: test'),
@@ -236,6 +264,9 @@ class DownloadPaymentsTest(TestCase):
         err = StringIO()
         call_command('download_payments', '--no-color', '--verbosity=3', stdout=out)
         call_command('download_payments', '--no-color', '--verbosity=3', stdout=out, stderr=err)
+
+        self.assertImportHistory(self.ImportHistoryRow('test', self.fake_date, None, 0, True),
+                                 self.ImportHistoryRow('test', self.fake_date, None, 0, True))
 
         self.assertEqual(err.getvalue(), '')
         self.log_handler.check(
@@ -279,6 +310,9 @@ class DownloadPaymentsTest(TestCase):
             'Payment ID PAYMENT_3 has not been saved due to the following errors:',
             'Payment is credit card transaction summary.',
         ])
+
+        self.assertImportHistory(self.ImportHistoryRow('test', self.fake_date, None, 1, True))
+
         self.assertEqual(BankPayment.objects.count(), 0)
         self.log_handler.check(
             ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments started.'),
@@ -289,7 +323,118 @@ class DownloadPaymentsTest(TestCase):
             ('django_pain.management.command_mixins', 'WARNING',
                 'Payment ID PAYMENT_3 has not been saved due to the following errors:'),
             ('django_pain.management.command_mixins', 'WARNING', 'Payment is credit card transaction summary.'),
-            ('django_pain.management.command_mixins', 'INFO', 'Skipped 1 payments.'),
+            ('django_pain.management.command_mixins', 'INFO', '1 payments not saved due to errors.'),
+            ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments finished.')
+        )
+
+    @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
+    @patch('django_pain.management.command_mixins.SavePaymentsMixin._save_if_not_exists')
+    def test_validation_error(self, save_method):
+        out = StringIO()
+        err = StringIO()
+
+        save_method.side_effect = ValidationError(['It is broken', 'It is even more broken'])
+        call_command('download_payments', '--no-color', '--verbosity=3', stdout=out, stderr=err)
+
+        self.assertEqual(out.getvalue().strip(), '')
+        self.assertEqual(err.getvalue().strip().split('\n'), [
+            'Payment ID PAYMENT_1 has not been saved due to the following errors:',
+            'It is broken',
+            'It is even more broken',
+            'Payment ID PAYMENT_2 has not been saved due to the following errors:',
+            'It is broken',
+            'It is even more broken',
+        ])
+
+        self.assertImportHistory(self.ImportHistoryRow('test', self.fake_date, None, 2, True))
+
+        self.assertEqual(BankPayment.objects.count(), 0)
+        self.log_handler.check(
+            ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments started.'),
+            ('django_pain.management.commands.download_payments', 'INFO', 'Processing: test'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Downloading payments for test.'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Parsing payments for test.'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Saving payments for test.'),
+            ('django_pain.management.command_mixins', 'WARNING',
+                'Payment ID PAYMENT_1 has not been saved due to the following errors:'),
+            ('django_pain.management.command_mixins', 'WARNING', 'It is broken\nIt is even more broken'),
+            ('django_pain.management.command_mixins', 'WARNING',
+                'Payment ID PAYMENT_2 has not been saved due to the following errors:'),
+            ('django_pain.management.command_mixins', 'WARNING', 'It is broken\nIt is even more broken'),
+            ('django_pain.management.command_mixins', 'INFO', '2 payments not saved due to errors.'),
+            ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments finished.')
+        )
+
+    @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
+    @patch('django_pain.management.command_mixins.SavePaymentsMixin._save_if_not_exists')
+    def test_validation_error_dict(self, save_method):
+        out = StringIO()
+        err = StringIO()
+
+        save_method.side_effect = ValidationError(OrderedDict(here='It is broken', there='It is even more broken'))
+        call_command('download_payments', '--no-color', '--verbosity=3', stdout=out, stderr=err)
+
+        self.assertEqual(out.getvalue().strip(), '')
+        # This is not nice but py35 does not keep the order of items in the dict
+        self.assertEqual(set(err.getvalue().strip().split('\n')), set([
+            'Payment ID PAYMENT_1 has not been saved due to the following errors:',
+            'here: It is broken',
+            'there: It is even more broken',
+            'Payment ID PAYMENT_2 has not been saved due to the following errors:',
+            'here: It is broken',
+            'there: It is even more broken',
+        ]))
+
+        self.assertImportHistory(self.ImportHistoryRow('test', self.fake_date, None, 2, True))
+
+        self.assertEqual(BankPayment.objects.count(), 0)
+        self.log_handler.check_present(
+            ('django_pain.management.command_mixins', 'WARNING',
+                'Payment ID PAYMENT_1 has not been saved due to the following errors:'),
+            ('django_pain.management.command_mixins', 'WARNING', 'here: It is broken'),
+            ('django_pain.management.command_mixins', 'WARNING', 'there: It is even more broken'),
+            ('django_pain.management.command_mixins', 'WARNING',
+                'Payment ID PAYMENT_2 has not been saved due to the following errors:'),
+            ('django_pain.management.command_mixins', 'WARNING', 'here: It is broken'),
+            ('django_pain.management.command_mixins', 'WARNING', 'there: It is even more broken'),
+            ('django_pain.management.command_mixins', 'INFO', '2 payments not saved due to errors.'),
+            ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments finished.'),
+            order_matters=False
+        )
+
+    @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
+    @patch('django_pain.management.command_mixins.SavePaymentsMixin._save_if_not_exists')
+    def test_integrity_error(self, save_method):
+        out = StringIO()
+        err = StringIO()
+
+        save_method.side_effect = IntegrityError('It is broken')
+        call_command('download_payments', '--no-color', '--verbosity=3', stdout=out, stderr=err)
+
+        self.assertEqual(out.getvalue().strip(), '')
+        self.assertEqual(err.getvalue().strip().split('\n'), [
+            'Payment ID PAYMENT_1 has not been saved due to the following errors:',
+            'It is broken',
+            'Payment ID PAYMENT_2 has not been saved due to the following errors:',
+            'It is broken',
+        ])
+
+        self.assertImportHistory(self.ImportHistoryRow('test', self.fake_date, None, 2, True))
+
+        self.assertEqual(BankPayment.objects.count(), 0)
+        self.log_handler.check(
+            ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments started.'),
+            ('django_pain.management.commands.download_payments', 'INFO', 'Processing: test'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Downloading payments for test.'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Parsing payments for test.'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Saving payments for test.'),
+            ('django_pain.management.command_mixins', 'WARNING',
+                'Payment ID PAYMENT_1 has not been saved due to the following errors:'),
+            ('django_pain.management.command_mixins', 'WARNING', 'It is broken'),
+            ('django_pain.management.command_mixins', 'WARNING',
+                'Payment ID PAYMENT_2 has not been saved due to the following errors:'),
+            ('django_pain.management.command_mixins', 'WARNING', 'It is broken'),
+            ('django_pain.management.command_mixins', 'INFO', '2 payments not saved due to errors.'),
             ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments finished.')
         )
 
@@ -377,3 +522,15 @@ class DownloadPaymentsTest(TestCase):
         self.assertEqual(model.constant_symbol, '')
         self.assertEqual(model.variable_symbol, '')
         self.assertEqual(model.specific_symbol, '')
+
+    @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
+    @patch('django_pain.tests.commands.test_download_payments.DummyStatementDownloader._download_data')
+    @patch('django_pain.tests.commands.test_download_payments.DummyStatementParser._verify_source')
+    def test_payment_history_filenames(self, mock_verify, mock_download):
+        mock_download.return_value = [RawStatement(content='Raw statement content', name='file_1.txt'),
+                                      RawStatement(content='Raw statement content', name='file_2.txt')]
+
+        out = StringIO()
+        call_command('download_payments', '--no-color', '--verbosity=3', stdout=out)
+
+        self.assertImportHistory(self.ImportHistoryRow('test', self.fake_date, 'file_1.txt;file_2.txt', 0, True))
