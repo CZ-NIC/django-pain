@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2019  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -20,13 +20,14 @@
 from django.contrib.admin import site
 from django.contrib.auth.models import User
 
-from django_pain.models import BankAccount, BankPayment
+from django_pain.models import BankAccount, BankPayment, PaymentImportHistory
 
-from .admin import BankAccountAdmin, BankPaymentAdmin, UserAdmin
+from .admin import BankAccountAdmin, BankPaymentAdmin, PaymentImportHistoryAdmin, UserAdmin
 
-__all__ = ['BankAccountAdmin', 'BankPaymentAdmin', 'UserAdmin']
+__all__ = ['BankAccountAdmin', 'BankPaymentAdmin', 'PaymentImportHistoryAdmin', 'UserAdmin']
 
 site.register(BankAccount, BankAccountAdmin)
 site.register(BankPayment, BankPaymentAdmin)
+site.register(PaymentImportHistory, PaymentImportHistoryAdmin)
 site.unregister(User)
 site.register(User, UserAdmin)

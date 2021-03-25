@@ -24,7 +24,7 @@ from django.core.management.base import BaseCommand, CommandError, no_translatio
 from django.utils import module_loading
 
 from django_pain.management.command_mixins import SavePaymentsMixin
-from django_pain.models import BankAccount
+from django_pain.models import BankAccount, PaymentImportHistory
 from django_pain.parsers.common import AbstractBankStatementParser
 
 LOGGER = logging.getLogger(__name__)
@@ -53,6 +53,10 @@ class Command(BaseCommand, SavePaymentsMixin):
 
         for input_file in options['input_file']:
             LOGGER.debug('Importing payments from %s.', input_file)
+            import_history = PaymentImportHistory(origin='transproc')
+            import_history.add_filename(input_file)
+            import_history.save()
+
             if input_file == '-':
                 handle = sys.stdin
             else:
@@ -61,11 +65,17 @@ class Command(BaseCommand, SavePaymentsMixin):
             try:
                 LOGGER.debug('Parsing payments from %s.', input_file)
                 payments = list(parser.parse(handle))
+
                 LOGGER.debug('Saving %s payments from %s to database.', len(payments), input_file)
-                self.save_payments(payments)
+                result = self.save_payments(payments)
+
+                import_history.errors = result.errors
+                import_history.finished = True
             except BankAccount.DoesNotExist as e:
                 LOGGER.error(str(e))
+                import_history.errors = 1
                 raise CommandError(e)
             finally:
+                import_history.save()
                 handle.close()
         LOGGER.info('Command import_payments finished.')

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -291,6 +291,29 @@ class BankPaymentAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         """Forbid deleting payments through admin interface."""
+        return False
+
+
+class PaymentImportHistoryAdmin(admin.ModelAdmin):
+    """Model admin for PaymenImportHistory."""
+
+    list_display = ('start_datetime', 'origin', 'filenames', 'errors', 'finished', 'success')
+    fields = ('start_datetime', 'origin', 'filenames', 'errors', 'finished', 'success')
+    readonly_fields = ('start_datetime', 'origin', 'filenames', 'errors', 'finished', 'success')
+
+    ordering = ('-start_datetime',)
+    actions = None
+
+    def has_add_permission(self, request, obj=None):
+        """Set add permission."""
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        """Set change permission."""
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        """Set delete permission."""
         return False
 
 

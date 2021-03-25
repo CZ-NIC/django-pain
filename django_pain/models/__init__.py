@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2019  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -17,8 +17,8 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Models module."""
-from .bank import PAYMENT_STATE_CHOICES, BankAccount, BankPayment
+from .bank import PAYMENT_STATE_CHOICES, BankAccount, BankPayment, PaymentImportHistory
 from .client import Client
 from .invoices import Invoice
 
-__all__ = ['PAYMENT_STATE_CHOICES', 'BankAccount', 'BankPayment', 'Client', 'Invoice']
+__all__ = ['PAYMENT_STATE_CHOICES', 'BankAccount', 'BankPayment', 'Client', 'Invoice', 'PaymentImportHistory']
