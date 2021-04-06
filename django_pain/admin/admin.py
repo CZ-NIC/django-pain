@@ -23,6 +23,7 @@ from datetime import date
 
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
+from django.db import transaction
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.formats import date_format
@@ -50,6 +51,16 @@ class BankAccountAdmin(admin.ModelAdmin):
             return ()
         else:
             return ('currency',)
+
+    @transaction.atomic
+    def changelist_view(self, request, extra_context=None):
+        """Wrap super's view in a transaction. It is needed for get_queryset in older versions of Django."""
+        return super().changelist_view(request, extra_context=extra_context)
+
+    @transaction.atomic
+    def history_view(self, request, object_id, extra_context=None):
+        """Wrap super's view in a transaction. It is needed for get_queryset in older versions of Django."""
+        return super().history_view(request, object_id, extra_context=extra_context)
 
     def get_queryset(self, request):
         """Override super's get_queryset to add locking."""
@@ -88,6 +99,16 @@ class InvoicesInline(admin.TabularInline):
         """Read only access."""
         return False
 
+    @transaction.atomic
+    def changelist_view(self, request, extra_context=None):
+        """Wrap super's view in a transaction. It is needed for get_queryset in older versions of Django."""
+        return super().changelist_view(request, extra_context=extra_context)
+
+    @transaction.atomic
+    def history_view(self, request, object_id, extra_context=None):
+        """Wrap super's view in a transaction. It is needed for get_queryset in older versions of Django."""
+        return super().history_view(request, object_id, extra_context=extra_context)
+
     def get_queryset(self, request):
         """Override super's get_queryset to add locking."""
         return super().get_queryset(request).select_for_update()
@@ -121,6 +142,16 @@ class BankPaymentAdmin(admin.ModelAdmin):
     inlines = (
         InvoicesInline,
     )
+
+    @transaction.atomic
+    def changelist_view(self, request, extra_context=None):
+        """Wrap super's view in a transaction. It is needed for get_queryset in older versions of Django."""
+        return super().changelist_view(request, extra_context=extra_context)
+
+    @transaction.atomic
+    def history_view(self, request, object_id, extra_context=None):
+        """Wrap super's view in a transaction. It is needed for get_queryset in older versions of Django."""
+        return super().history_view(request, object_id, extra_context=extra_context)
 
     def get_queryset(self, request):
         """Override super's get_queryset to add locking."""
