@@ -17,7 +17,7 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Test admin views."""
-from datetime import date, datetime
+from datetime import date
 from decimal import ROUND_HALF_UP
 from queue import Queue
 from threading import Event, Thread
@@ -79,14 +79,14 @@ class TestBankAccountAdmin(TestCase):
         self.assertContains(response, '<div class="readonly">EUR</div>', html=True)
 
 
+@freeze_time('2021-03-20 12:45')
 @override_settings(ROOT_URLCONF='django_pain.tests.urls')
 class TestPaymentImportHistoryAdmin(TestCase):
     """Test PaymentImportHistory."""
 
     def setUp(self):
         self.admin = User.objects.create_superuser('admin', 'admin@example.com', 'password')
-        self.import_history = PaymentImportHistory(origin='some_test_bank',
-                                                   start_datetime=datetime(2021, 3, 20, 12, 45))
+        self.import_history = PaymentImportHistory(origin='some_test_bank')
         self.import_history.save()
 
     def test_get_list(self):
