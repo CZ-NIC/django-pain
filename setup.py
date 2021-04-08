@@ -52,7 +52,7 @@ SETUP_REQUIRES = ['Babel >=2.3', 'setuptools_webpack']
 INSTALL_REQUIRES = open('requirements.txt').read().splitlines()
 EXTRAS_REQUIRE = {'quality': ['isort', 'flake8', 'pydocstyle', 'polint', 'mypy'],
                   'test': ['testfixtures', 'freezegun'],
-                  'teller': ['fred-teller ~=0.3.1']}
+                  'teller': ['fred-teller ~=0.3.4']}
 
 setup(name='django-pain',
       version='2.1.0-rc3',
