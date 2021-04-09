@@ -78,6 +78,12 @@ class TestBankAccountAdmin(TestCase):
         self.assertContains(response, '123456/0300')
         self.assertContains(response, '<div class="readonly">EUR</div>', html=True)
 
+    def test_get_history(self):
+        """Test GET request on bank account history."""
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('admin:django_pain_bankaccount_history', args=(self.account.pk,)))
+        self.assertContains(response, '123456/0300')
+
 
 @freeze_time('2021-03-20 12:45')
 @override_settings(ROOT_URLCONF='django_pain.tests.urls')
@@ -248,6 +254,12 @@ class TestBankPaymentAdmin(CacheResetMixin, TestCase):
         self.payment_client = get_client(handle='HANDLE', payment=self.processed_payment)
         self.payment_client.save()
 
+    def test_get_add(self):
+        """Test GET request on model addition."""
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('admin:django_pain_bankpayment_add'))
+        self.assertEqual(response.status_code, 403)
+
     def test_get_list(self):
         """Test GET request on model list."""
         self.client.force_login(self.admin)
@@ -264,6 +276,12 @@ class TestBankPaymentAdmin(CacheResetMixin, TestCase):
         self.assertContains(response, 'INV111222')
         self.assertContains(response, 'HANDLE')
         self.assertContains(response, 'Duplicate payment')
+
+    def test_get_history(self):
+        """Test GET request on model history."""
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('admin:django_pain_bankpayment_history', args=[self.processed_payment.pk]))
+        self.assertContains(response, 'Change history: My Payment 2')
 
     def test_get_fieldsets(self):
         """Test get_fieldsets method."""
