@@ -17,6 +17,8 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Test models."""
+from datetime import datetime
+
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.db.models import BLANK_CHOICE_DASH
@@ -114,8 +116,13 @@ class TestPaymentImportHistory(CacheResetMixin, TestCase):
     def test_str(self):
         """Test string representation."""
         import_history = PaymentImportHistory(origin='test')
-        self.assertEquals(str(import_history), 'test None')
+        import_history.save()
+        self.assertEquals(str(import_history), 'test 2021-02-01 10:15:00')
 
+    @freeze_time('2021-02-01 10:15')
+    def test_can_not_override_start_datetime(self):
+        """Test string representation."""
+        import_history = PaymentImportHistory(origin='test', start_datetime=datetime(2021, 4, 1))
         import_history.save()
         self.assertEquals(str(import_history), 'test 2021-02-01 10:15:00')
 

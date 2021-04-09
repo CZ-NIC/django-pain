@@ -23,7 +23,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from io import StringIO
 from pathlib import Path
-from typing import Any, Iterable, Mapping, TextIO, Union
+from typing import Any, Mapping, TextIO, Tuple, Union
 from unittest import skipUnless
 from unittest.mock import MagicMock, patch
 
@@ -68,8 +68,8 @@ class DummyStatementDownloader(BankStatementDownloader):
         super().__init__(base_url, timeout)
         self.password = password
 
-    def _download_data(self, start_date: date, end_date: date) -> Iterable[RawStatement]:
-        return [self.statement]
+    def _download_data(self, start_date: date, end_date: date) -> Tuple[RawStatement, ...]:
+        return (self.statement,)
 
 
 class DummyStatementParser(BankStatementParser):
