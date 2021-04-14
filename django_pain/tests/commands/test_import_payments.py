@@ -224,3 +224,19 @@ class TestImportPayments(TestCase):
             ('django_pain.management.command_mixins', 'INFO', '1 payments not saved due to errors.'),
             ('django_pain.management.commands.import_payments', 'INFO', 'Command import_payments finished.'),
         )
+
+    def test_file_not_found(self):
+        """Test command call with invalid file name."""
+        with self.assertRaises(CommandError) as cm:
+            call_command('import_payments',
+                         '--parser=django_pain.tests.commands.test_import_payments.DummyPaymentsParser',
+                         '--no-color', 'non_existent_file')
+
+        self.assertEqual(str(cm.exception), "[Errno 2] No such file or directory: 'non_existent_file'")
+
+        self.log_handler.check(
+            ('django_pain.management.commands.import_payments', 'INFO', 'Command import_payments started.'),
+            ('django_pain.management.commands.import_payments', 'DEBUG', 'Importing payments from non_existent_file.'),
+            ('django_pain.management.commands.import_payments', 'INFO',
+                "File non_existent_file could not be open: [Errno 2] No such file or directory: 'non_existent_file'."),
+        )
