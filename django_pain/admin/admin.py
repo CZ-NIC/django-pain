@@ -155,7 +155,11 @@ class BankPaymentAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         """Override super's get_queryset to add locking."""
-        return super().get_queryset(request).select_for_update()
+        # Admin interface times out when accessed while processing payments so we lock only for POST requests.
+        if request.method == 'POST':
+            return super().get_queryset(request).select_for_update()
+        else:
+            return super().get_queryset(request)
 
     class Media:
         """Media class."""

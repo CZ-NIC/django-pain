@@ -182,7 +182,7 @@ class TestDatabaseLocking(TransactionTestCase):
             try:
                 with transaction.atomic():
                     external_started.wait()
-                    response = self.client.get(reverse(viewname))
+                    response = self.client.post(reverse(viewname))
                     self.assertContains(response, find_in_response)
                     admin_started.set()
                     external_finished.wait()
