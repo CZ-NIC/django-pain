@@ -19,7 +19,7 @@
 """Test import_payments command."""
 import sys
 from collections import OrderedDict, namedtuple
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from io import StringIO
 from pathlib import Path
@@ -27,6 +27,7 @@ from typing import Any, Mapping, TextIO, Tuple, Union
 from unittest import skipUnless
 from unittest.mock import MagicMock, patch
 
+import pytz
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.core.management.base import CommandError
@@ -172,35 +173,93 @@ class DownloadPaymentsTest(TestCase):
     def test_default_parameters(self, mock_method):
         with override_settings(USE_TZ=False):
             call_command('download_payments', '--no-color')
-        mock_method.assert_called_with(date(year=2020, month=1, day=2), date(year=2020, month=1, day=9))
+        mock_method.assert_called_with(datetime(2020, 1, 2, 23, 30), datetime(2020, 1, 9, 23, 30))
 
-        with override_settings(USE_TZ=True, TIME_ZONE='Europe/Prague'):
+        with override_settings(USE_TZ=True):
             call_command('download_payments', '--no-color')
-        mock_method.assert_called_with(date(year=2020, month=1, day=3), date(year=2020, month=1, day=10))
+        mock_method.assert_called_with(datetime(2020, 1, 2, 23, 30, tzinfo=pytz.utc),
+                                       datetime(2020, 1, 9, 23, 30, tzinfo=pytz.utc))
+
+    @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
+    def test_default_start_date(self):
+        mock_path = 'django_pain.tests.commands.test_download_payments.DummyStatementDownloader.get_statements'
+        with override_settings(USE_TZ=False):
+            with patch(mock_path) as mock_method:
+                call_command('download_payments', '--no-color', '--end', '2020-01-09T20:30')
+                mock_method.assert_called_with(datetime(2020, 1, 2, 20, 30), datetime(2020, 1, 9, 20, 30))
+
+            with patch(mock_path) as mock_method:
+                call_command('download_payments', '--no-color', '--end', '2020-01-09T20:30+01:00')
+                mock_method.assert_called_with(datetime(2020, 1, 2, 19, 30, tzinfo=pytz.utc),
+                                               datetime(2020, 1, 9, 19, 30, tzinfo=pytz.utc))
+
+        with override_settings(USE_TZ=True, TIME_ZONE='UTC'):
+            with patch(mock_path) as mock_method:
+                call_command('download_payments', '--no-color', '--end', '2020-01-09T20:30')
+                mock_method.assert_called_with(datetime(2020, 1, 2, 20, 30, tzinfo=pytz.utc),
+                                               datetime(2020, 1, 9, 20, 30, tzinfo=pytz.utc))
+
+            with patch(mock_path) as mock_method:
+                call_command('download_payments', '--no-color', '--end', '2020-01-09T20:30+01:00')
+                mock_method.assert_called_with(datetime(2020, 1, 2, 19, 30, tzinfo=pytz.utc),
+                                               datetime(2020, 1, 9, 19, 30, tzinfo=pytz.utc))
+
+    @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
+    def test_default_end_date(self):
+        mock_path = 'django_pain.tests.commands.test_download_payments.DummyStatementDownloader.get_statements'
+        with override_settings(USE_TZ=False):
+            with patch(mock_path) as mock_method:
+                call_command('download_payments', '--no-color', '--start', '2020-01-05T20:30')
+                mock_method.assert_called_with(datetime(2020, 1, 5, 20, 30), datetime(2020, 1, 9, 23, 30))
+
+            with self.assertRaisesRegex(CommandError, 'Offset-naive used with offset-aware datetime'):
+                call_command('download_payments', '--no-color', '--start', '2020-01-05T20:30+01:00')
+
+        with override_settings(USE_TZ=True, TIME_ZONE='UTC'):
+            with patch(mock_path) as mock_method:
+                call_command('download_payments', '--no-color', '--start', '2020-01-05T20:30')
+                mock_method.assert_called_with(datetime(2020, 1, 5, 20, 30, tzinfo=pytz.utc),
+                                               datetime(2020, 1, 9, 23, 30, tzinfo=pytz.utc))
+
+            with patch(mock_path) as mock_method:
+                call_command('download_payments', '--no-color', '--start', '2020-01-05T20:30+01:00')
+                mock_method.assert_called_with(datetime(2020, 1, 5, 19, 30, tzinfo=pytz.utc),
+                                               datetime(2020, 1, 9, 23, 30, tzinfo=pytz.utc))
 
     @patch('django_pain.tests.commands.test_download_payments.DummyStatementDownloader.get_statements')
     @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
     def test_parameters(self, mock_method):
-        call_command('download_payments', '--no-color', '--start', '2020-01-01', '--end', '2020-01-21')
+        call_command('download_payments', '--no-color', '--start', '2020-01-01T23:30', '--end', '2020-01-21T23:30')
 
-        end_date = date(2020, 1, 21)
-        start_date = date(2020, 1, 1)
+        end_date = datetime(2020, 1, 21, 23, 30)
+        start_date = datetime(2020, 1, 1, 23, 30)
+        mock_method.assert_called_with(start_date, end_date)
+
+    @patch('django_pain.tests.commands.test_download_payments.DummyStatementDownloader.get_statements')
+    @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
+    def test_parameters_timezone(self, mock_method):
+        call_command('download_payments', '--no-color', '--start', '2020-01-01T23:30+01:00',
+                     '--end', '2020-01-21T23:30+01:00')
+
+        tzinfo = timezone(timedelta(hours=1), '+01:00')
+        end_date = datetime(2020, 1, 21, 23, 30, tzinfo=tzinfo)
+        start_date = datetime(2020, 1, 1, 23, 30, tzinfo=tzinfo)
         mock_method.assert_called_with(start_date, end_date)
 
     @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
     def test_invalid_start(self):
-        with self.assertRaisesRegex(CommandError, 'Error: argument -s/--start: invalid parse_date_safe value'):
+        with self.assertRaisesRegex(CommandError, 'Error: argument -s/--start: invalid parse_datetime_safe value'):
             call_command('download_payments', '--no-color', '--start', 'abc')
 
     @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
     def test_invalid_end(self):
-        with self.assertRaisesRegex(CommandError, 'Error: argument -e/--end: invalid parse_date_safe value'):
+        with self.assertRaisesRegex(CommandError, 'Error: argument -e/--end: invalid parse_datetime_safe value'):
             call_command('download_payments', '--no-color', '--end', 'abc')
 
     @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
     def test_invalid_time_interval(self):
         with self.assertRaisesRegex(CommandError, 'Start date has to be lower or equal to the end date'):
-            call_command('download_payments', '--no-color', '--start', '2020-09-02', '--end', '2020-09-01')
+            call_command('download_payments', '--no-color', '--start', '2020-09-02T00:00', '--end', '2020-09-01T00:00')
 
     @patch('django_pain.tests.commands.test_download_payments.DummyStatementDownloader.__init__')
     @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
@@ -254,9 +313,34 @@ class DownloadPaymentsTest(TestCase):
     @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
     def test_invalid_account(self, mock_method):
         statement = BankStatement('11111/11')
+        statement.add_payment(Payment())
         mock_method.return_value = statement
         with self.assertRaisesRegex(CommandError, 'Bank account 11111/11 does not exist'):
             call_command('download_payments', '--no-color')
+
+    @patch('django_pain.tests.commands.test_download_payments.DummyStatementParser.parse_file')
+    @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
+    def test_skip_empty_statements_without_bank_account(self, mock_method):
+        # Empty statements from teller.parsers.RaiffeisenParser do not have account_number
+        # Test whether we skip empty statement without unknown account_number causing an error.
+        statement = BankStatement(account_number=None)
+        mock_method.return_value = statement
+        call_command('download_payments')
+
+        self.assertQuerysetEqual(BankPayment.objects.values_list(
+                'identifier', 'account', 'counter_account_number', 'transaction_date', 'amount', 'amount_currency',
+                'variable_symbol'),
+            [], transform=tuple, ordered=False)
+
+        self.assertImportHistory(self.ImportHistoryRow('test', self.fake_date, None, 0, True))
+
+        self.log_handler.check(
+            ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments started.'),
+            ('django_pain.management.commands.download_payments', 'INFO', 'Processing: test'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Downloading payments for test.'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Parsing payments for test.'),
+            ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments finished.'),
+        )
 
     @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
     def test_payment_already_exist(self):

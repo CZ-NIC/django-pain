@@ -60,7 +60,11 @@ class Command(BaseCommand, SavePaymentsMixin):
             if input_file == '-':
                 handle = sys.stdin
             else:
-                handle = open(input_file)
+                try:
+                    handle = open(input_file)
+                except OSError as error:
+                    LOGGER.info('File %s could not be open: %s.', input_file, error)
+                    raise CommandError(error) from error
 
             try:
                 LOGGER.debug('Parsing payments from %s.', input_file)
@@ -71,10 +75,10 @@ class Command(BaseCommand, SavePaymentsMixin):
 
                 import_history.errors = result.errors
                 import_history.finished = True
-            except BankAccount.DoesNotExist as e:
-                LOGGER.error(str(e))
+            except BankAccount.DoesNotExist as error:
+                LOGGER.error(str(error))
                 import_history.errors = 1
-                raise CommandError(e)
+                raise CommandError(error)
             finally:
                 import_history.save()
                 handle.close()
