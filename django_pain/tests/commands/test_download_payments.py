@@ -313,9 +313,34 @@ class DownloadPaymentsTest(TestCase):
     @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
     def test_invalid_account(self, mock_method):
         statement = BankStatement('11111/11')
+        statement.add_payment(Payment())
         mock_method.return_value = statement
         with self.assertRaisesRegex(CommandError, 'Bank account 11111/11 does not exist'):
             call_command('download_payments', '--no-color')
+
+    @patch('django_pain.tests.commands.test_download_payments.DummyStatementParser.parse_file')
+    @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
+    def test_skip_empty_statements_without_bank_account(self, mock_method):
+        # Empty statements from teller.parsers.RaiffeisenParser do not have account_number
+        # Test whether we skip empty statement without unknown account_number causing an error.
+        statement = BankStatement(account_number=None)
+        mock_method.return_value = statement
+        call_command('download_payments')
+
+        self.assertQuerysetEqual(BankPayment.objects.values_list(
+                'identifier', 'account', 'counter_account_number', 'transaction_date', 'amount', 'amount_currency',
+                'variable_symbol'),
+            [], transform=tuple, ordered=False)
+
+        self.assertImportHistory(self.ImportHistoryRow('test', self.fake_date, None, 0, True))
+
+        self.log_handler.check(
+            ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments started.'),
+            ('django_pain.management.commands.download_payments', 'INFO', 'Processing: test'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Downloading payments for test.'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Parsing payments for test.'),
+            ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments finished.'),
+        )
 
     @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
     def test_payment_already_exist(self):
