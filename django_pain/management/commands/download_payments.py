@@ -152,7 +152,8 @@ class Command(BaseCommand, SavePaymentsMixin):
                 LOGGER.error(str(e))
                 parsing_errors += 1
                 continue
-            payments.extend(self._convert_to_models(statement))
+            if len(statement.payments) > 0:
+                payments.extend(self._convert_to_models(statement))
         return payments, parsing_errors
 
     def _convert_to_models(self, statement: BankStatement) -> Iterable[BankPayment]:
