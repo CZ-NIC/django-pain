@@ -23,7 +23,7 @@ from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from io import StringIO
 from pathlib import Path
-from typing import Any, Mapping, TextIO, Tuple, Union
+from typing import Any, List, Mapping, Optional, TextIO, Tuple, Union
 from unittest import skipUnless
 from unittest.mock import MagicMock, patch
 
@@ -50,6 +50,19 @@ except ImportError:
     BankStatement = object  # type: ignore
     Payment = object  # type: ignore
     RawStatement = object  # type: ignore
+
+
+def modify_payment_callback(payment: BankPayment) -> Optional[BankPayment]:
+    payment.identifier = payment.identifier + '_mod'
+    return payment
+
+
+def skip_payment_callback(payment: BankPayment) -> Optional[BankPayment]:
+    return None
+
+
+def raise_exception_callback(payment: BankPayment) -> Optional[BankPayment]:
+    raise ValidationError('Raised by callback')
 
 
 class DummyStatementDownloader(BankStatementDownloader):
@@ -98,21 +111,6 @@ class DummyStatementParser(BankStatementParser):
     def _verify_source(cls, source: Union[str, TextIO, Path]) -> None:
         if source is not DummyStatementDownloader.statement:
             raise ValueError('Expected DummyStatementDownloader.statement as source.')  # pragma: no cover
-
-
-class DummyCreditCardSummaryParser(BankStatementParser):
-    """Simple parser that just returns one credit card summary payment."""
-
-    @classmethod
-    def parse_file(cls, source: Union[str, TextIO, Path], encoding='utf-8') -> BankStatement:
-        statement = BankStatement('1234567890/2010')
-        payment = Payment(identifier='PAYMENT_3',
-                          counter_account='',
-                          amount=Money('42.00', 'CZK'),
-                          transaction_date=date(2020, 9, 15),
-                          constant_symbol='1176')
-        statement.add_payment(payment)
-        return statement
 
 
 @skipUnless('teller' in sys.modules, 'Can not run without teller library.')
@@ -381,34 +379,132 @@ class DownloadPaymentsTest(TestCase):
         self.assertEqual(out.getvalue(), '')
         self.assertEqual(err.getvalue(), '')
 
-    @override_settings(PAIN_IMPORT_CALLBACKS=['django_pain.import_callbacks.skip_credit_card_transaction_summary'],
-                       PAIN_DOWNLOADERS={'test': {**test_settings, 'PARSER':
-                           'django_pain.tests.commands.test_download_payments.DummyCreditCardSummaryParser'}}) # noqa
-    def test_import_callback_exception(self):
+    def _test_callback(self, callbacks: List[str], errors: int, imported_payments: List[Tuple[str]],
+                       out_value: List[str], err_value: List[str], log: List[Tuple[str, str, str]]):
         out = StringIO()
         err = StringIO()
-        call_command('download_payments', '--no-color', '--verbosity=3', stdout=out, stderr=err)
+        with override_settings(PAIN_IMPORT_CALLBACKS=callbacks, PAIN_DOWNLOADERS={'test': self.test_settings}):
+            call_command('download_payments', '--no-color', '--verbosity=3', stdout=out, stderr=err)
 
-        self.assertEqual(out.getvalue().strip(), '')
-        self.assertEqual(err.getvalue().strip().split('\n'), [
-            'Payment ID PAYMENT_3 has not been saved due to the following errors:',
-            'Payment is credit card transaction summary.',
-        ])
+        self.assertQuerysetEqual(
+            BankPayment.objects.values_list('identifier'),
+            imported_payments,
+            transform=tuple,
+            ordered=False
+        )
+        self.assertEqual(out.getvalue().strip().split('\n'), out_value)
+        self.assertEqual(err.getvalue().strip().split('\n'), err_value)
+        self.assertImportHistory(self.ImportHistoryRow('test', self.fake_date, None, errors, True))
+        self.log_handler.check(*log)
 
-        self.assertImportHistory(self.ImportHistoryRow('test', self.fake_date, None, 1, True))
+    def test_import_callback_modifies_payment(self):
+        log = [
+            ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments started.'),
+            ('django_pain.management.commands.download_payments', 'INFO', 'Processing: test'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Downloading payments for test.'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Parsing payments for test.'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Saving payments for test.'),
+            ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments finished.')
+        ]
+        self. _test_callback(
+            callbacks=['django_pain.tests.commands.test_download_payments.modify_payment_callback'],
+            errors=0,
+            imported_payments=[
+                ('PAYMENT_1_mod',),
+                ('PAYMENT_2_mod',)
+            ],
+            out_value=[
+                'Payment ID PAYMENT_1_mod has been imported.',
+                'Payment ID PAYMENT_2_mod has been imported.',
+            ],
+            err_value=[''],
+            log=log
+        )
 
-        self.assertEqual(BankPayment.objects.count(), 0)
-        self.log_handler.check(
+    def test_import_callback_skip_payments(self):
+        log = [
+            ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments started.'),
+            ('django_pain.management.commands.download_payments', 'INFO', 'Processing: test'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Downloading payments for test.'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Parsing payments for test.'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Saving payments for test.'),
+            ('django_pain.management.command_mixins', 'INFO',
+                'Payment ID PAYMENT_1 skipped by callback skip_payment_callback'),
+            ('django_pain.management.command_mixins', 'INFO',
+                'Payment ID PAYMENT_2 skipped by callback skip_payment_callback'),
+            ('django_pain.management.command_mixins', 'INFO', 'Skipped 2 payments.'),
+            ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments finished.')
+        ]
+        self. _test_callback(
+            callbacks=['django_pain.tests.commands.test_download_payments.skip_payment_callback'],
+            errors=0,
+            imported_payments=[],
+            out_value=[
+                'Payment ID PAYMENT_1 was skipped.',
+                'Payment ID PAYMENT_2 was skipped.',
+            ],
+            err_value=[''],
+            log=log
+        )
+
+    def test_import_callback_exception(self):
+        log = [
             ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments started.'),
             ('django_pain.management.commands.download_payments', 'INFO', 'Processing: test'),
             ('django_pain.management.commands.download_payments', 'DEBUG', 'Downloading payments for test.'),
             ('django_pain.management.commands.download_payments', 'DEBUG', 'Parsing payments for test.'),
             ('django_pain.management.commands.download_payments', 'DEBUG', 'Saving payments for test.'),
             ('django_pain.management.command_mixins', 'WARNING',
-                'Payment ID PAYMENT_3 has not been saved due to the following errors:'),
-            ('django_pain.management.command_mixins', 'WARNING', 'Payment is credit card transaction summary.'),
-            ('django_pain.management.command_mixins', 'INFO', '1 payments not saved due to errors.'),
+                'Payment ID PAYMENT_1 has not been saved due to the following errors:'),
+            ('django_pain.management.command_mixins', 'WARNING', 'Raised by callback'),
+            ('django_pain.management.command_mixins', 'WARNING',
+                'Payment ID PAYMENT_2 has not been saved due to the following errors:'),
+            ('django_pain.management.command_mixins', 'WARNING', 'Raised by callback'),
+            ('django_pain.management.command_mixins', 'INFO', '2 payments not saved due to errors.'),
             ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments finished.')
+        ]
+        self. _test_callback(
+            callbacks=['django_pain.tests.commands.test_download_payments.raise_exception_callback'],
+            errors=2,
+            imported_payments=[],
+            out_value=[''],
+            err_value=[
+                'Payment ID PAYMENT_1 has not been saved due to the following errors:',
+                'Raised by callback',
+                'Payment ID PAYMENT_2 has not been saved due to the following errors:',
+                'Raised by callback',
+            ],
+            log=log
+        )
+
+    def test_import_callback_none_is_skipped_immediately(self):
+        """Import callbacks do not expect None but may return None. Test None is not fed to another callback."""
+        log = [
+            ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments started.'),
+            ('django_pain.management.commands.download_payments', 'INFO', 'Processing: test'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Downloading payments for test.'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Parsing payments for test.'),
+            ('django_pain.management.commands.download_payments', 'DEBUG', 'Saving payments for test.'),
+            ('django_pain.management.command_mixins', 'INFO',
+             'Payment ID PAYMENT_1 skipped by callback skip_payment_callback'),
+            ('django_pain.management.command_mixins', 'INFO',
+             'Payment ID PAYMENT_2 skipped by callback skip_payment_callback'),
+            ('django_pain.management.command_mixins', 'INFO', 'Skipped 2 payments.'),
+            ('django_pain.management.commands.download_payments', 'INFO', 'Command download_payments finished.')
+        ]
+        self. _test_callback(
+            callbacks=[
+                'django_pain.tests.commands.test_download_payments.skip_payment_callback',
+                'django_pain.tests.commands.test_download_payments.raise_exception_callback',
+            ],
+            errors=0,
+            imported_payments=[],
+            out_value=[
+                'Payment ID PAYMENT_1 was skipped.',
+                'Payment ID PAYMENT_2 was skipped.',
+            ],
+            err_value=[''],
+            log=log
         )
 
     @override_settings(PAIN_DOWNLOADERS={'test': test_settings})
