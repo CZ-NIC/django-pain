@@ -18,10 +18,10 @@
 
 """Import callbacks."""
 from functools import lru_cache
+from typing import Optional
 from warnings import warn
 
 from django.conf import ImproperlyConfigured
-from django.core.exceptions import ValidationError
 
 from django_pain.constants import PaymentState
 from django_pain.models import BankPayment
@@ -52,7 +52,7 @@ def ignore_negative_payments(payment: BankPayment) -> BankPayment:
     return payment
 
 
-def skip_credit_card_transaction_summary(payment: BankPayment) -> BankPayment:
+def skip_credit_card_transaction_summary(payment: BankPayment) -> Optional[BankPayment]:
     """
     Import callback for ignoring payments with credit card transactions summary.
 
@@ -62,5 +62,6 @@ def skip_credit_card_transaction_summary(payment: BankPayment) -> BankPayment:
         if payment.counter_account_number == 'None/None':
             warn('Counter account number "None/None" encountered. This is deprecated. Use empty str or None instead.',
                  UserWarning)
-        raise ValidationError('Payment is credit card transaction summary.')
-    return payment
+        return None
+    else:
+        return payment

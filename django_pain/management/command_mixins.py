@@ -50,12 +50,16 @@ class SavePaymentsMixin(ABC):
                 errors += 1
                 self._process_error(payment, error)
             else:
-                if self.options['verbosity'] >= 2:
-                    self.stdout.write(self.style.SUCCESS('Payment ID {} has been imported.'.format(payment.identifier)))
                 if payment_saved:
                     saved += 1
+                    if self.options['verbosity'] >= 2:
+                        self.stdout.write(self.style.SUCCESS(
+                            'Payment ID {} has been imported.'.format(payment.identifier)))
                 else:
                     skipped += 1
+                    if self.options['verbosity'] >= 2:
+                        self.stdout.write(self.style.SUCCESS(
+                            'Payment ID {} was skipped.'.format(payment.identifier)))
         if skipped:
             LOGGER.info('Skipped %d payments.', skipped)
         if errors:
@@ -71,7 +75,12 @@ class SavePaymentsMixin(ABC):
             else:
                 payment.full_clean()
                 for callback in SETTINGS.import_callbacks:
+                    # Store payment id in case it is turned to None by the callback.
+                    payment_id = payment.identifier
                     payment = callback(payment)
+                    if payment is None:
+                        LOGGER.info('Payment ID %s skipped by callback %s', payment_id, callback.__name__)
+                        return False
                 payment.save()
                 return True
 

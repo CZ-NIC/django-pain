@@ -18,13 +18,14 @@
 
 """Test import callbacks."""
 from collections import OrderedDict
+from typing import cast
 
 from django.conf import ImproperlyConfigured
-from django.core.exceptions import ValidationError
 from django.test import SimpleTestCase, override_settings
 
 from django_pain.constants import PaymentState
 from django_pain.import_callbacks import ignore_negative_payments, skip_credit_card_transaction_summary
+from django_pain.models.bank import BankPayment
 from django_pain.tests.mixins import CacheResetMixin
 from django_pain.tests.utils import get_payment
 
@@ -71,26 +72,24 @@ class TestSkipCreditCardTransactionSummary(SimpleTestCase):
             constant_symbol='1176',
         )
         with self.assertWarnsRegex(UserWarning, 'Counter account number "None/None" encountered'):
-            with self.assertRaises(ValidationError):
-                payment = skip_credit_card_transaction_summary(payment)
+            self.assertIsNone(skip_credit_card_transaction_summary(payment))
 
     def test_credit_card_summary_payment_none(self):
         payment = get_payment(
             counter_account_number=None,
             constant_symbol='1176',
         )
-        with self.assertRaises(ValidationError):
-            payment = skip_credit_card_transaction_summary(payment)
+        self.assertIsNone(skip_credit_card_transaction_summary(payment))
 
     def test_credit_card_summary_payment_empty_str(self):
         payment = get_payment(
             counter_account_number='',
             constant_symbol='1176',
         )
-        with self.assertRaises(ValidationError):
-            payment = skip_credit_card_transaction_summary(payment)
+        self.assertIsNone(skip_credit_card_transaction_summary(payment))
 
     def test_normal_payment(self):
-        payment = get_payment()
-        payment = skip_credit_card_transaction_summary(payment)
-        self.assertEqual(payment.state, PaymentState.READY_TO_PROCESS)
+        original_payment = get_payment()
+        processed_payment = skip_credit_card_transaction_summary(original_payment)
+        self.assertIsNotNone(processed_payment)
+        self.assertEqual(cast(BankPayment, processed_payment).state, PaymentState.READY_TO_PROCESS)
