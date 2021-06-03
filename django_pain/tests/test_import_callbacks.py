@@ -18,13 +18,15 @@
 
 """Test import callbacks."""
 from collections import OrderedDict
+from copy import copy
 from typing import cast
 
 from django.conf import ImproperlyConfigured
 from django.test import SimpleTestCase, override_settings
+from djmoney.money import Money
 
-from django_pain.constants import PaymentState
-from django_pain.import_callbacks import ignore_negative_payments, skip_credit_card_transaction_summary
+from django_pain.constants import PaymentState, PaymentType
+from django_pain.import_callbacks import ignore_negative_payments, skip_bank_fees, skip_credit_card_transaction_summary
 from django_pain.models.bank import BankPayment
 from django_pain.tests.mixins import CacheResetMixin
 from django_pain.tests.utils import get_payment
@@ -93,3 +95,35 @@ class TestSkipCreditCardTransactionSummary(SimpleTestCase):
         processed_payment = skip_credit_card_transaction_summary(original_payment)
         self.assertIsNotNone(processed_payment)
         self.assertEqual(cast(BankPayment, processed_payment).state, PaymentState.READY_TO_PROCESS)
+
+
+class TestSkipBankFees(SimpleTestCase):
+    """Test skip_bank_fees callback."""
+
+    def setUp(self):
+        super().setUp()
+
+    def test_skip_bank_fees(self):
+        original_payments = [
+            get_payment(counter_account_number=''),
+            get_payment(amount=Money('-42.00', 'CZK')),
+            get_payment(payment_type=PaymentType.TRANSFER),
+            get_payment(counter_account_number='', amount=Money('-42.00', 'CZK'), payment_type=PaymentType.TRANSFER),
+        ]
+        expected_payments = [copy(p) for p in original_payments[:3]] + [None]  # type: ignore
+
+        for payment, expected in zip(original_payments, expected_payments):
+            with self.subTest(payment=payment, expected=expected):
+                processed = skip_bank_fees(payment)
+                self.assertEqual(type(processed), type(expected))
+                if expected is not None:
+                    processed = cast(BankPayment, processed)
+                    self.assertEqual(processed.identifier, expected.identifier)
+                    self.assertEqual(processed.uuid, expected.uuid)
+                    self.assertEqual(processed.payment_type, expected.payment_type)
+                    self.assertEqual(processed.counter_account_number, expected.counter_account_number)
+                    self.assertEqual(processed.state, expected.state)
+                    self.assertEqual(processed.card_payment_state, expected.card_payment_state)
+                    self.assertEqual(processed.processing_error, expected.processing_error)
+                    self.assertEqual(processed.processor, expected.processor)
+                    self.assertEqual(processed.card_handler, expected.card_handler)
