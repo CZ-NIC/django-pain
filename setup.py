@@ -50,9 +50,11 @@ def readme():
 
 SETUP_REQUIRES = ['Babel >=2.3', 'setuptools_webpack']
 INSTALL_REQUIRES = open('requirements.txt').read().splitlines()
+# Use --install-types for type stubs when available.
 EXTRAS_REQUIRE = {'quality': ['isort', 'flake8', 'pydocstyle', 'polint', 'mypy'],
                   'test': ['testfixtures', 'freezegun'],
-                  'teller': ['fred-teller ~=0.3.4']}
+                  'teller': ['fred-teller ~=0.3.4'],
+                  'types': ['types-freezegun', 'types-pytz', 'types-requests']}
 
 setup(name='django-pain',
       version='2.1.1',
