@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -41,6 +41,8 @@ MIDDLEWARE = [
 DATABASES = {
         'default': {'ENGINE': 'django.db.backends.sqlite3', 'NAME': ':memory:'}
 }
+
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 TEMPLATES = [
     {
