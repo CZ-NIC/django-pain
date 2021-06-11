@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -18,8 +18,19 @@
 
 """Various utils."""
 from datetime import date, datetime
+from enum import Enum
 
 from django.utils.dateparse import parse_date, parse_datetime
+
+
+# TODO: Replace by models.TextChoices once we drop support for Django 2.2
+class StrEnum(str, Enum):
+    """String Enum with overridden __str__ method to prevent errors caused by using Enum in forms."""
+
+    # inspired by
+    # https://github.com/django/django/blob/ca9872905559026af82000e46cde6f7dedc897b6/django/db/models/enums.py#L71
+    def __str__(self):
+        return str(self.value)
 
 
 def full_class_name(cls):
