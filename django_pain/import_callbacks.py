@@ -23,7 +23,7 @@ from warnings import warn
 
 from django.conf import ImproperlyConfigured
 
-from django_pain.constants import PaymentState
+from django_pain.constants import PaymentState, PaymentType
 from django_pain.models import BankPayment
 from django_pain.processors.ignore import IgnorePaymentProcessor
 from django_pain.settings import SETTINGS
@@ -62,6 +62,24 @@ def skip_credit_card_transaction_summary(payment: BankPayment) -> Optional[BankP
         if payment.counter_account_number == 'None/None':
             warn('Counter account number "None/None" encountered. This is deprecated. Use empty str or None instead.',
                  UserWarning)
+        return None
+    else:
+        return payment
+
+
+def skip_bank_fees(payment: BankPayment) -> Optional[BankPayment]:
+    """
+    Import callback for ignoring bank fees.
+
+    Payments are considered bank fees if payment_type is TRANSFER, amount is negative, and there is no counter account.
+
+    This function is intended to be used as pain import callback.
+    """
+    if (
+        not payment.counter_account_number
+        and payment.payment_type == PaymentType.TRANSFER
+        and payment.amount.amount < 0
+    ):
         return None
     else:
         return payment
