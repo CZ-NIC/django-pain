@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -22,7 +22,18 @@ from datetime import date, datetime
 from django.test import SimpleTestCase
 
 from django_pain.models.bank import BankAccount
-from django_pain.utils import full_class_name, parse_date_safe, parse_datetime_safe
+from django_pain.utils import StrEnum, full_class_name, parse_date_safe, parse_datetime_safe
+
+
+class TestEnum(StrEnum):
+    ONE = 'one'
+    TWO = 'two'
+
+
+class StrEnumTest(SimpleTestCase):
+
+    def test_str(self):
+        self.assertEqual(str(TestEnum.ONE), 'one')
 
 
 class FullClassNameTest(SimpleTestCase):

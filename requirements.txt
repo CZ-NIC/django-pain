@@ -1,4 +1,4 @@
-Django>=2.2,<2.2.99
+Django>=2.2,<3.2.99
 django-money~=1.3
 django-app-settings>=0.7.1
 lxml

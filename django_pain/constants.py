@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -19,13 +19,15 @@
 """Application-wide constants."""
 from enum import Enum, unique
 
+from django_pain.utils import StrEnum
+
 # Number of decimal places of currency amounts.
 # Bitcoin has 8, so 10 should be enough for most practical purposes.
 CURRENCY_PRECISION = 10
 
 
 @unique
-class PaymentType(str, Enum):
+class PaymentType(StrEnum):
     """Payment types constants."""
 
     TRANSFER = 'transfer'
@@ -33,7 +35,7 @@ class PaymentType(str, Enum):
 
 
 @unique
-class PaymentState(str, Enum):
+class PaymentState(StrEnum):
     """Payment states constants."""
 
     INITIALIZED = 'initialized'
