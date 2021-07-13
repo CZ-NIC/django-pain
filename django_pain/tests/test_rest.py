@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2020  CZ.NIC, z. s. p. o.
+# Copyright (C) 2020-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -22,6 +22,7 @@ from unittest.mock import Mock, patch
 
 from django.test import TestCase, override_settings
 from pycsob import conf as CSOB
+from testfixtures import LogCapture
 
 from django_pain.card_payment_handlers import PaymentHandlerConnectionError
 from django_pain.constants import PaymentState, PaymentType
@@ -123,7 +124,7 @@ class TestBankPaymentRestAPI(CacheResetMixin, TestCase):
         self.assertEqual(response.data['state'], ExternalPaymentState.PAID)
         self.assertEqual(BankPayment.objects.first().state, PaymentState.DEFERRED)
 
-    def test_create(self):
+    def _test_create(self, post_data):
         account = get_account(account_number='123456', currency='CZK')
         account.save()
 
@@ -137,18 +138,42 @@ class TestBankPaymentRestAPI(CacheResetMixin, TestCase):
             ])
             gateway_client_mock.return_value.get_payment_process_url.return_value = 'https://example.com'
 
-            response = self.client.post('/api/private/bankpayment/', data={
-                'amount': '1000',
-                'variable_symbol': '130',
-                'processor': 'donations',
-                'card_handler': 'csob',
-                'return_url': 'https://donations.nic.cz/return/',
-                'return_method': 'POST',
-                'language': 'cs',
-                'cart': '[{"name":"Dar","amount":1000,"description":"Longer description","quantity":1}]',
-            })
+            response = self.client.post('/api/private/bankpayment/', data=post_data)
 
         self.assertEqual(response.status_code, 201)
+
+    def test_create_no_currency(self):
+        post_data = {
+            'amount': '1000',
+            'variable_symbol': '130',
+            'processor': 'donations',
+            'card_handler': 'csob',
+            'return_url': 'https://donations.nic.cz/return/',
+            'return_method': 'POST',
+            'language': 'cs',
+            'cart': '[{"name":"Dar","amount":1000,"description":"Longer description","quantity":1}]',
+        }
+        with LogCapture(('django_pain.serializers',), propagate=False) as log_handler:
+            self._test_create(post_data)
+        log_handler.check((
+            'django_pain.serializers',
+            'WARNING',
+            'Parameter "amount_currency" not set. Using default currency. Processor for this payment: "donations"'
+        ))
+
+    def test_create_custom_currency(self):
+        post_data = {
+            'amount': '100',
+            'amount_currency': 'EUR',
+            'variable_symbol': '130',
+            'processor': 'donations',
+            'card_handler': 'csob',
+            'return_url': 'https://donations.nic.cz/return/',
+            'return_method': 'POST',
+            'language': 'cs',
+            'cart': '[{"name":"Dar","amount":100,"description":"Longer description","quantity":1}]',
+        }
+        self._test_create(post_data)
 
     def test_create_gw_connection_error(self):
         account = get_account(account_number='123456', currency='CZK')
@@ -158,6 +183,7 @@ class TestBankPaymentRestAPI(CacheResetMixin, TestCase):
             gateway_client_mock.side_effect = PaymentHandlerConnectionError()
             response = self.client.post('/api/private/bankpayment/', data={
                 'amount': '1000',
+                'amount_currency': 'EUR',
                 'variable_symbol': '130',
                 'processor': 'donations',
                 'card_handler': 'csob',

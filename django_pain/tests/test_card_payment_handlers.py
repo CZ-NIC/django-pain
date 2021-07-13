@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2020  CZ.NIC, z. s. p. o.
+# Copyright (C) 2020-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -123,7 +123,7 @@ class TestCSOBCardPaymentHandlerInit(TestCase):
         handler = CSOBCardPaymentHandler('csob')
         with patch.object(handler, '_client') as gateway_client_mock:
             gateway_client_mock.payment_init.side_effect = requests.ConnectionError()
-            self.assertRaises(PaymentHandlerConnectionError, handler.init_payment, 100, '123', 'csob',
+            self.assertRaises(PaymentHandlerConnectionError, handler.init_payment, Money(100, 'CZK'), '123', 'csob',
                               'https://example.com', 'POST', [], 'CZ')
 
     def test_init_payment_ok(self):
@@ -140,10 +140,15 @@ class TestCSOBCardPaymentHandlerInit(TestCase):
                 ('dttime', datetime.datetime(2020, 6, 10, 16, 47, 30))
             ])
             gateway_client_mock.get_payment_process_url.return_value = sentinel.url
-            payment, redirect_url = handler.init_payment(100, '123', 'donations', 'https://example.com', 'POST',
-                                                         [CartItem('Gift for FRED', 1, 1000000,
-                                                                   'Gift for the best FRED')],
-                                                         'CZ')
+            payment, redirect_url = handler.init_payment(
+                Money(100, 'CZK'),
+                '123',
+                'donations',
+                'https://example.com',
+                'POST',
+                [CartItem('Gift for FRED', 1, 1000000, 'Gift for the best FRED')],
+                'CZ'
+            )
         self.assertEqual(redirect_url, sentinel.url)
         self.assertEqual(payment.identifier, 'unique_id_123')
         self.assertEqual(payment.state, PaymentState.INITIALIZED)
@@ -166,7 +171,7 @@ class TestCSOBCardPaymentHandlerInit(TestCase):
             ])
             self.assertRaisesRegex(PaymentHandlerError, 'resultCode != OK',
                                    handler.init_payment,
-                                   100, '123', 'donations', 'https://example.com', 'POST',
+                                   Money(100, 'CZK'), '123', 'donations', 'https://example.com', 'POST',
                                    [CartItem('Gift for FRED', 1, 1000000,
                                              'Gift for the best FRED')],
                                    'CZ')
@@ -186,7 +191,7 @@ class TestCSOBCardPaymentHandlerInit(TestCase):
             ])
             self.assertRaisesRegex(PaymentHandlerError, 'paymentStatus != PAYMENT_STATUS_INIT',
                                    handler.init_payment,
-                                   100, '123', 'donations', 'https://example.com', 'POST',
+                                   Money(100, 'CZK'), '123', 'donations', 'https://example.com', 'POST',
                                    [CartItem('Gift for FRED', 1, 1000000,
                                              'Gift for the best FRED')],
                                    'CZ')
