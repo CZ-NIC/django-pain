@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2020  CZ.NIC, z. s. p. o.
+# Copyright (C) 2020-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -81,10 +81,17 @@ class CSOBCardPaymentHandler(AbstractCardPaymentHandler):
         # Init payment on CSOB Gateway
         try:
             response = self.client.payment_init(
-                variable_symbol, int(amount * 100), return_url, description='Dummy value',
-                cart=dict_cart, return_method=return_method, language=language,
+                order_no=variable_symbol,
+                total_amount=int(amount.amount * 100),
+                currency=amount.currency,
+                return_url=return_url,
+                description='Dummy value',
+                cart=dict_cart,
+                return_method=return_method,
+                language=language,
                 # logo_version=PAYMENTS_SETTINGS.PAYMENTS_CSOB_LOGO_VERSION,
-                # color_scheme_version=PAYMENTS_SETTINGS.PAYMENTS_CSOB_COLOR_SCHEME_VERSION, merchant_data=merchant_data
+                # color_scheme_version=PAYMENTS_SETTINGS.PAYMENTS_CSOB_COLOR_SCHEME_VERSION,
+                # merchant_data=merchant_data
             )
         except requests.ConnectionError:
             raise PaymentHandlerConnectionError('Gateway connection error')

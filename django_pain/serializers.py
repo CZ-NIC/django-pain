@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2020  CZ.NIC, z. s. p. o.
+# Copyright (C) 2020-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -17,14 +17,19 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Serializers for REST API."""
+import logging
 from enum import Enum, unique
 
+from django.conf import settings
+from djmoney.money import Money
 from rest_framework import serializers
 
 from django_pain.card_payment_handlers import CartItem
 from django_pain.constants import PaymentState
 from django_pain.models import BankPayment
 from django_pain.settings import get_card_payment_handler_instance
+
+LOGGER = logging.getLogger(__name__)
 
 
 @unique
@@ -88,9 +93,30 @@ class BankPaymentSerializer(serializers.ModelSerializer):
         return cart_items
 
     def validate(self, data):
-        """Overall checks thoughout the fields."""
+        """Overall checks throughout the fields."""
+        data = self._validate_amount(data)
+        data = self._validate_amount_cart(data)
+        return data
+
+    def _validate_amount(self, data):
+        """
+        Validate amount is of type Money.
+
+        If amount_currency is not specified we get Decimal instead of Money.
+        We can not validate amount in the dedicated function because we want to log info about the processor.
+        """
+        value = data['amount']
+        if not isinstance(value, Money):
+            processor = data.get('processor', '')
+            message = 'Parameter "amount_currency" not set. Using default currency. Processor for this payment: "{}"'
+            LOGGER.warning(message.format(processor))
+            data['amount'] = Money(amount=value, currency=settings.DEFAULT_CURRENCY)
+        return data
+
+    def _validate_amount_cart(self, data):
+        """Validate cart and amount are consistent."""
         cart_total_amount = sum((item.amount * item.quantity for item in data['cart']))
-        if cart_total_amount != data['amount']:
+        if cart_total_amount != data['amount'].amount:
             raise serializers.ValidationError('Sum of `cart` items amounts must be equal to payments `amount`')
         return data
 
