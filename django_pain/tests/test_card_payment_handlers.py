@@ -149,6 +149,23 @@ class TestCSOBCardPaymentHandlerInit(TestCase):
                 [CartItem('Gift for FRED', 1, 1000000, 'Gift for the best FRED')],
                 'CZ'
             )
+
+        gateway_client_mock.payment_init.assert_called_once_with(
+            order_no='123',
+            total_amount=100 * 100,
+            currency='CZK',
+            return_url='https://example.com',
+            description='Dummy value',
+            cart=[{
+                'name': 'Gift for FRED',
+                'quantity': 1,
+                'amount': 100000000,
+                'description': 'Gift for the best FRED'
+            }],
+            return_method='POST',
+            language='CZ',
+        )
+
         self.assertEqual(redirect_url, sentinel.url)
         self.assertEqual(payment.identifier, 'unique_id_123')
         self.assertEqual(payment.state, PaymentState.INITIALIZED)
