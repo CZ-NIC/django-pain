@@ -1,19 +1,22 @@
+########################################################################################################################
+# This file was generated using python_env, please do not edit directly.
+########################################################################################################################
 stages:
     - image
-    - analysis
     - test
 
-# Set up caching for pip.
-# Change pip's cache directory to be inside the project directory since we can only cache local items.
 variables:
+    DOCKER_REGISTRY: "archive.nic.cz:5000"
+    # Set up pip cache shared between all jobs of the project.
     PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-    POSTGRES_DB: test_pain
-    POSTGRES_USER: pain
+    POSTGRES_DB: test_django-pain
+    POSTGRES_USER: django-pain
     POSTGRES_PASSWORD: password
     # Setting PGHOST breaks startup of postgres service
-    PGDATABASE: test_pain
-    PGUSER: pain
+    PGDATABASE: test_django-pain
+    PGUSER: django-pain
     PGPASSWORD: password
+    TOX_PARALLEL_NO_SPINNER: 1
 
 cache:
     paths:
@@ -23,45 +26,43 @@ cache:
 # Docker
 .image:
     stage: image
-    tags:
-        - dind
-
-.image:py:
-    extends: .image
+    before_script:
+        - docker info
     script:
         # Login to GitLab container registry https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#using-the-gitlab-container-registry
         - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
         - docker build --pull --build-arg PYTHON_VERSION=$PYTHON_VERSION --tag "$IMAGE_TAG" --file docker/python/Dockerfile .
         - docker push "$IMAGE_TAG"
+    tags:
+        - dind
     variables:
-        IMAGE_TAG: "$CI_REGISTRY_IMAGE/python:$PYTHON_VERSION"
+        IMAGE_TAG: "$CI_REGISTRY_IMAGE/tox:$PYTHON_VERSION"
 
 image:py35:
-    extends: .image:py
+    extends: .image
     variables:
         PYTHON_VERSION: "3.5"
 
 image:py36:
-    extends: .image:py
+    extends: .image
     variables:
         PYTHON_VERSION: "3.6"
 
 image:py37:
-    extends: .image:py
+    extends: .image
     variables:
         PYTHON_VERSION: "3.7"
 
 image:py38:
-    extends: .image:py
+    extends: .image
     variables:
         PYTHON_VERSION: "3.8"
 
 image:node12:
     extends: .image
     script:
-        # Login to GitLab container registry https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#using-the-gitlab-container-registry
         - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
-        - docker build --pull --tag "$IMAGE_TAG" --file docker/node/Dockerfile .
+        - docker build --pull --tag "$IMAGE_TAG" docker/node
         - docker push "$IMAGE_TAG"
     variables:
         IMAGE_TAG: $CI_REGISTRY_IMAGE/node:12
@@ -69,58 +70,54 @@ image:node12:
 ########################################################################################################################
 # Basic declarations
 .py35: &py35
-    image: "$CI_REGISTRY/$CI_PROJECT_PATH/python:3.5"
+    image: "$CI_REGISTRY_IMAGE/tox:3.5"
 
 .py36: &py36
-    image: "$CI_REGISTRY/$CI_PROJECT_PATH/python:3.6"
+    image: "$CI_REGISTRY_IMAGE/tox:3.6"
 
 .py37: &py37
-    image: "$CI_REGISTRY/$CI_PROJECT_PATH/python:3.7"
+    image: "$CI_REGISTRY_IMAGE/tox:3.7"
 
 .py38: &py38
-    image: "$CI_REGISTRY/$CI_PROJECT_PATH/python:3.8"
+    image: "$CI_REGISTRY_IMAGE/tox:3.8"
 
 .node: &node
+    stage: test
     image: "$CI_REGISTRY/$CI_PROJECT_PATH/node:12"
 
-.install-dependencies: &install-dependencies
-    before_script:
-        # Set up SSH key for access to gitlab repositories
-        - install -m 700 -d $HOME/.ssh
-        - install -m 600 $SRC_DIR/{id_rsa,id_rsa.pub,known_hosts} $HOME/.ssh/
-    variables:
-        SRC_DIR: /usr/local/env
-
 .test: &test
+    stage: test
     services:
-      - name: postgres:12
-        alias: pain-postgres
-    script:
-        # First, build all virtualenvs in parallel without actually executing any tests.
+        - name: postgres:12
+          alias: django-pain-postgres
+          command: ["postgres", "-c", "fsync=off"]
+    before_script:
+        - echo "Active index - $PIP_INDEX_URL"
+        # First, build all virtualenvs without actually executing any tests.
         - tox --parallel all --notest
+    script:
         # Can't set PGHOST as a job variable, it breaks postgres service startup.
-        - PGHOST=pain-postgres tox
+        - PGHOST=django-pain-postgres tox
 
 .test-thaw: &test-thaw
     <<: *test
     only:
         - schedules
     script:
-        - tox -e py35-thaw,py36-thaw,py37-thaw,py38-thaw
+        - PGHOST=django-pain-postgres tox -e py35-thaw,py36-thaw,py37-thaw,py38-thaw
 
 ########################################################################################################################
 # Individual jobs
 licensing:
-    <<: *py38
-    <<: *install-dependencies
-    stage: analysis
+    image: "$DOCKER_REGISTRY/utils/license-check:latest"
+    tags:
+        - common
     script:
-        - git clone git@gitlab.office.nic.cz:internal-tools/license-check.git --single-branch --depth 1
-        - ./license-check/license-check.sh -v
+        - license-check -v
+
 
 piprot:
     <<: *py38
-    stage: analysis
     only:
         - schedules
     script:
@@ -131,34 +128,42 @@ piprot:
 test:py35:
     <<: *test
     <<: *py35
+    needs: ["image:py35"]
 
 test:py36:
     <<: *test
     <<: *py36
+    needs: ["image:py36"]
 
 test:py37:
     <<: *test
     <<: *py37
+    needs: ["image:py37"]
 
 test:py38:
     <<: *test
     <<: *py38
+    needs: ["image:py38"]
 
 test:py35-thaw:
     <<: *test-thaw
     <<: *py35
+    needs: ["image:py35"]
 
 test:py36-thaw:
     <<: *test-thaw
     <<: *py36
+    needs: ["image:py36"]
 
 test:py37-thaw:
     <<: *test-thaw
     <<: *py37
+    needs: ["image:py37"]
 
 test:py38-thaw:
     <<: *test-thaw
     <<: *py38
+    needs: ["image:py38"]
 
 test:node12:
     <<: *node
@@ -173,3 +178,4 @@ test:node12:
         - npm run test
         - npm run build
         - json-python-coverage coverage-js/coverage-summary.json
+    needs: ["image:node12"]
