@@ -16,7 +16,6 @@ variables:
     PGDATABASE: test_django-pain
     PGUSER: django-pain
     PGPASSWORD: password
-    TOX_PARALLEL_NO_SPINNER: 1
 
 cache:
     paths:
@@ -93,8 +92,6 @@ image:node12:
           command: ["postgres", "-c", "fsync=off"]
     before_script:
         - echo "Active index - $PIP_INDEX_URL"
-        # First, build all virtualenvs without actually executing any tests.
-        - tox --parallel all --notest
     script:
         # Can't set PGHOST as a job variable, it breaks postgres service startup.
         - PGHOST=django-pain-postgres tox
