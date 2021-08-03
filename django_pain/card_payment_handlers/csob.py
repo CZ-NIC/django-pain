@@ -83,7 +83,7 @@ class CSOBCardPaymentHandler(AbstractCardPaymentHandler):
             response = self.client.payment_init(
                 order_no=variable_symbol,
                 total_amount=int(amount.amount * 100),
-                currency=amount.currency,
+                currency=str(amount.currency),
                 return_url=return_url,
                 description='Dummy value',
                 cart=dict_cart,

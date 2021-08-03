@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2020  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -35,41 +35,43 @@ class DummyPaymentProcessor(AbstractPaymentProcessor):
     default_objective = 'Dummy objective'
 
     def process_payments(self, payments):
-        """Dummy function."""
+        """Do nothing."""
 
     def assign_payment(self, payment, client_id):
-        """Dummy function."""
+        """Do nothing."""
 
 
 class DummyCardPaymentHandler(AbstractCardPaymentHandler):
     """Dummy card payment handler."""
 
     def init_payment(self, **kwargs):
-        """Dummy function."""
+        """Do nothing."""
 
     def update_payments_state(self, payment):
-        """Dummy function."""
+        """Update payment state."""
         payment.state = PaymentState.READY_TO_PROCESS
         payment.save()
 
 
 class DummyCardPaymentHandlerExc(DummyCardPaymentHandler):
     """Dummy card payment handler which throws connectoin exception."""
+
     def init_payment(self, **kwargs):
-        """Dummy function."""
+        """Do nothing."""
 
     def update_payments_state(self, payment):
-        """Dummy function."""
+        """Raise exception."""
         raise PaymentHandlerError('Card Handler Error')
 
 
 class DummyCardPaymentHandlerConnExc(DummyCardPaymentHandler):
     """Dummy card payment handler which throws connectoin exception."""
+
     def init_payment(self, **kwargs):
-        """Dummy function."""
+        """Do nothing."""
 
     def update_payments_state(self, payment):
-        """Dummy function."""
+        """Raise exception."""
         raise PaymentHandlerConnectionError('Gateway connection error')
 
 
