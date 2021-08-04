@@ -109,11 +109,13 @@ class BankPayment(models.Model):
         verbose_name = _('Bank payment')
         verbose_name_plural = _('Bank payments')
 
-        constraints = [
-            CheckConstraint(check=Q(payment_type=PaymentType.TRANSFER) & ~Q(counter_account_number__exact='')
-                            | Q(payment_type=PaymentType.CARD_PAYMENT, counter_account_number__exact=''),
-                            name='payment_counter_account_only_for_transfer')
-        ]
+        constraints = [CheckConstraint(
+            check=(
+                Q(payment_type=PaymentType.TRANSFER)
+                | Q(payment_type=PaymentType.CARD_PAYMENT, counter_account_number__exact='')
+            ),
+            name='payment_counter_account_only_for_transfer'
+        )]
 
     def __str__(self):
         """Return string representation of bank payment."""
