@@ -18,4 +18,4 @@
 
 """Django application for managing bank payments and invoices."""
 
-__version__ = '2.2.0-rc2'
+__version__ = '2.2.0-rc3'
