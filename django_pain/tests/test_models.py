@@ -94,12 +94,14 @@ class TestBankPayment(CacheResetMixin, TestCase):
         payment = get_payment(processor='dummy')
         self.assertEqual(payment.objective, 'Dummy objective')
 
-    def test_transfer_must_have_counter_account(self):
+    def test_transfer_may_not_have_counter_account(self):
         account = get_account()
         account.save()
 
         payment = get_payment(account=account, payment_type=PaymentType.TRANSFER, counter_account_number='')
-        self.assertRaises(IntegrityError, payment.save)
+        payment.save()
+
+        self.assertEqual(BankPayment.objects.get().counter_account_number, '')
 
     def test_card_payment_must_not_have_counter_account(self):
         account = get_account()
