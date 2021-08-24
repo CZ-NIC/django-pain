@@ -147,7 +147,7 @@ class Command(BaseCommand, SavePaymentsMixin):
         payments = []  # type: List[BankPayment]
         for raw_statement in raw_statements:
             try:
-                statement = parser.parse_file(raw_statement)
+                statement = parser.parse_file(raw_statement.buffer, encoding=raw_statement.encoding)
             except Exception as e:
                 LOGGER.error(str(e))
                 parsing_errors += 1

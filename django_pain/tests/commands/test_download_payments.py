@@ -21,11 +21,11 @@ import sys
 from collections import OrderedDict, namedtuple
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
-from io import StringIO
+from io import BytesIO, StringIO
 from pathlib import Path
-from typing import Any, List, Mapping, Optional, TextIO, Tuple, Union
+from typing import Any, BinaryIO, List, Mapping, Optional, Tuple, Union
 from unittest import skipUnless
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, sentinel
 
 import pytz
 from django.core.exceptions import ValidationError
@@ -68,11 +68,14 @@ def raise_exception_callback(payment: BankPayment) -> Optional[BankPayment]:
 class DummyStatementDownloader(BankStatementDownloader):
     """Simple downloader that just returns fixed string"""
 
-    statement = MagicMock(spec=StringIO)
+    statement = MagicMock(spec=RawStatement)
+    statement.content = b'Statement!'
+    statement.encoding = sentinel.encoding
     statement.name = None
+    statement.buffer = BytesIO(statement.content)
 
     def __init__(self, base_url: str, password: str, timeout: int = 3):
-        expected_url = 'https://bank.test'
+        expected_url = 'https://bank.test/'
         expected_password = 'letmein'
         if base_url != expected_url:
             raise ValueError('Expected {} as base_url.'.format(expected_url))  # pragma: no cover
@@ -90,8 +93,8 @@ class DummyStatementParser(BankStatementParser):
     """Simple downloader that just returns two fixed payments."""
 
     @classmethod
-    def parse_file(cls, source: Union[str, TextIO, Path], encoding='utf-8') -> BankStatement:
-        cls._verify_source(source)
+    def parse_file(cls, source: Union[str, Path, BinaryIO], encoding=None) -> BankStatement:
+        cls._verify_source(source, encoding)
 
         statement = BankStatement('1234567890/2010')
         payment_1 = Payment(identifier='PAYMENT_1',
@@ -108,9 +111,11 @@ class DummyStatementParser(BankStatementParser):
         return statement
 
     @classmethod
-    def _verify_source(cls, source: Union[str, TextIO, Path]) -> None:
-        if source is not DummyStatementDownloader.statement:
-            raise ValueError('Expected DummyStatementDownloader.statement as source.')  # pragma: no cover
+    def _verify_source(cls, source: Union[str, Path, BinaryIO], encoding) -> None:
+        if source is not DummyStatementDownloader.statement.buffer:
+            raise ValueError('Expected DummyStatementDownloader.statement.buffer as source.')  # pragma: no cover
+        if encoding is not DummyStatementDownloader.statement.encoding:
+            raise ValueError('Expected DummyStatementDownloader.statement.encoding as encoding.')  # pragma: no cover
 
 
 @skipUnless('teller' in sys.modules, 'Can not run without teller library.')
@@ -119,7 +124,7 @@ class DownloadPaymentsTest(TestCase):
 
     test_settings = {'DOWNLOADER': 'django_pain.tests.commands.test_download_payments.DummyStatementDownloader',
                      'PARSER': 'django_pain.tests.commands.test_download_payments.DummyStatementParser',
-                     'DOWNLOADER_PARAMS': {'base_url': 'https://bank.test', 'password': 'letmein'}
+                     'DOWNLOADER_PARAMS': {'base_url': 'https://bank.test/', 'password': 'letmein'}
                      }  # type: Mapping[str, Any]
 
     fake_date = datetime(2020, 1, 9, 23, 30)
@@ -707,8 +712,8 @@ class DownloadPaymentsTest(TestCase):
     @patch('django_pain.tests.commands.test_download_payments.DummyStatementDownloader._download_data')
     @patch('django_pain.tests.commands.test_download_payments.DummyStatementParser._verify_source')
     def test_payment_history_filenames(self, mock_verify, mock_download):
-        mock_download.return_value = [RawStatement(content='Raw statement content', name='file_1.txt'),
-                                      RawStatement(content='Raw statement content', name='file_2.txt')]
+        mock_download.return_value = [RawStatement(b'Raw statement content', name='file_1.txt'),
+                                      RawStatement(b'Raw statement content', name='file_2.txt')]
 
         out = StringIO()
         call_command('download_payments', '--no-color', '--verbosity=3', stdout=out)
