@@ -80,6 +80,10 @@ class DummyBrokenProcessor(DummyPaymentProcessor):
     """Simple processor that rises error every time it is called."""
 
     def process_payments(self, payments):
+        # Processors may be lazy.
+        yield self.fail()
+
+    def fail(self):
         raise PaymentProcessorError('It is broken!')
 
 
