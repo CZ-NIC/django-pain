@@ -76,29 +76,27 @@ class Command(BaseCommand):
             LOGGER.info('Processing payments with processor %s.', processor_name)
             try:
                 results = processor.process_payments(deepcopy(payment) for payment in payments)
+                unprocessed_payments = []
+                for payment, processed in zip_longest(payments, results):
+                    if processed.result:
+                        payment.state = PaymentState.PROCESSED
+                        payment.processor = processor_name
+                        payment.processing_error = processed.error
+                        payment.save()
+                    elif processed.error is not None:
+                        LOGGER.info('Saving payment %s as DEFERRED with error %s.', payment.uuid, processed.error)
+                        payment.state = PaymentState.DEFERRED
+                        payment.processor = processor_name
+                        payment.processing_error = processed.error
+                        payment.save()
+                    else:
+                        unprocessed_payments.append(payment)
+                payments = unprocessed_payments
             except PaymentProcessorError as error:
                 LOGGER.error('Error occured while processing payments with processor %s: %s Skipping.',
                              processor_name,
                              str(error))
                 continue
-
-            unprocessed_payments = []
-            for payment, processed in zip_longest(payments, results):
-                if processed.result:
-                    payment.state = PaymentState.PROCESSED
-                    payment.processor = processor_name
-                    payment.processing_error = processed.error
-                    payment.save()
-                elif processed.error is not None:
-                    LOGGER.info('Saving payment %s as DEFERRED with error %s.', payment.uuid, processed.error)
-                    payment.state = PaymentState.DEFERRED
-                    payment.processor = processor_name
-                    payment.processing_error = processed.error
-                    payment.save()
-                else:
-                    unprocessed_payments.append(payment)
-
-            payments = unprocessed_payments
 
         LOGGER.info('Marking %s unprocessed payments as DEFERRED.', len(payments))
         for unprocessed_payment in payments:
