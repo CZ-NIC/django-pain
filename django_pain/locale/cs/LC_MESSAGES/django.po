@@ -81,6 +81,9 @@ msgstr "Django admin"
 msgid "Duplicate payment"
 msgstr "Duplicitní platba"
 
+msgid "Enforce currency check"
+msgstr "Vyžadovat kontrolu měny"
+
 msgid "Errors"
 msgstr "Chyby"
 
