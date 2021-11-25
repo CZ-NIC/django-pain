@@ -64,6 +64,12 @@ class TestBankPayment(CacheResetMixin, TestCase):
                                                        'than bank account ACCOUNT 123 (USD).'):
             payment.clean()
 
+    def test_currency_constraint_not_enforced(self):
+        """Test clean method when constraint is not enforced."""
+        account = get_account(currency='USD', enforce_currency=False)
+        payment = get_payment(account=account, amount=Money('999.00', 'CZK'))
+        payment.clean()
+
     @override_settings(PAIN_PROCESSORS={'dummy': 'django_pain.tests.utils.DummyPaymentProcessor'})
     def test_objective_choices(self):
         self.assertEqual(BankPayment.objective_choices(), BLANK_CHOICE_DASH + [
