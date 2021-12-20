@@ -104,7 +104,7 @@ class CSOBCardPaymentHandler(AbstractCardPaymentHandler):
 
         redirect_url = self.client.get_payment_process_url(data['payId'])
 
-        account = BankAccount.objects.get(account_number=SETTINGS.csob_card['account_number'])
+        account = self._get_account(amount)
         payment = BankPayment.objects.create(
             identifier=data['payId'],
             payment_type=PaymentType.CARD_PAYMENT,
@@ -136,3 +136,18 @@ class CSOBCardPaymentHandler(AbstractCardPaymentHandler):
         else:
             LOGGER.error('payment_status resultCode != OK: %s', gateway_result)
             raise PaymentHandlerError('payment_status resultCode != OK', gateway_result)
+
+    def _get_account(self, amount: Money) -> BankAccount:
+        csob_accounts = SETTINGS.csob_card['account_numbers']
+        try:
+            account_number = csob_accounts[str(amount.currency)]
+        except KeyError as error:
+            raise ValueError('No account for currency {}.'.format(amount.currency)) from error
+
+        try:
+            account = BankAccount.objects.get(account_number=account_number)
+        except BankAccount.DoesNotExist as error:
+            message = 'CSOBCardPaymentHandler configured with non-existing account "{}".'.format(account_number)
+            raise ValueError(message) from error
+
+        return account
