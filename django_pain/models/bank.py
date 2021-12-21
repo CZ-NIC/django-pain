@@ -59,14 +59,6 @@ class BankAccount(models.Model):
     account_number = models.TextField(unique=True, verbose_name=_('Account number'))
     account_name = models.TextField(blank=True, verbose_name=_('Account name'))
     currency = CurrencyField()
-    enforce_currency = models.BooleanField(
-        default=True,
-        verbose_name=_('Enforce currency check'),
-        help_text=(
-            "When this option is set it is not possible to create payments to this account with currency different from"
-            " the account's currency."
-        ),
-    )
 
     class Meta:
         """Meta class."""
@@ -130,8 +122,8 @@ class BankPayment(models.Model):
         return self.identifier
 
     def clean(self):
-        """Check whether payment currency is the same as currency of related bank account if required by the account."""
-        if self.account.enforce_currency and (self.account.currency != self.amount.currency.code):
+        """Check whether payment currency is the same as currency of related bank account."""
+        if self.account.currency != self.amount.currency.code:
             raise ValidationError('Bank payment {} is in different currency ({}) than bank account {} ({}).'.format(
                 self.identifier, self.amount.currency.code, self.account, self.account.currency
             ))
