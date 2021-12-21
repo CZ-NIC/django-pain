@@ -145,6 +145,29 @@ This callable is called right before the payment is saved during the import.
 Especially, this callable can throw ValidationError in order to avoid saving payment to the database.
 Default value is empty list.
 
+``PAIN_CSOB_CARD``
+--------------------
+
+Settings for CSOB card payment handler. `API_PUBLIC_KEY`, `MERCHANT_ID` and `MERCHANT_PRIVATE_KEY` contain parameters
+provided by CSOB bank. `ACCOUNT_NUMBERS` is a mapping assigning accounts to curency codes. CSOB payment gateway may
+accept payments in different currencies. For each currency there has to be an account held in that currency associated
+with the gateway. The associated accounts have to be specified in `ACCOUNT_NUMBERS` setting so we are able to choose the
+correct account when recording the payments in the application. The values of the mapping are account numbers as
+recorded in the database.
+
+Example configuration:
+
+.. code-block:: python
+
+    PAIN_CSOB_CARD = {
+        'API_PUBLIC_KEY': 'path_to_public_key.txt'),
+        'MERCHANT_ID': 'abc123',
+        'MERCHANT_PRIVATE_KEY': 'path_to_private_key.txt'),
+        'ACCOUNT_NUMBERS': {
+            'CZK': '123456',
+            'EUR': '234567',
+        },
+    }
 
 Other related settings
 ======================
