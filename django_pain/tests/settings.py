@@ -65,7 +65,7 @@ PAIN_CSOB_CARD = {
     'API_PUBLIC_KEY': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'empty_key.txt'),
     'MERCHANT_ID': '',
     'MERCHANT_PRIVATE_KEY': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'empty_key.txt'),
-    'ACCOUNT_NAME': 'Account',
+    'ACCOUNT_NUMBER': '123456',
 }
 
 DEFAULT_CURRENCY = 'CZK'
