@@ -104,7 +104,7 @@ class CSOBCardPaymentHandler(AbstractCardPaymentHandler):
 
         redirect_url = self.client.get_payment_process_url(data['payId'])
 
-        account = BankAccount.objects.get(account_name=SETTINGS.csob_card['account_name'])
+        account = BankAccount.objects.get(account_number=SETTINGS.csob_card['account_number'])
         payment = BankPayment.objects.create(
             identifier=data['payId'],
             payment_type=PaymentType.CARD_PAYMENT,
