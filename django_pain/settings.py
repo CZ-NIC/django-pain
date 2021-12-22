@@ -191,7 +191,7 @@ class PainSettings(appsettings.AppSettings):
         api_public_key=appsettings.FileSetting(required=True),
         merchant_id=appsettings.StringSetting(required=True),
         merchant_private_key=appsettings.FileSetting(required=True),
-        account_name=appsettings.StringSetting(required=True),
+        account_numbers=appsettings.DictSetting(required=True),
     ), default=None)
 
     class Meta:

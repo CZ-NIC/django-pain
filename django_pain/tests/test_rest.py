@@ -36,7 +36,16 @@ from django_pain.tests.utils import get_account, get_payment
 @override_settings(ROOT_URLCONF='django_pain.tests.urls',
                    PAIN_CARD_PAYMENT_HANDLERS={
                        'csob': 'django_pain.card_payment_handlers.csob.CSOBCardPaymentHandler'
-                   })
+                   },
+                   PAIN_CSOB_CARD={
+                        'API_PUBLIC_KEY': 'empty_key.txt',
+                        'MERCHANT_ID': '',
+                        'MERCHANT_PRIVATE_KEY': 'empty_key.txt',
+                        'ACCOUNT_NUMBERS': {
+                            'CZK': '123456',
+                            'EUR': '234567',
+                        },
+                    })
 class TestBankPaymentRestAPI(CacheResetMixin, TestCase):
     def test_retrieve_not_exists(self):
         response = self.client.get('/api/private/bankpayment/no-i-do-not-exists/')
@@ -124,8 +133,8 @@ class TestBankPaymentRestAPI(CacheResetMixin, TestCase):
         self.assertEqual(response.data['state'], ExternalPaymentState.PAID)
         self.assertEqual(BankPayment.objects.first().state, PaymentState.DEFERRED)
 
-    def _test_create(self, post_data):
-        account = get_account(account_number='123456', currency='CZK')
+    def _test_create(self, post_data, account_number='123456', account_currency='CZK'):
+        account = get_account(account_number=account_number, currency=account_currency)
         account.save()
 
         with patch('django_pain.card_payment_handlers.csob.CsobClient') as gateway_client_mock:
@@ -173,7 +182,7 @@ class TestBankPaymentRestAPI(CacheResetMixin, TestCase):
             'language': 'cs',
             'cart': '[{"name":"Dar","amount":100,"description":"Longer description","quantity":1}]',
         }
-        self._test_create(post_data)
+        self._test_create(post_data, account_number='234567', account_currency='EUR')
 
     def test_create_gw_connection_error(self):
         account = get_account(account_number='123456', currency='CZK')

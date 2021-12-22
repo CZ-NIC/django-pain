@@ -81,9 +81,6 @@ msgstr "Django admin"
 msgid "Duplicate payment"
 msgstr "Duplicitní platba"
 
-msgid "Enforce currency check"
-msgstr "Vyžadovat kontrolu měny"
-
 msgid "Errors"
 msgstr "Chyby"
 
@@ -192,9 +189,6 @@ msgstr "Nepodařilo se spárovat platbu"
 
 msgid "Variable symbol"
 msgstr "Variabilní symbol"
-
-msgid "When this option is set it is not possible to create payments to this account with currency different from the account's currency."
-msgstr "Pokud je tato možnost nastavená, tak není možné pro daný účet vytvořit platbu v jiné měně, než je měna toho účtu."
 
 msgid "account"
 msgstr "vyúčtovací"
