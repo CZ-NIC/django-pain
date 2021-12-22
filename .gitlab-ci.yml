@@ -6,7 +6,7 @@ stages:
     - test
 
 variables:
-    DOCKER_REGISTRY: "archive.nic.cz:5000"
+    DOCKER_REGISTRY: "reg.nic.cz"
     # Set up pip cache shared between all jobs of the project.
     PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
     POSTGRES_DB: test_django-pain
