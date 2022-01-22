@@ -29,7 +29,7 @@
     "jest": "^25.0.0",
     "jest-environment-jsdom": "^24.9.0",
     "jest-environment-jsdom-global": "^1.2.0",
-    "node-fetch": "^2.2.0",
+    "node-fetch": "^3.1.1",
     "stylelint": "^11.1.1",
     "stylelint-config-standard": "^19.0.0",
     "webpack": "^4.41.2",
