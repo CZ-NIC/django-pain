@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2022  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -23,8 +23,6 @@ from distutils.command.build import build
 
 from setuptools import find_packages, setup
 from setuptools.command.sdist import sdist
-
-import django_pain
 
 
 class custom_build(build):
