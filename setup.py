@@ -57,7 +57,7 @@ EXTRAS_REQUIRE = {'quality': ['isort', 'flake8', 'pydocstyle', 'polint', 'mypy']
                   'types': ['types-freezegun', 'types-pytz', 'types-requests']}
 
 setup(name='django-pain',
-      version='2.3.0-rc3',
+      version='2.3.0',
       description='Django application for managing bank payments and invoices',
       long_description=readme(),
       url='http://www.nic.cz/',
