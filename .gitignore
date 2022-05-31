@@ -1,4 +1,4 @@
-# Byte-compiled / optimized / DLL files
+# Byte-compiled
 __pycache__/
 *.py[cod]
 *$py.class
@@ -13,19 +13,20 @@ node_modules/
 # Distribution / packaging
 .Python
 env/
-build/
+/build/
 develop-eggs/
-dist/
+/dist/
 downloads/
-eggs/
-.eggs/
+/.eggs/
+/eggs/
+/MANIFEST
 lib/
 lib64/
 parts/
 sdist/
 var/
 wheels/
-*.egg-info/
+/*.egg-info/
 .installed.cfg
 *.egg
 
@@ -41,9 +42,8 @@ pip-delete-this-directory.txt
 
 # Unit test / coverage reports
 htmlcov/
-.tox/
-.coverage
-.coverage.*
+/.tox/
+/.coverage*
 .cache
 coverage.xml
 *.cover
@@ -66,4 +66,4 @@ venv/
 ENV/
 
 # mypy
-.mypy_cache/
+/.mypy_cache/

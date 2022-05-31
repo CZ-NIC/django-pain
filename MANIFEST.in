@@ -3,3 +3,9 @@ include COPYING
 include README.rst
 include requirements.txt
 graft django_pain
+include pyproject.toml
+include setup.py
+include CHANGELOG.rst
+global-exclude __pycache__/*
+include *.json
+include *.js
