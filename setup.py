@@ -18,70 +18,18 @@
 # along with FRED.  If not, see <https://www.gnu.org/licenses/>.
 
 """Setup script for django_pain."""
-import os
 from distutils.command.build import build
 
-from setuptools import find_packages, setup
-from setuptools.command.sdist import sdist
+from setuptools import setup
+from setuptools_npm import npm_not_skipped
 
 
 class custom_build(build):
-    sub_commands = [('compile_catalog', lambda x: True), ('build_js', None)] + build.sub_commands
+    sub_commands = [
+        ('compile_catalog', None),
+        ('npm_install', npm_not_skipped),
+        ('npm_run', npm_not_skipped),
+    ] + build.sub_commands
 
 
-class custom_sdist(sdist):
-
-    def run(self):
-        self.run_command('compile_catalog')
-        # sdist is an old style class so super cannot be used
-        sdist.run(self)
-
-    def has_i18n_files(self):
-        return bool(self.distribution.i18n_files)
-
-
-def readme():
-    """Return content of README file."""
-    with open(os.path.join(os.path.dirname(__file__), 'README.rst'), encoding='utf-8') as f:
-        return f.read()
-
-
-SETUP_REQUIRES = ['Babel >=2.3', 'setuptools_webpack']
-INSTALL_REQUIRES = open('requirements.txt').read().splitlines()
-# Use --install-types for type stubs when available.
-EXTRAS_REQUIRE = {'quality': ['isort', 'flake8', 'pydocstyle', 'polint', 'mypy'],
-                  'test': ['testfixtures', 'freezegun'],
-                  'teller': ['fred-teller ~=0.4.0'],
-                  'types': ['types-freezegun', 'types-pytz', 'types-requests']}
-
-setup(name='django-pain',
-      version='2.3.0',
-      description='Django application for managing bank payments and invoices',
-      long_description=readme(),
-      url='http://www.nic.cz/',
-      author='Jan Musílek',
-      author_email='jan.musilek@nic.cz',
-      packages=find_packages(),
-      include_package_data=True,
-      python_requires='>=3.5',
-      setup_requires=SETUP_REQUIRES,
-      install_requires=INSTALL_REQUIRES,
-      extras_require=EXTRAS_REQUIRE,
-      webpack_output_path='django_pain/static/django_pain/js',
-      cmdclass={'build': custom_build, 'sdist': custom_sdist},
-      classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
-        'Environment :: Web Environment',
-        'Framework :: Django',
-        'Framework :: Django :: 2.2',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
-        'Operating System :: OS Independent',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Topic :: Internet :: WWW/HTTP',
-        'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
-      ])
+setup(cmdclass={'build': custom_build})

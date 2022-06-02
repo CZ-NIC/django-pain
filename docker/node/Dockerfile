@@ -1,7 +1,4 @@
-########################################################################################################################
-# This file was generated using python_env, please do not edit directly.
-########################################################################################################################
+FROM node:14-buster
 
-FROM node:12
-
+RUN npm install -g npm@latest
 RUN npm install -g @cz-nic/json-python-coverage

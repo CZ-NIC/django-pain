@@ -1,6 +1,3 @@
-########################################################################################################################
-# This file was generated using python_env, please do not edit directly.
-########################################################################################################################
 stages:
     - image
     - test
@@ -9,13 +6,14 @@ variables:
     DOCKER_REGISTRY: "reg.nic.cz"
     # Set up pip cache shared between all jobs of the project.
     PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-    POSTGRES_DB: test_django-pain
-    POSTGRES_USER: django-pain
+    POSTGRES_DB: testdb
+    POSTGRES_USER: user
     POSTGRES_PASSWORD: password
     # Setting PGHOST breaks startup of postgres service
-    PGDATABASE: test_django-pain
-    PGUSER: django-pain
+    PGDATABASE: testdb
+    PGUSER: user
     PGPASSWORD: password
+    PYTHONWARNINGS: ""
 
 cache:
     paths:
@@ -37,16 +35,6 @@ cache:
     variables:
         IMAGE_TAG: "$CI_REGISTRY_IMAGE/tox:$PYTHON_VERSION"
 
-image:py35:
-    extends: .image
-    variables:
-        PYTHON_VERSION: "3.5"
-
-image:py36:
-    extends: .image
-    variables:
-        PYTHON_VERSION: "3.6"
-
 image:py37:
     extends: .image
     variables:
@@ -57,32 +45,42 @@ image:py38:
     variables:
         PYTHON_VERSION: "3.8"
 
-image:node12:
+image:py39:
+    extends: .image
+    variables:
+        PYTHON_VERSION: "3.9"
+
+image:py310:
+    extends: .image
+    variables:
+        PYTHON_VERSION: "3.10"
+
+image:node14:
     extends: .image
     script:
         - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
         - docker build --pull --tag "$IMAGE_TAG" docker/node
         - docker push "$IMAGE_TAG"
     variables:
-        IMAGE_TAG: $CI_REGISTRY_IMAGE/node:12
+        IMAGE_TAG: $CI_REGISTRY_IMAGE/node:14
 
 ########################################################################################################################
 # Basic declarations
-.py35: &py35
-    image: "$CI_REGISTRY_IMAGE/tox:3.5"
-
-.py36: &py36
-    image: "$CI_REGISTRY_IMAGE/tox:3.6"
-
 .py37: &py37
     image: "$CI_REGISTRY_IMAGE/tox:3.7"
 
 .py38: &py38
     image: "$CI_REGISTRY_IMAGE/tox:3.8"
 
+.py39: &py39
+    image: "$CI_REGISTRY_IMAGE/tox:3.9"
+
+.py310: &py310
+    image: "$CI_REGISTRY_IMAGE/tox:3.10"
+
 .node: &node
     stage: test
-    image: "$CI_REGISTRY/$CI_PROJECT_PATH/node:12"
+    image: "$CI_REGISTRY/$CI_PROJECT_PATH/node:14"
 
 .test: &test
     stage: test
@@ -95,13 +93,8 @@ image:node12:
     script:
         # Can't set PGHOST as a job variable, it breaks postgres service startup.
         - PGHOST=django-pain-postgres tox
-
-.test-thaw: &test-thaw
-    <<: *test
-    only:
-        - schedules
-    script:
-        - PGHOST=django-pain-postgres tox -e py35-thaw,py36-thaw,py37-thaw,py38-thaw
+    coverage: '/TOTAL(?:\s+\d+){4}\s+(\d+\%)/'
+    interruptible: true
 
 ########################################################################################################################
 # Individual jobs
@@ -111,26 +104,6 @@ licensing:
         - common
     script:
         - license-check -v
-
-
-piprot:
-    <<: *py38
-    only:
-        - schedules
-    script:
-        - pip install piprot
-        - piprot requirements.txt constraints.txt
-    allow_failure: true
-
-test:py35:
-    <<: *test
-    <<: *py35
-    needs: ["image:py35"]
-
-test:py36:
-    <<: *test
-    <<: *py36
-    needs: ["image:py36"]
 
 test:py37:
     <<: *test
@@ -142,32 +115,22 @@ test:py38:
     <<: *py38
     needs: ["image:py38"]
 
-test:py35-thaw:
-    <<: *test-thaw
-    <<: *py35
-    needs: ["image:py35"]
+test:py39:
+    <<: *test
+    <<: *py39
+    needs: ["image:py39"]
 
-test:py36-thaw:
-    <<: *test-thaw
-    <<: *py36
-    needs: ["image:py36"]
+test:py310:
+    <<: *test
+    <<: *py310
+    needs: ["image:py310"]
 
-test:py37-thaw:
-    <<: *test-thaw
-    <<: *py37
-    needs: ["image:py37"]
-
-test:py38-thaw:
-    <<: *test-thaw
-    <<: *py38
-    needs: ["image:py38"]
-
-test:node12:
+test:node14:
     <<: *node
     before_script:
         - node --version
         - npm --version
-        - npm install
+        - npm clean-install
         - npm list || true
     script:
         - npm run check-css
@@ -175,4 +138,4 @@ test:node12:
         - npm run test
         - npm run build
         - json-python-coverage coverage-js/coverage-summary.json
-    needs: ["image:node12"]
+    needs: ["image:node14"]

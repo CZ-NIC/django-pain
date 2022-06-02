@@ -21,8 +21,8 @@ Bank accounts and payments may be managed through a Django admin site.
 Installation
 ============
 
-You need to add ``django_pain.apps.DjangoPainConfig`` and ``django_lang_switch.apps.DjangoLangSwitchConfig`` to your ``INSTALLED_APPS``.
-In order for user interface to work, you also need to add the Django admin site.
+You need to add ``django_pain.apps.DjangoPainConfig`` and ``django_lang_switch.apps.DjangoLangSwitchConfig``
+to your ``INSTALLED_APPS``. In order for user interface to work, you also need to add the Django admin site.
 See `Django docs`__ for detailed description.
 
 __ https://docs.djangoproject.com/en/dev/ref/contrib/admin/
@@ -140,8 +140,8 @@ Example configuration:
 
 List setting containing dotted paths to callables.
 
-Each value of the list should be dotted path refering to callable that takes BankPayment object as its argument and returns (possibly) changed BankPayment.
-This callable is called right before the payment is saved during the import.
+Each value of the list should be dotted path refering to callable that takes BankPayment object as its argument and
+returns (possibly) changed BankPayment. This callable is called right before the payment is saved during the import.
 Especially, this callable can throw ValidationError in order to avoid saving payment to the database.
 Default value is empty list.
 
@@ -218,7 +218,8 @@ __ https://docs.djangoproject.com/en/dev/ref/settings/#languages
 Currency formatting
 -------------------
 
-In case Django does not format currencies correctly according to its locale setting it may be necessary to define the formatting rules manually:
+In case Django does not format currencies correctly according to its locale setting it may be necessary to define
+the formatting rules manually:
 
 .. code-block:: python
 
@@ -231,7 +232,8 @@ In case Django does not format currencies correctly according to its locale sett
         rounding_method=ROUND_HALF_UP
     )
 
-First argument of `add_formatting_definition` should be a properly formatted `locale name`_ from the ``LANGUAGES`` setting.
+First argument of `add_formatting_definition` should be a properly formatted `locale name`_ from the ``LANGUAGES``
+setting.
 
 .. _locale name: https://docs.djangoproject.com/en/dev/topics/i18n/#term-locale-name
 
@@ -272,8 +274,8 @@ Default value for ``START`` is seven days before ``END``.
 
 Example ``download_payments --start 2020-09-01T00:00 --end 2020-10-31T23:59``
 
-Optional repeatable parameter ``--downloader`` selects which downloaders defined in the ``PAIN_DOWNLOADERS`` settings will
-be used. If the parameter is omitted all defined downloaders will be used.
+Optional repeatable parameter ``--downloader`` selects which downloaders defined in the ``PAIN_DOWNLOADERS`` settings
+will be used. If the parameter is omitted all defined downloaders will be used.
 
 Example ``download_payments --downloader somebank --downloader someotherbank``
 
