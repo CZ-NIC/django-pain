@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2022  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -21,7 +21,7 @@ from collections import namedtuple
 from datetime import date, datetime
 from decimal import Decimal
 from io import StringIO
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, cast
 
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
@@ -85,8 +85,10 @@ class TestImportPayments(TestCase):
         account = BankAccount(account_number='123456/7890', currency='CZK')
         account.save()
         self.account = account
-        self.log_handler = LogCapture(('django_pain.management.commands.import_payments',
-                                       'django_pain.management.command_mixins'), propagate=False)
+        self.log_handler = LogCapture(cast(Tuple[str], (
+            'django_pain.management.commands.import_payments',
+            'django_pain.management.command_mixins',
+        )), propagate=False)
 
     def tearDown(self):
         self.log_handler.uninstall()

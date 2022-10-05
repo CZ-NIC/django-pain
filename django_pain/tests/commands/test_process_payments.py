@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2022  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -25,6 +25,7 @@ from collections import OrderedDict
 from datetime import date
 from io import StringIO
 from queue import Queue
+from typing import cast
 from unittest.mock import patch
 
 from django.core.management import call_command
@@ -235,7 +236,7 @@ class TestProcessPayments(CacheResetMixin, TestCase):
         param_name should contain either '--include-accounts' or '--exclude-accounts'
         """
         BankAccount.objects.create(account_number='987654/3210', currency='CZK')
-        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
+        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(cast(str, self.tempdir.path), 'test.lock')):
             out = StringIO()
             err = StringIO()
             with self.assertRaises(CommandError):
@@ -255,7 +256,7 @@ class TestProcessPayments(CacheResetMixin, TestCase):
         'dummy': 'django_pain.tests.commands.test_process_payments.DummyTruePaymentProcessor'})
     def test_payments_processed(self):
         """Test processed payments."""
-        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
+        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(cast(str, self.tempdir.path), 'test.lock')):
             call_command('process_payments')
 
             self.assertQuerysetEqual(
@@ -278,7 +279,7 @@ class TestProcessPayments(CacheResetMixin, TestCase):
         'dummy': 'django_pain.tests.commands.test_process_payments.DummyFalsePaymentProcessor'})
     def test_payments_deferred(self):
         """Test deferred payments."""
-        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
+        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(cast(str, self.tempdir.path), 'test.lock')):
             call_command('process_payments')
 
             self.assertQuerysetEqual(
@@ -301,7 +302,7 @@ class TestProcessPayments(CacheResetMixin, TestCase):
         'dummy': 'django_pain.tests.commands.test_process_payments.DummyTrueErrorPaymentProcessor'})
     def test_payments_processed_with_error(self):
         """Test processed payments with processing error."""
-        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
+        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(cast(str, self.tempdir.path), 'test.lock')):
             call_command('process_payments')
 
             self.assertQuerysetEqual(
@@ -324,7 +325,7 @@ class TestProcessPayments(CacheResetMixin, TestCase):
         'dummy': 'django_pain.tests.commands.test_process_payments.DummyFalseErrorPaymentProcessor'})
     def test_payments_deferred_with_error(self):
         """Test deferred payments with processing error."""
-        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
+        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(cast(str, self.tempdir.path), 'test.lock')):
             call_command('process_payments')
 
             self.assertQuerysetEqual(
@@ -351,7 +352,7 @@ class TestProcessPayments(CacheResetMixin, TestCase):
         ('dummy', 'django_pain.tests.commands.test_process_payments.DummyTruePaymentProcessor')]))
     def test_payments_processed_after_first_processor_fails(self):
         """Test payments processed after first_processor fails."""
-        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
+        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(cast(str, self.tempdir.path), 'test.lock')):
             call_command('process_payments')
 
             self.assertQuerysetEqual(
@@ -380,7 +381,7 @@ class TestProcessPayments(CacheResetMixin, TestCase):
     ]))
     def test_payments_from_to(self):
         """Test processed payments."""
-        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
+        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(cast(str, self.tempdir.path), 'test.lock')):
             call_command('process_payments', '--from', '2017-01-01 00:00', '--to', '2017-01-02 00:00')
 
             self.assertQuerysetEqual(
@@ -390,7 +391,7 @@ class TestProcessPayments(CacheResetMixin, TestCase):
             self.assertEqual(BankPayment.objects.first().objective, '')
 
     def test_invalid_date_raises_exception(self):
-        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
+        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(cast(str, self.tempdir.path), 'test.lock')):
             with self.assertRaises(CommandError):
                 call_command('process_payments', '--from', '2017-01-32 00:00', '--to', '2017-02-01 00:00')
             with self.assertRaises(CommandError):
@@ -402,7 +403,7 @@ class TestProcessPayments(CacheResetMixin, TestCase):
 
     def test_lock(self):
         """Test process payments lock."""
-        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
+        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(cast(str, self.tempdir.path), 'test.lock')):
             lock = open(SETTINGS.process_payments_lock_file, 'a')
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
             out = StringIO()
@@ -421,7 +422,7 @@ class TestProcessPayments(CacheResetMixin, TestCase):
 
     def test_invalid_lock(self):
         """Test process payments with invalid lock file."""
-        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
+        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(cast(str, self.tempdir.path), 'test.lock')):
             os.mkdir(SETTINGS.process_payments_lock_file, mode=0o0)
             out = StringIO()
             err = StringIO()
@@ -453,7 +454,7 @@ class TestProcessPayments(CacheResetMixin, TestCase):
         account2.save()
         get_payment(identifier='PAYMENT_2', account=self.account, state=PaymentState.READY_TO_PROCESS).save()
         get_payment(identifier='PAYMENT_3', account=account2, state=PaymentState.READY_TO_PROCESS).save()
-        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
+        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(cast(str, self.tempdir.path), 'test.lock')):
             out = StringIO()
             err = StringIO()
             call_command('process_payments', '--exclude-accounts', '987654/3210', stdout=out, stderr=err)
@@ -485,7 +486,7 @@ class TestProcessPayments(CacheResetMixin, TestCase):
         account2.save()
         get_payment(identifier='PAYMENT_2', account=self.account, state=PaymentState.READY_TO_PROCESS).save()
         get_payment(identifier='PAYMENT_3', account=account2, state=PaymentState.READY_TO_PROCESS).save()
-        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
+        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(cast(str, self.tempdir.path), 'test.lock')):
             out = StringIO()
             err = StringIO()
             call_command('process_payments', '--include-accounts', '123456/7890', stdout=out, stderr=err)
@@ -516,7 +517,7 @@ class TestProcessPayments(CacheResetMixin, TestCase):
                     payment_type=PaymentType.CARD_PAYMENT, counter_account_number='', processor='dummy').save()
         get_payment(identifier='PAYMENT_3', account=self.account, state=PaymentState.READY_TO_PROCESS,
                     payment_type=PaymentType.CARD_PAYMENT, counter_account_number='', processor='dummy').save()
-        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
+        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(cast(str, self.tempdir.path), 'test.lock')):
             call_command('process_payments')
             self.assertQuerysetEqual(
                 BankPayment.objects.values_list('identifier', 'state', 'processor'),
@@ -550,7 +551,7 @@ class TestProcessPayments(CacheResetMixin, TestCase):
         get_payment(identifier='PAYMENT_3', account=self.account, state=PaymentState.READY_TO_PROCESS,
                     payment_type=PaymentType.CARD_PAYMENT, counter_account_number='', processor='dummy',
                     transaction_date=date(2018, 5, 11)).save()
-        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
+        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(cast(str, self.tempdir.path), 'test.lock')):
             call_command('process_payments')
             self.assertQuerysetEqual(
                 BankPayment.objects.values_list('identifier', 'state', 'processor'),
@@ -589,7 +590,7 @@ class TestProcessPayments(CacheResetMixin, TestCase):
         get_payment(identifier='PAYMENT_3', account=self.account, state=PaymentState.READY_TO_PROCESS,
                     payment_type=PaymentType.CARD_PAYMENT, counter_account_number='', processor='dummy',
                     transaction_date=date(2018, 5, 11)).save()
-        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(self.tempdir.path, 'test.lock')):
+        with override_settings(PAIN_PROCESS_PAYMENTS_LOCK_FILE=os.path.join(cast(str, self.tempdir.path), 'test.lock')):
             call_command('process_payments')
             self.assertQuerysetEqual(
                 BankPayment.objects.values_list('identifier', 'state', 'processor'),

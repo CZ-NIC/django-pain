@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2020-2021  CZ.NIC, z. s. p. o.
+# Copyright (C) 2020-2022  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -23,7 +23,7 @@ from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from io import BytesIO, StringIO
 from pathlib import Path
-from typing import Any, BinaryIO, List, Mapping, Optional, Tuple, Union
+from typing import Any, BinaryIO, List, Mapping, Optional, Tuple, Union, cast
 from unittest import skipUnless
 from unittest.mock import MagicMock, patch, sentinel
 
@@ -141,8 +141,10 @@ class DownloadPaymentsTest(TestCase):
         account = BankAccount(account_number='1234567890/2010', currency='CZK')
         account.save()
         self.account = account
-        self.log_handler = LogCapture(('django_pain.management.commands.download_payments',
-                                       'django_pain.management.command_mixins'), propagate=False)
+        self.log_handler = LogCapture(cast(Tuple[str], (
+            'django_pain.management.commands.download_payments',
+            'django_pain.management.command_mixins',
+        )), propagate=False)
 
     def tearDown(self):
         self.log_handler.uninstall()
