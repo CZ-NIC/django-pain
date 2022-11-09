@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2022  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -18,7 +18,7 @@
 
 """Base payment processor module."""
 from abc import ABC, abstractmethod
-from typing import Iterable
+from typing import Iterable, Optional
 
 from django_pain.constants import PaymentProcessingError
 from django_pain.models import BankPayment
@@ -35,7 +35,7 @@ class InvalidTaxDateError(Exception):
 class ProcessPaymentResult(object):
     """Result of payment processing."""
 
-    def __init__(self, result: bool, error: PaymentProcessingError = None) -> None:
+    def __init__(self, result: bool, error: Optional[PaymentProcessingError] = None) -> None:
         """
         Initialize the result.
 
