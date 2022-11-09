@@ -1,11 +1,16 @@
 stages:
     - image
     - test
+    - build
+    - publish
 
 variables:
     DOCKER_REGISTRY: "reg.nic.cz"
     # Set up pip cache shared between all jobs of the project.
     PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+    PIP_INDEX_URL:
+        value: "https://pypi.nic.cz/cznic/public"
+        description: "PyPI index to be used."
     POSTGRES_DB: testdb
     POSTGRES_USER: user
     POSTGRES_PASSWORD: password
