@@ -23,7 +23,7 @@ from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from io import BytesIO, StringIO
 from pathlib import Path
-from typing import Any, BinaryIO, List, Mapping, Optional, Tuple, Union, cast
+from typing import BinaryIO, List, Optional, Tuple, Union, cast
 from unittest import skipUnless
 from unittest.mock import MagicMock, patch, sentinel
 
@@ -125,7 +125,7 @@ class DownloadPaymentsTest(TestCase):
     test_settings = {'DOWNLOADER': 'django_pain.tests.commands.test_download_payments.DummyStatementDownloader',
                      'PARSER': 'django_pain.tests.commands.test_download_payments.DummyStatementParser',
                      'DOWNLOADER_PARAMS': {'base_url': 'https://bank.test/', 'password': 'letmein'}
-                     }  # type: Mapping[str, Any]
+                     }
 
     fake_date = datetime(2020, 1, 9, 23, 30)
     ImportHistoryRow = namedtuple('ImportHistoryRow', ('origin', 'start_datetime', 'filenames', 'errors', 'finished'))
