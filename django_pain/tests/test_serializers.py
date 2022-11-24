@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2020-2021  CZ.NIC, z. s. p. o.
+# Copyright (C) 2020-2022  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -68,9 +68,9 @@ class TestBankPaymentSerializer(SimpleTestCase):
 
     @override_settings(DEFAULT_CURRENCY='EUR')
     def test_validate_amount(self):
-        data = {
+        data: Dict[str, Any] = {
             'cart': [CartItem(name='Dar', amount=10, description='Dar datovce', quantity=1)]
-        }  # type: Dict[str, Any]
+        }
         serializer = BankPaymentSerializer()
 
         data['amount'] = Money(10, 'CZK')

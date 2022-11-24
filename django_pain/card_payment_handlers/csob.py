@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2020-2021  CZ.NIC, z. s. p. o.
+# Copyright (C) 2020-2022  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -18,7 +18,7 @@
 
 """Card handler for CSOB Gateway."""
 import logging
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 import requests
 from django.utils import timezone
@@ -71,7 +71,7 @@ class CSOBCardPaymentHandler(AbstractCardPaymentHandler):
     def init_payment(self, amount: Money, variable_symbol: str, processor: str, return_url: str,
                      return_method: str, cart: List[CartItem], language: str) -> Tuple[BankPayment, str]:
         """Initialize card payment on the CSOB gateway, see parent class for detailed description."""
-        dict_cart = []  # type: List[Dict]
+        dict_cart: List[dict] = []
         for item in cart:
             dict_item = item._asdict()
             # CSOB Gateway works with multiples of 100 of basic currency:
