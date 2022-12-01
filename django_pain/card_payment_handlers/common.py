@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2020  CZ.NIC, z. s. p. o.
+# Copyright (C) 2020-2022  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -63,7 +63,7 @@ class AbstractCardPaymentHandler(ABC):
             return_url: URL to wich Gateway redirects back after payment is done.
             return_method: HTTP method for the redirection (POST/GET).
             cart: List of CartItems of length from 1 to 2.
-            language: Two capital letter language code e.g. 'EN' for English.
+            language: ISO 639-1 language code e.g. 'en' for English.
 
         Returns newly created BankPayment and CSOB gateway URL to redirect to.
 
