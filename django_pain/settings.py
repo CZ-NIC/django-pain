@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018-2021  CZ.NIC, z. s. p. o.
+# Copyright (C) 2018-2022  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -187,7 +187,7 @@ class PainSettings(appsettings.AppSettings):
 
     # CSOB card settings
     csob_card = appsettings.NestedDictSetting(dict(
-        api_url=appsettings.StringSetting(default='https://api.platebnibrana.csob.cz/api/v1.7/'),
+        api_url=appsettings.StringSetting(default='https://api.platebnibrana.csob.cz/api/v1.9/'),
         api_public_key=appsettings.FileSetting(required=True),
         merchant_id=appsettings.StringSetting(required=True),
         merchant_private_key=appsettings.FileSetting(required=True),

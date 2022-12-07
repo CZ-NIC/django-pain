@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2020-2021  CZ.NIC, z. s. p. o.
+# Copyright (C) 2020-2022  CZ.NIC, z. s. p. o.
 #
 # This file is part of FRED.
 #
@@ -135,7 +135,7 @@ class TestCSOBCardPaymentHandlerInit(TestCase):
         with patch.object(handler, '_client') as gateway_client_mock:
             gateway_client_mock.payment_init.side_effect = requests.ConnectionError()
             self.assertRaises(PaymentHandlerConnectionError, handler.init_payment, Money(100, 'CZK'), '123', 'csob',
-                              'https://example.com', 'POST', [], 'CZ')
+                              'https://example.com', 'POST', [], 'cs')
 
     def test_init_payment_ok(self):
         account = get_account(account_number='123456', currency='CZK')
@@ -158,7 +158,7 @@ class TestCSOBCardPaymentHandlerInit(TestCase):
                 'https://example.com',
                 'POST',
                 [CartItem('Gift for FRED', 1, 1000000, 'Gift for the best FRED')],
-                'CZ'
+                'cs'
             )
 
         gateway_client_mock.payment_init.assert_called_once_with(
@@ -174,7 +174,7 @@ class TestCSOBCardPaymentHandlerInit(TestCase):
                 'description': 'Gift for the best FRED'
             }],
             return_method='POST',
-            language='CZ',
+            language='cs',
         )
 
         self.assertEqual(redirect_url, sentinel.url)
@@ -215,7 +215,7 @@ class TestCSOBCardPaymentHandlerInit(TestCase):
                     'https://example.com',
                     'POST',
                     [CartItem('Gift for FRED', 1, 1000000, 'Gift for the best FRED')],
-                    'CZ'
+                    'cs'
                 )
 
         for currency, pay_id, account in test_data:
@@ -247,7 +247,7 @@ class TestCSOBCardPaymentHandlerInit(TestCase):
                     'https://example.com',
                     'POST',
                     [CartItem('Gift for FRED', 1, 1000000, 'Gift for the best FRED')],
-                    'CZ'
+                    'cs'
                 )
 
     @override_settings(PAIN_CSOB_CARD=csob_settings)
@@ -275,7 +275,7 @@ class TestCSOBCardPaymentHandlerInit(TestCase):
                     'https://example.com',
                     'POST',
                     [CartItem('Gift for FRED', 1, 1000000, 'Gift for the best FRED')],
-                    'CZ'
+                    'cs'
                 )
 
     def test_init_payment_not_ok(self):
@@ -295,7 +295,7 @@ class TestCSOBCardPaymentHandlerInit(TestCase):
                                    Money(100, 'CZK'), '123', 'donations', 'https://example.com', 'POST',
                                    [CartItem('Gift for FRED', 1, 1000000,
                                              'Gift for the best FRED')],
-                                   'CZ')
+                                   'cs')
 
     def test_init_payment_not_wrong_status(self):
         account = get_account(account_number='123456', currency='CZK')
@@ -315,4 +315,4 @@ class TestCSOBCardPaymentHandlerInit(TestCase):
                                    Money(100, 'CZK'), '123', 'donations', 'https://example.com', 'POST',
                                    [CartItem('Gift for FRED', 1, 1000000,
                                              'Gift for the best FRED')],
-                                   'CZ')
+                                   'cs')
