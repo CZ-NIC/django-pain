@@ -1,6 +1,6 @@
 {
   "name": "django-pain",
-  "version": "0.1.0",
+  "version": "2.4.0-rc.1",
   "description": "JavaScript for django-pain",
   "author": "Jan Musílek <jan.musilek@nic.cz>",
   "license": "GPL-3.0-or-later",
